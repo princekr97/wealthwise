@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Styles & Theme tweaks for WealthWise */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Utility for glassmorphism cards */
+.glass-card {
+  @apply bg-slate-900/60 border border-slate-700/60 backdrop-blur-xl;
+}
+
+/* Brand gradient background for hero sections */
+.brand-hero-bg {
+  background-image: theme('backgroundImage.hero-glow'),
+    radial-gradient(circle at center, rgba(15,23,42,0.95), #020617),
+    theme('backgroundImage.grid-pattern');
+  background-size:
+    100% 100%,
+    100% 100%,
+    40px 40px;
+}
+
+/* Transition helper */
+.transition-base {
+  @apply transition-all duration-200 ease-out;
+}
