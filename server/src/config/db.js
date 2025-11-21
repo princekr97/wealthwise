@@ -20,7 +20,13 @@ export const connectDB = async () => {
 
   try {
     await mongoose.connect(uri, {
-      dbName: 'wealthwise'
+      dbName: 'wealthwise',
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 30000,
+      retryWrites: true,
+      maxPoolSize: 10,
+      minPoolSize: 5
     });
 
     console.log('MongoDB connected successfully');
