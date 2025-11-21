@@ -14,6 +14,7 @@ import lendingRoutes from './routes/lendingRoutes.js';
 import budgetRoutes from './routes/budgetRoutes.js';
 import goalRoutes from './routes/goalRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import { connectDB } from './config/db.js';
 
 const app = express();
 
@@ -35,6 +36,43 @@ if (process.env.NODE_ENV !== 'production') {
 
 app.use(express.json());
 
+// Global connection management
+let dbConnectionPromise = null;
+
+// Middleware to ensure DB connection for all API routes
+app.use(async (req, res, next) => {
+  // Skip middleware for health check
+  if (req.path === '/api/health' || req.path === '/api/test-db') {
+    return next();
+  }
+
+  try {
+    // Check if already connected
+    if (mongoose.connection.readyState === 1) {
+      return next();
+    }
+
+    // If connection is in progress, wait for it
+    if (dbConnectionPromise) {
+      await dbConnectionPromise;
+      if (mongoose.connection.readyState === 1) {
+        return next();
+      }
+    }
+
+    // Start a new connection attempt
+    dbConnectionPromise = connectDB();
+    await dbConnectionPromise;
+    next();
+  } catch (error) {
+    console.error('[App Middleware] Connection error:', error.message);
+    res.status(503).json({
+      message: 'Database service unavailable. Please try again later.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
   res.json({ 
@@ -43,6 +81,40 @@ app.get('/api/health', (req, res) => {
     database: dbStatus,
     timestamp: new Date().toISOString()
   });
+});
+
+// Diagnostic endpoint to test connection
+app.get('/api/test-db', async (req, res) => {
+  try {
+    console.log('[test-db] Testing MongoDB connection...');
+    const uri = process.env.MONGODB_URI;
+    
+    if (!uri) {
+      return res.status(500).json({ error: 'MONGODB_URI not set' });
+    }
+
+    // Ensure connection is established
+    if (mongoose.connection.readyState !== 1) {
+      await connectDB();
+    }
+
+    // Try to ping the database
+    const adminDb = mongoose.connection.db.admin();
+    const result = await adminDb.ping();
+    
+    res.json({ 
+      status: 'connected',
+      ping: result,
+      readyState: mongoose.connection.readyState
+    });
+  } catch (error) {
+    console.error('[test-db] Error:', error.message);
+    res.status(503).json({ 
+      error: error.message,
+      name: error.name,
+      code: error.code
+    });
+  }
 });
 
 app.use('/api/auth', authRoutes);
