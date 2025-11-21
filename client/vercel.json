@@ -20,7 +20,7 @@
       ]
     },
     {
-      "source": "/(js|css)/.*",
+      "source": "/js/*",
       "headers": [
         {
           "key": "Cache-Control",
@@ -29,7 +29,7 @@
       ]
     },
     {
-      "source": "/assets/.*",
+      "source": "/css/*",
       "headers": [
         {
           "key": "Cache-Control",
@@ -38,7 +38,7 @@
       ]
     },
     {
-      "source": "/(.*)\\.woff2?",
+      "source": "/assets/*",
       "headers": [
         {
           "key": "Cache-Control",
