@@ -21,17 +21,18 @@ export const connectDB = async () => {
   try {
     await mongoose.connect(uri, {
       dbName: 'wealthwise',
-      serverSelectionTimeoutMS: 30000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 30000,
+      serverSelectionTimeoutMS: 60000,
+      socketTimeoutMS: 60000,
+      connectTimeoutMS: 60000,
       retryWrites: true,
       maxPoolSize: 10,
-      minPoolSize: 5
+      minPoolSize: 1,
+      family: 4 // Force IPv4
     });
 
     console.log('MongoDB connected successfully');
   } catch (error) {
     console.error('MongoDB connection error:', error.message);
-    process.exit(1);
+    throw error;
   }
 };
