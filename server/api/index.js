@@ -5,59 +5,62 @@
  * Handles connection pooling for serverless environment
  */
 
-import dotenv from 'dotenv';
-dotenv.config();
-
+// Load environment variables
+import mongoose from 'mongoose';
 import app from '../src/app.js';
 import { connectDB } from '../src/config/db.js';
-import mongoose from 'mongoose';
 
-// Global connection flag
-let dbConnected = false;
-let connecting = false;
+console.log('[Serverless Init] Process env MONGODB_URI:', !!process.env.MONGODB_URI);
 
-// Middleware to ensure DB connection before handling requests
-app.use(async (req, res, next) => {
-  // Check if already connected
+// Keep a persistent connection
+let cachedConnection = null;
+
+async function getConnection() {
+  // If mongoose is already connected, return
   if (mongoose.connection.readyState === 1) {
-    return next();
+    console.log('[Serverless] Reusing existing connection');
+    return mongoose.connection;
   }
 
-  // Prevent multiple simultaneous connection attempts
-  if (connecting) {
-    // Wait for connection attempt to complete
-    const maxWait = 30000; // 30 seconds
-    const startTime = Date.now();
-    while (mongoose.connection.readyState !== 1 && Date.now() - startTime < maxWait) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
+  // If we have a cached connection, try to verify it's still alive
+  if (cachedConnection && mongoose.connection.readyState === 1) {
+    console.log('[Serverless] Using cached connection');
+    return cachedConnection;
+  }
+
+  // Create new connection
+  console.log('[Serverless] Creating new MongoDB connection...');
+  try {
+    const conn = await connectDB();
+    cachedConnection = conn;
+    console.log('[Serverless] MongoDB connection established');
+    return conn;
+  } catch (error) {
+    console.error('[Serverless] MongoDB connection failed:', error.message);
+    console.error('[Serverless] Full error:', JSON.stringify(error, null, 2));
+    throw error;
+  }
+}
+
+// Middleware to ensure DB connection
+app.use(async (req, res, next) => {
+  try {
+    console.log('[Request] Path:', req.path, 'ReadyState:', mongoose.connection.readyState);
     
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({
-        message: 'Database service unavailable. Please try again later.'
-      });
-    }
-    return next();
-  }
-
-  if (!dbConnected) {
-    connecting = true;
-    try {
-      await connectDB();
-      dbConnected = true;
-      connecting = false;
-      console.log('Database connected on serverless request');
+    if (req.path === '/api/health') {
+      // Health check doesn't need DB
       return next();
-    } catch (error) {
-      connecting = false;
-      console.error('Database connection failed:', error.message);
-      return res.status(503).json({
-        message: 'Database service unavailable. Please try again later.'
-      });
     }
+
+    await getConnection();
+    next();
+  } catch (error) {
+    console.error('[Middleware] Connection error:', error.message);
+    res.status(503).json({
+      message: 'Database service unavailable. Please try again later.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
-  next();
 });
 
-// Export as default for Vercel
 export default app;

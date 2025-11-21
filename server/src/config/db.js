@@ -14,12 +14,16 @@ export const connectDB = async () => {
   const uri = process.env.MONGODB_URI;
 
   if (!uri) {
-    console.error('MONGODB_URI is not defined in environment variables');
-    process.exit(1);
+    const error = 'MONGODB_URI is not defined in environment variables';
+    console.error('[connectDB]', error);
+    throw new Error(error);
   }
 
   try {
-    await mongoose.connect(uri, {
+    console.log('[connectDB] Connecting to MongoDB...');
+    console.log('[connectDB] URI starts with:', uri.substring(0, 30) + '...');
+    
+    const conn = await mongoose.connect(uri, {
       dbName: 'wealthwise',
       serverSelectionTimeoutMS: 60000,
       socketTimeoutMS: 60000,
@@ -27,12 +31,21 @@ export const connectDB = async () => {
       retryWrites: true,
       maxPoolSize: 10,
       minPoolSize: 1,
-      family: 4 // Force IPv4
+      family: 4, // Force IPv4
+      directConnection: false // Use SRV record (recommended for Atlas)
     });
 
-    console.log('MongoDB connected successfully');
+    console.log('[connectDB] MongoDB connected successfully');
+    console.log('[connectDB] Connection readyState:', mongoose.connection.readyState);
+    return conn;
   } catch (error) {
-    console.error('MongoDB connection error:', error.message);
+    console.error('[connectDB] Connection failed');
+    console.error('[connectDB] Error name:', error.name);
+    console.error('[connectDB] Error message:', error.message);
+    console.error('[connectDB] Error code:', error.code);
+    if (error.reason) {
+      console.error('[connectDB] Error reason:', error.reason);
+    }
     throw error;
   }
 };
