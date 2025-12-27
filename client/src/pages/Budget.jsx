@@ -1,22 +1,65 @@
 /**
  * Budget & Goals Page
- * Set budgets, track spending, and manage financial goals
+ * 
+ * Set budgets, track spending, and manage financial goals.
+ * Uses MUI components for consistent design.
  */
 
-import { useState, useEffect } from 'react';
-import { Plus, Target, Zap, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Stack,
+  Tabs,
+  Tab,
+  LinearProgress,
+  IconButton,
+  useTheme,
+  useMediaQuery,
+  Skeleton,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  TrendingUp as TrendingUpIcon,
+  Flag as FlagIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
 import { toast } from 'sonner';
 import budgetService from '../services/budgetService';
 import { formatCurrency, formatDate, formatPercent } from '../utils/formatters';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import PageContainer from '../components/layout/PageContainer';
+import PageHeader from '../components/layout/PageHeader';
+import SummaryCard from '../components/layout/SummaryCard';
+import SummaryCardGrid from '../components/layout/SummaryCardGrid';
+
+const DEFAULT_CATEGORIES = [
+  'Food & Dining',
+  'Transportation',
+  'Shopping',
+  'Entertainment',
+  'Bills & Utilities'
+];
 
 export default function BudgetGoals() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const [budgets, setBudgets] = useState([]);
   const [goals, setGoals] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('budgets');
-  const [showBudgetForm, setShowBudgetForm] = useState(false);
-  const [showGoalForm, setShowGoalForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(0);
+  const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
+  const [goalDialogOpen, setGoalDialogOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmType, setConfirmType] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -24,13 +67,7 @@ export default function BudgetGoals() {
   const [budgetFormData, setBudgetFormData] = useState({
     month: new Date().toISOString().split('T')[0].substring(0, 7),
     overallLimit: '',
-    categories: [
-      { category: 'Food & Dining', limit: '' },
-      { category: 'Transportation', limit: '' },
-      { category: 'Shopping', limit: '' },
-      { category: 'Entertainment', limit: '' },
-      { category: 'Bills & Utilities', limit: '' }
-    ]
+    categories: DEFAULT_CATEGORIES.map(cat => ({ category: cat, limit: '' }))
   });
 
   const [goalFormData, setGoalFormData] = useState({
@@ -41,11 +78,10 @@ export default function BudgetGoals() {
   });
 
   useEffect(() => {
-    fetchBudgetsAndGoals();
+    fetchData();
   }, []);
 
-  const fetchBudgetsAndGoals = async () => {
-    setLoading(true);
+  const fetchData = async () => {
     try {
       const [budgetRes, goalRes] = await Promise.all([
         budgetService.getBudgets(),
@@ -54,15 +90,14 @@ export default function BudgetGoals() {
       setBudgets(Array.isArray(budgetRes) ? budgetRes : []);
       setGoals(Array.isArray(goalRes) ? goalRes : []);
     } catch (error) {
-      console.error('Failed to fetch budgets/goals:', error);
+      console.error('Failed to fetch data:', error);
       toast.error('Failed to fetch budgets and goals');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBudgetSubmit = async (e) => {
-    e.preventDefault();
+  const handleBudgetSubmit = async () => {
     try {
       const dataToSend = {
         ...budgetFormData,
@@ -74,58 +109,46 @@ export default function BudgetGoals() {
       };
       await budgetService.createBudget(dataToSend);
       toast.success('Budget created successfully');
-      setBudgetFormData({
-        month: new Date().toISOString().split('T')[0].substring(0, 7),
-        overallLimit: '',
-        categories: [
-          { category: 'Food & Dining', limit: '' },
-          { category: 'Transportation', limit: '' },
-          { category: 'Shopping', limit: '' },
-          { category: 'Entertainment', limit: '' },
-          { category: 'Bills & Utilities', limit: '' }
-        ]
-      });
-      setShowBudgetForm(false);
-      fetchBudgetsAndGoals();
+      resetBudgetForm();
+      setBudgetDialogOpen(false);
+      fetchData();
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Failed to create budget');
-      console.error('Failed to create budget:', error);
     }
   };
 
-  const handleGoalSubmit = async (e) => {
-    e.preventDefault();
+  const handleGoalSubmit = async () => {
     try {
       const dataToSend = {
         ...goalFormData,
         targetAmount: parseFloat(goalFormData.targetAmount),
-        currentAmount: parseFloat(goalFormData.currentAmount)
+        currentAmount: parseFloat(goalFormData.currentAmount) || 0
       };
       await budgetService.createGoal(dataToSend);
       toast.success('Goal created successfully');
-      setGoalFormData({
-        name: '',
-        targetAmount: '',
-        currentAmount: '',
-        deadline: ''
-      });
-      setShowGoalForm(false);
-      fetchBudgetsAndGoals();
+      resetGoalForm();
+      setGoalDialogOpen(false);
+      fetchData();
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Failed to create goal');
-      console.error('Failed to create goal:', error);
     }
   };
 
-  const handleDeleteBudget = async (id) => {
-    setDeleteId(id);
-    setConfirmType('budget');
-    setConfirmOpen(true);
+  const resetBudgetForm = () => {
+    setBudgetFormData({
+      month: new Date().toISOString().split('T')[0].substring(0, 7),
+      overallLimit: '',
+      categories: DEFAULT_CATEGORIES.map(cat => ({ category: cat, limit: '' }))
+    });
   };
 
-  const handleDeleteGoal = async (id) => {
+  const resetGoalForm = () => {
+    setGoalFormData({ name: '', targetAmount: '', currentAmount: '', deadline: '' });
+  };
+
+  const handleDelete = (id, type) => {
     setDeleteId(id);
-    setConfirmType('goal');
+    setConfirmType(type);
     setConfirmOpen(true);
   };
 
@@ -134,324 +157,349 @@ export default function BudgetGoals() {
     try {
       if (confirmType === 'budget') {
         await budgetService.deleteBudget(deleteId);
-        toast.success('Budget deleted successfully');
-      } else if (confirmType === 'goal') {
+        toast.success('Budget deleted');
+      } else {
         await budgetService.deleteGoal(deleteId);
-        toast.success('Goal deleted successfully');
+        toast.success('Goal deleted');
       }
-      fetchBudgetsAndGoals();
+      fetchData();
       setConfirmOpen(false);
       setDeleteId(null);
-      setConfirmType(null);
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Failed to delete');
-      console.error('Failed to delete:', error);
+      toast.error('Failed to delete');
     }
   };
 
+  // Calculate summary stats
+  const totalBudgetLimit = budgets.reduce((sum, b) => sum + (b.overallLimit || 0), 0);
+  const totalGoalsTarget = goals.reduce((sum, g) => sum + (g.targetAmount || 0), 0);
+  const totalGoalsSaved = goals.reduce((sum, g) => sum + (g.currentAmount || 0), 0);
+  const avgGoalProgress = goals.length > 0
+    ? goals.reduce((sum, g) => sum + (g.targetAmount > 0 ? (g.currentAmount / g.targetAmount) * 100 : 0), 0) / goals.length
+    : 0;
+
+  if (loading) {
+    return (
+      <PageContainer>
+        <Skeleton variant="text" width={200} height={40} sx={{ mb: 3 }} />
+        <SummaryCardGrid>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} variant="rounded" height={140} />
+          ))}
+        </SummaryCardGrid>
+      </PageContainer>
+    );
+  }
+
   return (
-    <div className="space-y-6 pb-20">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg p-6 text-white">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Budget & Goals</h1>
-          <p className="text-amber-100">Plan your spending and track financial goals</p>
-        </div>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="🎯 Budget & Goals"
+        subtitle="Plan your spending and track financial goals"
+        actionLabel={activeTab === 0 ? 'Add Budget' : 'Add Goal'}
+        onAction={() => activeTab === 0 ? setBudgetDialogOpen(true) : setGoalDialogOpen(true)}
+      />
+
+      {/* Summary Cards */}
+      <SummaryCardGrid columns={4}>
+        <SummaryCard
+          icon="📊"
+          label="Total Budgets"
+          value={budgets.length.toString()}
+          valueColor="warning"
+          subtitle={budgets.length > 0 ? formatCurrency(totalBudgetLimit) + ' total limit' : undefined}
+        />
+        <SummaryCard
+          icon="🎯"
+          label="Active Goals"
+          value={goals.length.toString()}
+          valueColor="info"
+          subtitle={goals.length > 0 ? formatPercent(avgGoalProgress) + ' avg progress' : undefined}
+        />
+        <SummaryCard
+          icon="💰"
+          label="Total Saved"
+          value={formatCurrency(totalGoalsSaved)}
+          valueColor="success"
+        />
+        <SummaryCard
+          icon="🏁"
+          label="Remaining"
+          value={formatCurrency(totalGoalsTarget - totalGoalsSaved)}
+          valueColor={(totalGoalsTarget - totalGoalsSaved) > 0 ? "primary" : "success"}
+        />
+      </SummaryCardGrid>
 
       {/* Tabs */}
-      <div className="flex gap-4 border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab('budgets')}
-          className={`px-4 py-2 font-semibold border-b-2 transition ${
-            activeTab === 'budgets'
-              ? 'border-amber-500 text-amber-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
+      <Card sx={{ mb: 3 }}>
+        <Tabs
+          value={activeTab}
+          onChange={(e, v) => setActiveTab(v)}
+          sx={{
+            borderBottom: '1px solid rgba(255,255,255,0.1)',
+            '& .MuiTab-root': {
+              minHeight: { xs: 48, sm: 56 },
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            },
+          }}
         >
-          <Zap className="inline mr-2" size={18} /> Budgets
-        </button>
-        <button
-          onClick={() => setActiveTab('goals')}
-          className={`px-4 py-2 font-semibold border-b-2 transition ${
-            activeTab === 'goals'
-              ? 'border-amber-500 text-amber-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Target className="inline mr-2" size={18} /> Goals
-        </button>
-      </div>
+          <Tab icon={<TrendingUpIcon />} label="Budgets" iconPosition="start" />
+          <Tab icon={<FlagIcon />} label="Goals" iconPosition="start" />
+        </Tabs>
+      </Card>
 
       {/* Budgets Tab */}
-      {activeTab === 'budgets' && (
-        <div className="space-y-6">
-          <div className="flex justify-end">
-            <button
-              onClick={() => setShowBudgetForm(true)}
-              className="bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-amber-700 transition"
-            >
-              <Plus size={20} /> Add Budget
-            </button>
-          </div>
+      {
+        activeTab === 0 && (
+          <Stack spacing={2}>
+            {budgets.length === 0 ? (
+              <Card>
+                <CardContent sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography color="textSecondary">No budgets set yet. Create one to start tracking!</Typography>
+                </CardContent>
+              </Card>
+            ) : (
+              budgets.map((budget) => (
+                <Card key={budget._id}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
+                          {new Date(budget.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          Overall Limit: {formatCurrency(budget.overallLimit)}
+                        </Typography>
+                      </Box>
+                      <IconButton size="small" color="error" onClick={() => handleDelete(budget._id, 'budget')}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
 
-          {showBudgetForm && (
-            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-              <h2 className="text-xl font-bold mb-4">Set New Budget</h2>
-              <form onSubmit={handleBudgetSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Month *</label>
-                    <input
-                      type="month"
-                      required
-                      value={budgetFormData.month}
-                      onChange={(e) => setBudgetFormData({ ...budgetFormData, month: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Overall Budget Limit *</label>
-                    <input
-                      type="number"
-                      required
-                      value={budgetFormData.overallLimit}
-                      onChange={(e) => setBudgetFormData({ ...budgetFormData, overallLimit: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Category Limits</h3>
-                  <div className="space-y-3">
-                    {budgetFormData.categories.map((cat, idx) => (
-                      <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">{cat.category}</label>
-                        </div>
-                        <input
-                          type="number"
-                          value={cat.limit}
-                          onChange={(e) => {
-                            const newCats = [...budgetFormData.categories];
-                            newCats[idx].limit = e.target.value;
-                            setBudgetFormData({ ...budgetFormData, categories: newCats });
-                          }}
-                          className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                          placeholder="0.00"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    className="bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-700 transition"
-                  >
-                    Save Budget
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowBudgetForm(false)}
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {loading ? (
-            <div className="text-center text-gray-500">Loading...</div>
-          ) : budgets.length === 0 ? (
-            <div className="text-center text-gray-500 bg-white rounded-lg p-6">No budgets set yet</div>
-          ) : (
-            <div className="space-y-4">
-              {budgets.map((budget) => (
-                <div key={budget._id} className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900">
-                        {new Date(budget.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                      </h3>
-                      <p className="text-sm text-gray-600">Overall Limit: {formatCurrency(budget.overallLimit)}</p>
-                    </div>
-                    <button
-                      onClick={() => handleDeleteBudget(budget._id)}
-                      className="text-red-600 hover:text-red-800 font-semibold"
-                    >
-                      Delete
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {budget.categories.map((cat, idx) => (
-                      <div key={idx}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="font-medium text-gray-700">{cat.category}</span>
-                          <span className="text-gray-600">{formatCurrency(cat.limit)}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                      {budget.categories?.map((cat, idx) => (
+                        <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.5, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.02)' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 500 }}>{cat.category}</Typography>
+                          <Typography variant="caption" color="primary" sx={{ fontWeight: 600 }}>{formatCurrency(cat.limit)}</Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </Stack>
+        )
+      }
 
       {/* Goals Tab */}
-      {activeTab === 'goals' && (
-        <div className="space-y-6">
-          <div className="flex justify-end">
-            <button
-              onClick={() => setShowGoalForm(true)}
-              className="bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-amber-700 transition"
-            >
-              <Plus size={20} /> Add Goal
-            </button>
-          </div>
-
-          {showGoalForm && (
-            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-              <h2 className="text-xl font-bold mb-4">Set New Goal</h2>
-              <form onSubmit={handleGoalSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Goal Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={goalFormData.name}
-                      onChange={(e) => setGoalFormData({ ...goalFormData, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      placeholder="e.g., Emergency Fund"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Target Amount *</label>
-                    <input
-                      type="number"
-                      required
-                      value={goalFormData.targetAmount}
-                      onChange={(e) => setGoalFormData({ ...goalFormData, targetAmount: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      placeholder="0.00"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Current Amount</label>
-                    <input
-                      type="number"
-                      value={goalFormData.currentAmount}
-                      onChange={(e) => setGoalFormData({ ...goalFormData, currentAmount: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      placeholder="0.00"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
-                    <input
-                      type="date"
-                      value={goalFormData.deadline}
-                      onChange={(e) => setGoalFormData({ ...goalFormData, deadline: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    className="bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-700 transition"
-                  >
-                    Save Goal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowGoalForm(false)}
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {loading ? (
-            <div className="text-center text-gray-500">Loading...</div>
-          ) : goals.length === 0 ? (
-            <div className="text-center text-gray-500 bg-white rounded-lg p-6">No goals set yet</div>
-          ) : (
-            <div className="space-y-4">
-              {goals.map((goal) => {
+      {
+        activeTab === 1 && (
+          <Stack spacing={2}>
+            {goals.length === 0 ? (
+              <Card>
+                <CardContent sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography color="textSecondary">No goals set yet. Create one to start saving!</Typography>
+                </CardContent>
+              </Card>
+            ) : (
+              goals.map((goal) => {
                 const progress = goal.targetAmount > 0 ? (goal.currentAmount / goal.targetAmount) * 100 : 0;
                 const remaining = goal.targetAmount - goal.currentAmount;
 
                 return (
-                  <div key={goal._id} className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-900">{goal.name}</h3>
-                        <p className="text-sm text-gray-600">
-                          Target: {formatCurrency(goal.targetAmount)} • Current: {formatCurrency(goal.currentAmount)}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteGoal(goal._id)}
-                        className="text-red-600 hover:text-red-800 font-semibold"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                  <Card key={goal._id}>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                        <Box>
+                          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
+                            {goal.name}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            Target: {formatCurrency(goal.targetAmount)} • Saved: {formatCurrency(goal.currentAmount)}
+                          </Typography>
+                        </Box>
+                        <IconButton size="small" color="error" onClick={() => handleDelete(goal._id, 'goal')}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
 
-                    <div className="mb-3">
-                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-green-500 to-blue-500 h-full transition-all duration-300"
-                          style={{ width: `${Math.min(progress, 100)}%` }}
+                      <Box sx={{ mb: 1.5 }}>
+                        <LinearProgress
+                          variant="determinate"
+                          value={Math.min(progress, 100)}
+                          sx={{
+                            height: 8,
+                            borderRadius: 4,
+                            bgcolor: 'rgba(255,255,255,0.1)',
+                            '& .MuiLinearProgress-bar': {
+                              borderRadius: 4,
+                              background: 'linear-gradient(90deg, #22C55E 0%, #3B82F6 100%)',
+                            },
+                          }}
                         />
-                      </div>
-                      <p className="text-xs text-gray-600 mt-1">
-                        {formatPercent(progress)} Complete • {formatCurrency(remaining)} remaining
-                      </p>
-                    </div>
+                        <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5, display: 'block' }}>
+                          {formatPercent(progress)} Complete • {formatCurrency(remaining)} remaining
+                        </Typography>
+                      </Box>
 
-                    {goal.deadline && (
-                      <p className="text-sm text-gray-700">
-                        <strong>Deadline:</strong> {formatDate(goal.deadline)}
-                      </p>
-                    )}
-                  </div>
+                      {goal.deadline && (
+                        <Typography variant="caption" color="textSecondary">
+                          <strong>Deadline:</strong> {formatDate(goal.deadline)}
+                        </Typography>
+                      )}
+                    </CardContent>
+                  </Card>
                 );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+              })
+            )}
+          </Stack>
+        )
+      }
+
+      {/* Add Budget Dialog */}
+      <Dialog open={budgetDialogOpen} onClose={() => setBudgetDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{
+          fontWeight: 700,
+          pb: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <IconButton
+            edge="start"
+            color="inherit"
+            onClick={() => setBudgetDialogOpen(false)}
+            aria-label="close"
+            size="small"
+            sx={{ mr: 1 }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+          Set New Budget
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2.5} sx={{ mt: 1 }}>
+            <TextField
+              label="Month"
+              type="month"
+              value={budgetFormData.month}
+              onChange={(e) => setBudgetFormData({ ...budgetFormData, month: e.target.value })}
+              fullWidth
+              size="small"
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Overall Budget Limit"
+              type="number"
+              value={budgetFormData.overallLimit}
+              onChange={(e) => setBudgetFormData({ ...budgetFormData, overallLimit: e.target.value })}
+              fullWidth
+              size="small"
+              placeholder="0.00"
+            />
+
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, pt: 1 }}>Category Limits</Typography>
+            {budgetFormData.categories.map((cat, idx) => (
+              <Box key={idx} sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Typography variant="caption" sx={{ minWidth: 120 }}>{cat.category}</Typography>
+                <TextField
+                  type="number"
+                  value={cat.limit}
+                  onChange={(e) => {
+                    const newCats = [...budgetFormData.categories];
+                    newCats[idx].limit = e.target.value;
+                    setBudgetFormData({ ...budgetFormData, categories: newCats });
+                  }}
+                  size="small"
+                  placeholder="0.00"
+                  sx={{ flex: 1 }}
+                />
+              </Box>
+            ))}
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+
+          <Button variant="contained" onClick={handleBudgetSubmit}>Save Budget</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Goal Dialog */}
+      <Dialog open={goalDialogOpen} onClose={() => setGoalDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{
+          fontWeight: 700,
+          pb: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <IconButton
+            edge="start"
+            color="inherit"
+            onClick={() => setGoalDialogOpen(false)}
+            aria-label="close"
+            size="small"
+            sx={{ mr: 1 }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+          Set New Goal
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2.5} sx={{ mt: 1 }}>
+            <TextField
+              label="Goal Name"
+              value={goalFormData.name}
+              onChange={(e) => setGoalFormData({ ...goalFormData, name: e.target.value })}
+              fullWidth
+              size="small"
+              placeholder="e.g., Emergency Fund"
+            />
+            <TextField
+              label="Target Amount"
+              type="number"
+              value={goalFormData.targetAmount}
+              onChange={(e) => setGoalFormData({ ...goalFormData, targetAmount: e.target.value })}
+              fullWidth
+              size="small"
+              placeholder="0.00"
+            />
+            <TextField
+              label="Current Amount"
+              type="number"
+              value={goalFormData.currentAmount}
+              onChange={(e) => setGoalFormData({ ...goalFormData, currentAmount: e.target.value })}
+              fullWidth
+              size="small"
+              placeholder="0.00"
+            />
+            <TextField
+              label="Deadline"
+              type="date"
+              value={goalFormData.deadline}
+              onChange={(e) => setGoalFormData({ ...goalFormData, deadline: e.target.value })}
+              fullWidth
+              size="small"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+
+          <Button variant="contained" onClick={handleGoalSubmit}>Save Goal</Button>
+        </DialogActions>
+      </Dialog>
 
       <ConfirmDialog
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         title={confirmType === 'budget' ? 'Delete Budget' : 'Delete Goal'}
-        message={confirmType === 'budget' 
-          ? 'This budget will be permanently deleted. This action cannot be undone.'
-          : 'This goal will be permanently deleted. This action cannot be undone.'}
+        message="This will be permanently deleted. This action cannot be undone."
         onConfirm={confirmDelete}
         confirmText="Delete"
         severity="error"
       />
-    </div>
+    </PageContainer >
   );
 }

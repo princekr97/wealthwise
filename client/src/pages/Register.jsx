@@ -1,10 +1,28 @@
 /**
  * Register Page
+ *
+ * Uses MUI components for consistency with the rest of the app.
+ * Mobile-first responsive design.
  */
 
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Link,
+  Stack,
+  CircularProgress,
+  IconButton,
+  InputAdornment,
+} from '@mui/material';
+import {
+  PersonAdd as PersonAddIcon,
+  Visibility,
+  VisibilityOff
+} from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -14,6 +32,7 @@ import { useAuth } from '../hooks/useAuth';
 export function Register() {
   const navigate = useNavigate();
   const { register: registerUser, loading } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -39,86 +58,178 @@ export function Register() {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-50 flex items-center gap-2">
-            <UserPlus size={20} className="text-emerald-400" />
+    <Box>
+      {/* Header */}
+      <Box sx={{ mb: { xs: 3, sm: 4 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+          <PersonAddIcon sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 600,
+              fontSize: { xs: '1.125rem', sm: '1.25rem', md: '1.5rem' },
+            }}
+          >
             Create your WealthWise account
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            It only takes a minute. Start tracking your money smarter.
-          </p>
-        </div>
-      </div>
-
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-        <div className="space-y-1 text-sm">
-          <label htmlFor="name" className="text-slate-200">
-            Full Name
-          </label>
-          <input
-            id="name"
-            type="text"
-            {...register('name')}
-            className="w-full rounded-xl bg-slate-900/80 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            placeholder="Prince Gupta"
-          />
-          {errors.name && (
-            <p className="text-[11px] text-rose-400 mt-0.5">{errors.name.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-1 text-sm">
-          <label htmlFor="email" className="text-slate-200">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            {...register('email')}
-            className="w-full rounded-xl bg-slate-900/80 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            placeholder="you@example.com"
-          />
-          {errors.email && (
-            <p className="text-[11px] text-rose-400 mt-0.5">{errors.email.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-1 text-sm">
-          <label htmlFor="password" className="text-slate-200">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            {...register('password')}
-            className="w-full rounded-xl bg-slate-900/80 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            placeholder="At least 6 characters"
-          />
-          {errors.password && (
-            <p className="text-[11px] text-rose-400 mt-0.5">{errors.password.message}</p>
-          )}
-          <p className="text-[11px] text-slate-500 mt-0.5">
-            Use a mix of letters, numbers, and symbols for better security.
-          </p>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 bg-gradient-to-r from-brand to-brandBlue text-slate-950 text-sm font-semibold shadow-brand-soft hover:shadow-brand-blue transition-base disabled:opacity-60 disabled:cursor-not-allowed"
+          </Typography>
+        </Box>
+        <Typography
+          variant="body2"
+          color="textSecondary"
+          sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
         >
-          {loading ? 'Creating account...' : 'Create Account'}
-        </button>
+          It only takes a minute. Start tracking your money smarter.
+        </Typography>
+      </Box>
+
+      {/* Form */}
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Stack spacing={{ xs: 2, sm: 2.5 }}>
+          <TextField
+            {...register('name')}
+            label="Full Name"
+            type="text"
+            fullWidth
+            size="small"
+            placeholder="Prince Gupta"
+            error={!!errors.name}
+            helperText={errors.name?.message}
+            sx={{
+              '& .MuiInputBase-root': {
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+              },
+            }}
+          />
+
+          <TextField
+            {...register('email')}
+            label="Email"
+            type="email"
+            fullWidth
+            size="small"
+            placeholder="you@example.com"
+            error={!!errors.email}
+            helperText={errors.email?.message}
+            sx={{
+              '& .MuiInputBase-root': {
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+              },
+            }}
+          />
+
+          <TextField
+            {...register('phoneNumber')}
+            label="Phone Number (Optional)"
+            type="tel"
+            fullWidth
+            size="small"
+            placeholder="10-digit mobile number"
+            error={!!errors.phoneNumber}
+            helperText={errors.phoneNumber?.message}
+            sx={{
+              '& .MuiInputBase-root': {
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+              },
+            }}
+          />
+
+          <Box>
+            <TextField
+              {...register('password')}
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              fullWidth
+              size="small"
+              placeholder="At least 6 characters"
+              error={!!errors.password}
+              helperText={errors.password?.message}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      size="small"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiInputBase-root': {
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                },
+              }}
+            />
+            {!errors.password && (
+              <Typography
+                variant="caption"
+                color="textSecondary"
+                sx={{
+                  display: 'block',
+                  mt: 0.5,
+                  fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                }}
+              >
+                Use a mix of letters, numbers, and symbols for better security.
+              </Typography>
+            )}
+          </Box>
+
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            disabled={loading}
+            sx={{
+              mt: 1,
+              py: { xs: 1.25, sm: 1.5 },
+              borderRadius: 2,
+              fontWeight: 600,
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+              textTransform: 'none',
+              minHeight: { xs: 44, sm: 48 },
+            }}
+          >
+            {loading ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={18} color="inherit" />
+                Creating account...
+              </Box>
+            ) : (
+              'Create Account'
+            )}
+          </Button>
+        </Stack>
       </form>
 
-      <p className="mt-4 text-xs text-slate-400 text-center">
+      {/* Footer */}
+      <Typography
+        variant="body2"
+        color="textSecondary"
+        sx={{
+          mt: { xs: 2.5, sm: 3 },
+          textAlign: 'center',
+          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+        }}
+      >
         Already have an account?{' '}
-        <Link to="/login" className="text-emerald-400 hover:text-emerald-300 font-medium">
+        <Link
+          component={RouterLink}
+          to="/login"
+          color="primary"
+          sx={{
+            fontWeight: 600,
+            textDecoration: 'none',
+            '&:hover': { textDecoration: 'underline' },
+          }}
+        >
           Log in
         </Link>
-      </p>
-    </div>
+      </Typography>
+    </Box>
   );
 }

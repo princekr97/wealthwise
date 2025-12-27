@@ -12,8 +12,10 @@ import {
   Button,
   Stack,
   Alert,
-  Box
+  Box,
+  IconButton
 } from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 
 export default function FormDialog({
   open,
@@ -39,7 +41,23 @@ export default function FormDialog({
         }
       }}
     >
-      <DialogTitle sx={{ fontWeight: 700, color: '#F1F5F9' }}>
+      <DialogTitle sx={{
+        fontWeight: 700,
+        color: '#F1F5F9',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1
+      }}>
+        <IconButton
+          edge="start"
+          color="inherit"
+          onClick={onClose}
+          aria-label="close"
+          size="small"
+          sx={{ mr: 1, color: '#94A3B8' }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
         {title}
       </DialogTitle>
       <DialogContent sx={{ pt: 2 }}>
@@ -53,9 +71,7 @@ export default function FormDialog({
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: 2, gap: 1 }}>
-        <Button onClick={onClose} disabled={loading}>
-          Cancel
-        </Button>
+
         <Button
           onClick={onSubmit}
           variant="contained"

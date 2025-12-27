@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Global Styles & Theme tweaks for WealthWise */
+/* Global Styles - WealthWise Mobile-First Design */
 
 html,
 body,
@@ -10,15 +10,21 @@ body,
   height: 100%;
 }
 
-/* Smooth scrolling */
 html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar */
+/* Mobile-optimized scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 6px;
+  width: 6px;
+  height: 4px;
+}
+
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 6px;
+  }
 }
 
 ::-webkit-scrollbar-track {
@@ -34,12 +40,21 @@ html {
   background: #334155;
 }
 
-/* Utility for glassmorphism cards */
+/* Simple Glassmorphism Utilities */
 .glass-card {
-  @apply bg-slate-900/60 border border-slate-700/60 backdrop-blur-xl;
+  @apply bg-slate-900/50 border border-slate-700/50 backdrop-blur-xl;
 }
 
-/* Brand gradient background for hero sections */
+.glass-card-strong {
+  @apply bg-slate-900/70 border border-slate-700/70 backdrop-blur-xl shadow-xl;
+}
+
+.glass-input {
+  @apply bg-slate-900/60 border border-slate-700/60 backdrop-blur-md;
+  @apply focus:bg-slate-900/80 focus:border-emerald-500/60 focus:backdrop-blur-lg;
+}
+
+/* Clean brand gradient background */
 .brand-hero-bg {
   background-image: theme('backgroundImage.hero-glow'),
     radial-gradient(circle at center, rgba(15,23,42,0.95), #020617),
@@ -50,7 +65,14 @@ html {
     40px 40px;
 }
 
-/* Transition helper */
+/* Smooth transitions */
 .transition-base {
   @apply transition-all duration-200 ease-out;
+}
+
+/* Mobile touch feedback */
+@media (hover: none) and (pointer: coarse) {
+  .hover-lift:active {
+    transform: scale(0.98);
+  }
 }

@@ -2,12 +2,13 @@
  * App Component
  *
  * Defines application routes and global layout.
+ * Uses standardized layout components for consistency.
  */
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import { Layout } from './components/layout/Layout.jsx';
+import { Layout, AuthLayout } from './components/layout';
 import { Landing } from './pages/Landing.jsx';
 import { Login } from './pages/Login.jsx';
 import { Register } from './pages/Register.jsx';
@@ -20,16 +21,20 @@ import Investments from './pages/Investments.jsx';
 import Lending from './pages/Lending.jsx';
 import Budget from './pages/Budget.jsx';
 import Settings from './pages/Settings.jsx';
+import { ResetPassword } from './pages/ResetPassword.jsx';
+import Groups from './pages/Groups.jsx';
+import GroupDetails from './pages/GroupDetails.jsx';
 
 export default function App() {
   return (
     <>
-      <Toaster richColors position="top-right" />
+      <Toaster richColors position="top-right" duration={2000} />
       <Routes>
         <Route path="/" element={<Landing />} />
 
         <Route path="/login" element={<AuthLayout><Login /></AuthLayout>} />
         <Route path="/register" element={<AuthLayout><Register /></AuthLayout>} />
+        <Route path="/reset-password/:token" element={<AuthLayout><ResetPassword /></AuthLayout>} />
 
         <Route
           path="/app/*"
@@ -38,6 +43,8 @@ export default function App() {
               <Layout>
                 <Routes>
                   <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="groups" element={<Groups />} />
+                  <Route path="groups/:id" element={<GroupDetails />} />
                   <Route path="expenses" element={<Expenses />} />
                   <Route path="income" element={<Income />} />
                   <Route path="loans" element={<Loans />} />
@@ -55,15 +62,5 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
-  );
-}
-
-function AuthLayout({ children }) {
-  return (
-    <div className="min-h-screen brand-hero-bg flex items-center justify-center px-4">
-      <div className="max-w-md w-full glass-card rounded-2xl shadow-brand-blue p-8">
-        {children}
-      </div>
-    </div>
   );
 }

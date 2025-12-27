@@ -1,166 +1,297 @@
 /**
  * Layout Component
- *
- * Provides responsive shell with sidebar navigation and top bar.
+ * 
+ * Main application shell with sidebar navigation and header.
+ * Uses MUI components for consistency with the rest of the app.
  */
 
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+import { Box, Drawer, IconButton, Typography, useTheme, useMediaQuery, alpha } from '@mui/material';
 import {
-  BarChart3,
-  CreditCard,
-  Menu,
-  Wallet,
-  TrendingUp,
-  PiggyBank,
-  Target,
-  Landmark,
-  Settings,
-  X
-} from 'lucide-react';
+  Menu as MenuIcon,
+  Close as CloseIcon,
+  Dashboard as DashboardIcon,
+  Receipt as ExpensesIcon,
+  AccountBalance as IncomeIcon,
+  CreditCard as LoansIcon,
+  TrendingUp as InvestmentsIcon,
+  Handshake as LendingIcon,
+  Flag as BudgetIcon,
+  Settings as SettingsIcon,
+  Groups as GroupsIcon
+} from '@mui/icons-material';
 
 const navItems = [
-  { to: '/app/dashboard', label: 'Dashboard', icon: BarChart3 },
-  { to: '/app/expenses', label: 'Expenses', icon: Wallet },
-  { to: '/app/income', label: 'Income', icon: Landmark },
-  { to: '/app/loans', label: 'Loans & EMIs', icon: CreditCard },
-  { to: '/app/investments', label: 'Investments', icon: TrendingUp },
-  { to: '/app/lending', label: 'Lending', icon: PiggyBank },
-  { to: '/app/budget', label: 'Budget & Goals', icon: Target },
-  { to: '/app/settings', label: 'Settings', icon: Settings }
+  { to: '/app/dashboard', label: 'Dashboard', icon: DashboardIcon },
+  { to: '/app/groups', label: 'Groups', icon: GroupsIcon },
+  { to: '/app/expenses', label: 'Expenses', icon: ExpensesIcon },
+  { to: '/app/income', label: 'Income', icon: IncomeIcon },
+  { to: '/app/loans', label: 'Loans & EMIs', icon: LoansIcon },
+  { to: '/app/investments', label: 'Investments', icon: InvestmentsIcon },
+  { to: '/app/lending', label: 'Lending', icon: LendingIcon },
+  { to: '/app/budget', label: 'Budget & Goals', icon: BudgetIcon },
+  { to: '/app/settings', label: 'Settings', icon: SettingsIcon }
 ];
 
+const SIDEBAR_WIDTH = 260;
+
+// Colors
+const colors = {
+  bgPrimary: '#0F172A',
+  bgSidebar: '#0F172A',
+  bgCard: '#1E293B',
+  border: 'rgba(148, 163, 184, 0.15)',
+  textPrimary: '#F1F5F9',
+  textSecondary: '#94A3B8',
+  primary: '#22C55E',
+  primaryHover: 'rgba(34, 197, 94, 0.1)'
+};
+
 export function Layout({ children }) {
-  const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  const location = useLocation();
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const SidebarContent = () => (
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: colors.bgSidebar,
+        borderRight: `1px solid ${colors.border}`
+      }}
+    >
+      {/* Logo */}
+      <Box
+        sx={{
+          px: 2.5,
+          py: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          borderBottom: `1px solid ${colors.border}`
+        }}
+      >
+        <Box
+          sx={{
+            width: 36,
+            height: 36,
+            borderRadius: 2,
+            background: 'linear-gradient(135deg, #22C55E 0%, #3B82F6 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: colors.bgPrimary,
+            fontWeight: 700,
+            fontSize: '1rem'
+          }}
+        >
+          W
+        </Box>
+        <Box>
+          <Typography sx={{ fontWeight: 600, fontSize: '0.9rem', color: colors.textPrimary }}>
+            WealthWise
+          </Typography>
+          <Typography sx={{ fontSize: '0.65rem', color: colors.textSecondary, mt: -0.3 }}>
+            Personal Finance Hub
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Navigation */}
+      <Box component="nav" sx={{ flex: 1, py: 2, px: 1.5 }}>
+        {navItems.map(({ to, label, icon: Icon }) => {
+          const isActive = location.pathname === to;
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={() => isMobile && setMobileOpen(false)}
+              style={{ textDecoration: 'none' }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  px: 2,
+                  py: 1.25,
+                  mb: 0.5,
+                  borderRadius: 2,
+                  transition: 'all 0.15s ease',
+                  bgcolor: isActive ? colors.primaryHover : 'transparent',
+                  border: isActive ? `1px solid rgba(34, 197, 94, 0.3)` : '1px solid transparent',
+                  color: isActive ? colors.primary : colors.textSecondary,
+                  '&:hover': {
+                    bgcolor: isActive ? colors.primaryHover : 'rgba(255, 255, 255, 0.03)',
+                    color: isActive ? colors.primary : colors.textPrimary
+                  }
+                }}
+              >
+                <Icon sx={{ fontSize: 20 }} />
+                <Typography sx={{ fontSize: '0.85rem', fontWeight: isActive ? 600 : 500 }}>
+                  {label}
+                </Typography>
+              </Box>
+            </NavLink>
+          );
+        })}
+      </Box>
+
+      {/* Footer */}
+      <Box sx={{ px: 2.5, py: 2, borderTop: `1px solid ${colors.border}` }}>
+        <Typography sx={{ fontSize: '0.7rem', color: colors.textSecondary, mb: 0.5 }}>
+          Financial Health
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            sx={{
+              flex: 1,
+              height: 6,
+              borderRadius: 3,
+              bgcolor: 'rgba(255, 255, 255, 0.1)',
+              overflow: 'hidden'
+            }}
+          >
+            <Box
+              sx={{
+                width: '72%',
+                height: '100%',
+                background: 'linear-gradient(90deg, #22C55E 0%, #3B82F6 100%)',
+                borderRadius: 3
+              }}
+            />
+          </Box>
+          <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: colors.primary }}>
+            72
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
+  );
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:flex-col w-64 border-r border-slate-800 bg-slate-950/80 backdrop-blur-xl">
-        <div className="px-5 py-4 flex items-center gap-2 border-b border-slate-800">
-          <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-brand to-brandBlue flex items-center justify-center text-slate-950 font-bold">
-            W
-          </div>
-          <div>
-            <div className="font-semibold text-sm">WealthWise</div>
-            <div className="text-[11px] text-slate-500 -mt-0.5">Personal Finance Hub</div>
-          </div>
-        </div>
-
-        <nav className="flex-1 px-3 py-4 space-y-1 text-sm">
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `flex items-center gap-2 px-3 py-2 rounded-xl transition-base ${
-                  isActive
-                    ? 'bg-slate-800/90 text-emerald-300 shadow-brand-soft border border-emerald-500/40'
-                    : 'text-slate-300 hover:bg-slate-900/80 hover:text-white'
-                }`
-              }
-            >
-              <Icon size={18} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="px-4 py-4 border-t border-slate-800 text-xs text-slate-500">
-          <div>Financial Health • <span className="text-emerald-400 font-medium">72/100</span></div>
-          <div className="mt-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
-            <div className="h-full w-[72%] bg-gradient-to-r from-emerald-500 to-sky-500" />
-          </div>
-        </div>
-      </aside>
-
-      {/* Mobile drawer overlay */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
-
-      {/* Mobile sidebar */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-950/95 border-r border-slate-800 transform transition-transform duration-200 lg:hidden ${
-          open ? 'translate-x-0' : '-translate-x-full'
-        }`}
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: colors.bgPrimary }}>
+      {/* Desktop Sidebar */}
+      <Box
+        component="aside"
+        sx={{
+          display: { xs: 'none', lg: 'block' },
+          width: SIDEBAR_WIDTH,
+          flexShrink: 0
+        }}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-brand to-brandBlue flex items-center justify-center text-slate-950 font-bold">
-              W
-            </div>
-            <div>
-              <div className="font-semibold text-sm">WealthWise</div>
-              <div className="text-[11px] text-slate-500 -mt-0.5">Your money cockpit</div>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="p-1 rounded-full bg-slate-900 hover:bg-slate-800 transition-base"
-            onClick={() => setOpen(false)}
-          >
-            <X size={18} />
-          </button>
-        </div>
+        <Box sx={{ position: 'fixed', width: SIDEBAR_WIDTH, height: '100vh' }}>
+          <SidebarContent />
+        </Box>
+      </Box>
 
-        <nav className="px-3 py-4 space-y-1 text-sm">
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-2 px-3 py-2 rounded-xl transition-base ${
-                  isActive
-                    ? 'bg-slate-800/90 text-emerald-300 shadow-brand-soft border border-emerald-500/40'
-                    : 'text-slate-300 hover:bg-slate-900/80 hover:text-white'
-                }`
-              }
+      {/* Mobile Drawer */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: 'block', lg: 'none' },
+          '& .MuiDrawer-paper': {
+            width: SIDEBAR_WIDTH,
+            bgcolor: colors.bgSidebar,
+            border: 'none'
+          }
+        }}
+      >
+        <SidebarContent />
+      </Drawer>
+
+      {/* Main Content */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {/* Header */}
+        <Box
+          component="header"
+          sx={{
+            height: 56,
+            px: { xs: 2, sm: 3 },
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: `1px solid ${colors.border}`,
+            bgcolor: colors.bgPrimary,
+            position: 'sticky',
+            top: 0,
+            zIndex: 100
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Mobile menu button */}
+            <IconButton
+              onClick={handleDrawerToggle}
+              sx={{
+                display: { lg: 'none' },
+                color: colors.textSecondary,
+                '&:hover': { color: colors.textPrimary }
+              }}
             >
-              <Icon size={18} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
-
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col relative">
-        {/* Top bar */}
-        <header className="h-14 border-b border-slate-800 flex items-center justify-between px-4 lg:px-6 bg-slate-950/75 backdrop-blur-xl sticky top-0 z-30">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="lg:hidden p-2 rounded-full bg-slate-900 hover:bg-slate-800 transition-base"
-              onClick={() => setOpen(true)}
+              {mobileOpen ? <CloseIcon /> : <MenuIcon />}
+            </IconButton>
+            <Typography
+              sx={{
+                display: { xs: 'none', sm: 'block' },
+                fontSize: '0.8rem',
+                color: colors.textSecondary
+              }}
             >
-              <Menu size={18} />
-            </button>
-            <div className="text-xs text-slate-400 hidden sm:block">
-              Welcome back, <span className="text-slate-100 font-medium">Investor</span>
-            </div>
-          </div>
+              Welcome Back, <span style={{ color: colors.textPrimary, fontWeight: 500 }}>Investor</span>
+            </Typography>
+          </Box>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex flex-col text-right text-[11px]">
-              <span className="text-slate-400">Today&apos;s snapshot</span>
-              <span className="text-emerald-400 font-medium">You&apos;re on track 🎯</span>
-            </div>
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-500 to-sky-500 text-slate-950 text-xs flex items-center justify-center font-semibold">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ display: { xs: 'none', sm: 'block' }, textAlign: 'right' }}>
+              <Typography sx={{ fontSize: '0.65rem', color: colors.textSecondary }}>
+                Today's snapshot
+              </Typography>
+              <Typography sx={{ fontSize: '0.7rem', color: colors.primary, fontWeight: 500 }}>
+                You're on track 🎯
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #22C55E 0%, #3B82F6 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: colors.bgPrimary,
+                fontSize: '0.75rem',
+                fontWeight: 600
+              }}
+            >
               PG
-            </div>
-          </div>
-        </header>
+            </Box>
+          </Box>
+        </Box>
 
-        {/* Scrollable content */}
-        <main className="flex-1 overflow-y-auto bg-slate-950/95">
-          <div className="max-w-6xl mx-auto px-4 lg:px-6 py-4 lg:py-6">{children}</div>
-        </main>
-      </div>
-    </div>
+        {/* Page Content */}
+        <Box
+          component="main"
+          sx={{
+            flex: 1,
+            overflow: 'auto',
+            bgcolor: colors.bgPrimary
+          }}
+        >
+          {children}
+        </Box>
+      </Box>
+    </Box>
   );
 }

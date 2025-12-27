@@ -7,19 +7,33 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box, Card, CardContent, Button, TextField, Select, MenuItem, FormControl, InputLabel,
   Dialog, DialogTitle, DialogContent, DialogActions, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Grid, Container, Stack, IconButton, Chip, Typography, useMediaQuery, useTheme,
+  TableHead, TableRow, Grid, Stack, IconButton, Chip, Typography, useMediaQuery, useTheme,
   TablePagination, Alert, CircularProgress, LinearProgress
 } from '@mui/material';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend, ScatterChart, Scatter
+  Tooltip, ResponsiveContainer, ScatterChart, Scatter
 } from 'recharts';
-import { Add as AddIcon, Delete as DeleteIcon, TrendingUp as TrendingUpIcon, TrendingDown as TrendingDownIcon, FilterList as FilterListIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  FilterList as FilterListIcon,
+  Refresh as RefreshIcon,
+  Close as CloseIcon,
+  Check as CheckIcon
+} from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 import { investmentService } from '../services/investmentService';
 import { formatCurrency, formatDate, formatPercent } from '../utils/formatters';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import PageContainer from '../components/layout/PageContainer';
+import PageHeader from '../components/layout/PageHeader';
+import SummaryCard from '../components/layout/SummaryCard';
+import SummaryCardGrid from '../components/layout/SummaryCardGrid';
+import ChartCard, { ChartGrid, EmptyChartState, CategoryLegend } from '../components/layout/ChartCard';
 
 const INVESTMENT_TYPES = ['Stocks', 'Mutual Funds', 'FD', 'PPF', 'NPS', 'Gold', 'Crypto', 'Real Estate', 'Bonds', 'Other'];
 const COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#EC4899', '#6B7280'];
@@ -63,12 +77,12 @@ export default function Investments() {
       const itemDate = new Date(item.purchaseDate).toISOString().split('T')[0];
       const from = fromDate ? new Date(fromDate).toISOString().split('T')[0] : null;
       const to = toDate ? new Date(toDate).toISOString().split('T')[0] : null;
-      
+
       if (from && itemDate < from) return false;
       if (to && itemDate > to) return false;
       return true;
     });
-    
+
     setFilteredInvestments(filtered);
     setPage(0);
   }, [investments, fromDate, toDate]);
@@ -97,7 +111,7 @@ export default function Investments() {
         currentValue: parseFloat(values.currentValue),
         units: values.units ? parseFloat(values.units) : null
       };
-      
+
       if (dataToSend.amountInvested <= 0) {
         toast.error('Amount invested must be greater than 0');
         return;
@@ -160,623 +174,607 @@ export default function Investments() {
   }
 
   return (
-    <Box sx={{ py: { xs: 2, sm: 2, md: 3, lg: 4 }, px: { xs: 1, sm: 1, md: 2, lg: 4 } }}>
-      <Box sx={{ width: '100%', mx: 'auto' }}>
-        {/* Header */}
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: { xs: 2, sm: 3, md: 4 }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
-            <IconButton
-              onClick={() => {
-                setTempFromDate(fromDate);
-                setTempToDate(toDate);
-                setFilterModalOpen(true);
-              }}
-              sx={{
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                color: 'primary.main',
-                '&:hover': { backgroundColor: 'rgba(59, 130, 246, 0.2)' }
-              }}
-              title="Filter by date range"
-            >
-              <FilterListIcon />
-            </IconButton>
-            <Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem', lg: '1.75rem' } }}>📈 Investments</Typography>
-              <Typography variant="body2" color="textSecondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem', md: '0.95rem' } }}>Track and grow your investment portfolio</Typography>
-            </Box>
-          </Box>
-          <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => setOpen(true)} size={isMobile ? 'small' : 'medium'}>
-            Add Investment
-          </Button>
-        </Stack>
+    <PageContainer>
+      <PageHeader
+        title="📈 Investments"
+        subtitle="Track and grow your investment portfolio"
+        actionLabel="Add Investment"
+        onAction={() => setOpen(true)}
+        leftContent={
+          <IconButton
+            onClick={() => {
+              setTempFromDate(fromDate);
+              setTempToDate(toDate);
+              setFilterModalOpen(true);
+            }}
+            sx={{
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              color: 'primary.main',
+              '&:hover': { backgroundColor: 'rgba(59, 130, 246, 0.2)' }
+            }}
+            title="Filter by date range"
+          >
+            <FilterListIcon />
+          </IconButton>
+        }
+      />
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {/* Summary Cards */}
-        <Grid container spacing={{ xs: 2, sm: 2, md: 3, lg: 3 }} sx={{ mb: { xs: 2, sm: 3, md: 4 } }}>
-          <Grid item xs={12} sm={6} md={6} lg={3}>
-            <Card><CardContent sx={{ minHeight: { xs: 110, sm: 130, md: 140 } }}>
-              <Typography color="textSecondary" variant="caption" sx={{ display: 'block', mb: 1, fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>Amount Invested</Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: 'info.main', fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' } }}>{formatCurrency(totalInvested)}</Typography>
-            </CardContent></Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={3}>
-            <Card><CardContent sx={{ minHeight: { xs: 110, sm: 130, md: 140 } }}>
-              <Typography color="textSecondary" variant="caption" sx={{ display: 'block', mb: 1, fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>Current Value</Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' } }}>{formatCurrency(totalCurrentValue)}</Typography>
-            </CardContent></Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={3}>
-            <Card><CardContent sx={{ minHeight: { xs: 110, sm: 130, md: 140 } }}>
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                <Box>
-                  <Typography color="textSecondary" variant="caption" sx={{ display: 'block', mb: 1, fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>Total Return</Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: totalReturn >= 0 ? 'success.main' : 'error.main', fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' } }}>
-                    {formatCurrency(totalReturn)}
-                  </Typography>
-                </Box>
-                {totalReturn >= 0 ? <TrendingUpIcon sx={{ color: 'success.main', fontSize: 24 }} /> : <TrendingDownIcon sx={{ color: 'error.main', fontSize: 24 }} />}
-              </Stack>
-            </CardContent></Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={3}>
-            <Card><CardContent sx={{ minHeight: { xs: 110, sm: 130, md: 140 } }}>
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                <Box>
-                  <Typography color="textSecondary" variant="caption" sx={{ display: 'block', mb: 1, fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>Return %</Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: returnPercent >= 0 ? 'success.main' : 'error.main', fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' } }}>
-                    {formatPercent(returnPercent)}
-                  </Typography>
-                </Box>
-                {returnPercent >= 0 ? <TrendingUpIcon sx={{ color: 'success.main', fontSize: 24 }} /> : <TrendingDownIcon sx={{ color: 'error.main', fontSize: 24 }} />}
-              </Stack>
-            </CardContent></Card>
-          </Grid>
-        </Grid>
+      {/* Summary Cards */}
+      <SummaryCardGrid columns={4}>
+        <SummaryCard
+          icon="💰"
+          label="Amount Invested"
+          value={formatCurrency(totalInvested)}
+          valueColor="info"
+          subtitle={`${filteredInvestments.length} investments`}
+        />
+        <SummaryCard
+          icon="📊"
+          label="Current Value"
+          value={formatCurrency(totalCurrentValue)}
+          valueColor="primary"
+        />
+        <SummaryCard
+          icon={totalReturn >= 0 ? "📈" : "📉"}
+          label="Total Return"
+          value={formatCurrency(totalReturn)}
+          valueColor={totalReturn >= 0 ? 'success' : 'error'}
+          trend={formatPercent(returnPercent)}
+        />
+        <SummaryCard
+          icon="🎯"
+          label="Return %"
+          value={formatPercent(returnPercent)}
+          valueColor={returnPercent >= 0 ? 'success' : 'error'}
+        />
+      </SummaryCardGrid>
 
-        {/* Charts */}
-        <Grid container spacing={{ xs: 2, sm: 2, md: 3, lg: 3 }} sx={{ mb: { xs: 2, sm: 3, md: 4 } }}>
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent sx={{ pb: 0 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '0.95rem', sm: '1rem', md: '1.1rem' } }}>
-                    💰 Portfolio Allocation
-                  </Typography>
-                  {byType.length > 0 && (
-                    <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.75rem' }}>
-                      {byType.length} types
-                    </Typography>
-                  )}
-                </Box>
-              </CardContent>
+      <ChartGrid>
+        {/* Portfolio Allocation */}
+        <ChartCard
+          title="📂 Portfolio Allocation"
+          subtitle={byType.length > 0 ? `${byType.length} types` : undefined}
+          footer={byType.length > 0 ? (
+            <CategoryLegend data={byType} colors={COLORS} formatter={formatCurrency} />
+          ) : undefined}
+        >
+          {byType.length === 0 ? (
+            <EmptyChartState message="Add investments to see allocation" />
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={byType}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  innerRadius={isMobile ? 40 : (isTablet ? 55 : 65)}
+                  outerRadius={isMobile ? 70 : (isTablet ? 90 : 110)}
+                  paddingAngle={2}
+                  stroke="transparent"
+                  dataKey="value"
+                >
+                  {byType.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value) => formatCurrency(value)}
+                  contentStyle={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    padding: '8px 12px'
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </ChartCard>
 
-              <CardContent sx={{ pt: 1 }}>
-                {byType.length > 0 ? (
-                  <>
-                    <Box sx={{ width: '100%', height: { xs: 250, sm: 280, md: 300 }, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie 
-                            data={byType} 
-                            dataKey="value" 
-                            nameKey="name" 
-                            cx="50%" 
-                            cy="50%" 
-                            outerRadius={isMobile ? 70 : (isTablet ? 90 : 110)}
-                          >
-                            {byType.map((entry, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} />)}
-                          </Pie>
-                          <Tooltip formatter={(v) => formatCurrency(v)} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </Box>
+        {/* Return Analysis */}
+        <ChartCard
+          title="📊 Return Analysis"
+          subtitle="Top investments by value"
+        >
+          {investments.length === 0 ? (
+            <EmptyChartState message="Add investments to see performance" />
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={investments.slice(0, 5)} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  stroke="rgba(255,255,255,0.5)"
+                  tickLine={false}
+                  fontSize={11}
+                  tick={{ fill: 'rgba(255,255,255,0.7)' }}
+                />
+                <YAxis
+                  stroke="rgba(255,255,255,0.5)"
+                  tickLine={false}
+                  fontSize={11}
+                  tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                  tick={{ fill: 'rgba(255,255,255,0.7)' }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    padding: '8px 12px'
+                  }}
+                  formatter={(value) => formatCurrency(value)}
+                />
+                <Bar
+                  dataKey="currentValue"
+                  fill="#3B82F6"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={50}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </ChartCard>
+      </ChartGrid>
 
-                    {/* Legend Grid */}
-                    <Box sx={{ 
-                      mt: 3, 
-                      pt: 2, 
-                      borderTop: '1px solid rgba(255,255,255,0.1)',
-                      display: 'grid',
-                      gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr', md: '1fr 1fr' },
-                      gap: { xs: 1.5, sm: 2 },
-                      rowGap: { xs: 1.5, sm: 2 }
-                    }}>
-                      {byType && byType.length > 0 && byType.map((item, index) => {
-                        const total = byType.reduce((sum, i) => sum + (i.value || 0), 0);
-                        const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : '0';
-                        return (
-                          <Box 
-                            key={index}
-                            sx={{ 
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 0.5,
-                              p: 1.5,
-                              borderRadius: 1.5,
-                              backgroundColor: 'rgba(255,255,255,0.02)',
-                              border: '1px solid rgba(255,255,255,0.05)',
-                              '&:hover': {
-                                backgroundColor: 'rgba(255,255,255,0.04)',
-                                borderColor: 'rgba(255,255,255,0.1)'
-                              },
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <Box
-                                sx={{
-                                  width: 10,
-                                  height: 10,
-                                  borderRadius: '50%',
-                                  bgcolor: COLORS[index % COLORS.length],
-                                  flexShrink: 0
-                                }}
-                              />
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                  fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                                  fontWeight: 600,
-                                  flex: 1,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                {item.name}
-                              </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 0.5 }}>
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                  fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                                  fontWeight: 600,
-                                  color: COLORS[index % COLORS.length]
-                                }}
-                              >
-                                {formatCurrency(item.value || 0)}
-                              </Typography>
-                              <Typography 
-                                variant="caption" 
-                                color="textSecondary"
-                                sx={{ 
-                                  fontSize: { xs: '0.65rem', sm: '0.7rem' }
-                                }}
-                              >
-                                {percentage}%
-                              </Typography>
-                            </Box>
-                          </Box>
-                        );
-                      })}
-                    </Box>
-                  </>
-                ) : (
-                  <Typography color="textSecondary" sx={{ textAlign: 'center', py: 4, fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                    No data available
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+      {/* Investments Table */}
+      <Card>
+        <CardContent>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>📋 Your Investments</Typography>
 
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent sx={{ pb: 0 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '0.95rem', sm: '1rem', md: '1.1rem' } }}>
-                    📊 Return Analysis
-                  </Typography>
-                  {investments.length > 0 && (
-                    <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.75rem' }}>
-                      Top 5
-                    </Typography>
-                  )}
-                </Box>
-              </CardContent>
-
-              <CardContent sx={{ pt: 1 }}>
-                {investments.length > 0 ? (
-                  <Box sx={{ width: '100%', height: { xs: 250, sm: 280, md: 300 } }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={investments.slice(0, 5)}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-                        <XAxis 
-                          dataKey="name" 
-                          tick={{ fontSize: isMobile ? 10 : 12, fill: 'rgba(255,255,255,0.7)' }}
-                          axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
-                        />
-                        <YAxis 
-                          tick={{ fontSize: isMobile ? 10 : 12, fill: 'rgba(255,255,255,0.7)' }}
-                          tickFormatter={(value) => `₹${(value / 100000).toFixed(0)}L`}
-                          axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
-                        />
-                        <Tooltip formatter={(v) => formatCurrency(v)} />
-                        <Bar dataKey="currentValue" fill="#22C55E" radius={[8, 8, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </Box>
-                ) : (
-                  <Typography color="textSecondary" sx={{ textAlign: 'center', py: 4, fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                    No data available
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        {/* Investments Table */}
-        <Card>
-          <CardContent>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>📋 Your Investments</Typography>
-            
-            {/* Desktop Table */}
-            {!isMobile && (
-              <TableContainer sx={{ overflowX: 'auto' }}>
-                <Table size="medium">
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-                      <TableCell sx={{ fontSize: '0.8rem' }}>Name</TableCell>
-                      <TableCell sx={{ fontSize: '0.8rem' }}>Type</TableCell>
-                      <TableCell align="right" sx={{ fontSize: '0.8rem' }}>Invested</TableCell>
-                      <TableCell align="right" sx={{ fontSize: '0.8rem' }}>Current</TableCell>
-                      <TableCell align="right" sx={{ fontSize: '0.8rem' }}>Return</TableCell>
-                      <TableCell align="right" sx={{ fontSize: '0.8rem' }}>%</TableCell>
-                      <TableCell align="center" sx={{ fontSize: '0.8rem' }}>Actions</TableCell>
+          {/* Desktop Table */}
+          {!isMobile && (
+            <TableContainer sx={{ overflowX: 'auto' }}>
+              <Table size="medium">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+                    <TableCell sx={{ fontSize: '0.8rem' }}>Name</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem' }}>Type</TableCell>
+                    <TableCell align="right" sx={{ fontSize: '0.8rem' }}>Invested</TableCell>
+                    <TableCell align="right" sx={{ fontSize: '0.8rem' }}>Current</TableCell>
+                    <TableCell align="right" sx={{ fontSize: '0.8rem' }}>Return</TableCell>
+                    <TableCell align="right" sx={{ fontSize: '0.8rem' }}>%</TableCell>
+                    <TableCell align="center" sx={{ fontSize: '0.8rem' }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedInvestments.length > 0 ? (
+                    paginatedInvestments.map((inv) => {
+                      const invReturn = inv.currentValue - inv.amountInvested;
+                      const invReturnPercent = (invReturn / inv.amountInvested) * 100;
+                      return (
+                        <TableRow key={inv._id} hover>
+                          <TableCell sx={{ fontSize: '0.85rem' }}>{inv.name}</TableCell>
+                          <TableCell sx={{ fontSize: '0.85rem' }}><Chip label={inv.type} size="small" variant="outlined" /></TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>{formatCurrency(inv.amountInvested)}</TableCell>
+                          <TableCell align="right" sx={{ fontSize: '0.85rem' }}>{formatCurrency(inv.currentValue)}</TableCell>
+                          <TableCell align="right" sx={{ color: invReturn >= 0 ? 'success.main' : 'error.main', fontWeight: 600, fontSize: '0.85rem' }}>
+                            {formatCurrency(invReturn)}
+                          </TableCell>
+                          <TableCell align="right" sx={{ color: invReturnPercent >= 0 ? 'success.main' : 'error.main', fontWeight: 600, fontSize: '0.85rem' }}>
+                            {formatPercent(invReturnPercent)}
+                          </TableCell>
+                          <TableCell align="center">
+                            <IconButton size="small" color="error" onClick={() => handleDelete(inv._id)}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                        <Typography color="textSecondary" sx={{ fontSize: '0.9rem' }}>No investments yet. Add one to get started!</Typography>
+                      </TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {paginatedInvestments.length > 0 ? (
-                      paginatedInvestments.map((inv) => {
-                        const invReturn = inv.currentValue - inv.amountInvested;
-                        const invReturnPercent = (invReturn / inv.amountInvested) * 100;
-                        return (
-                          <TableRow key={inv._id} hover>
-                            <TableCell sx={{ fontSize: '0.85rem' }}>{inv.name}</TableCell>
-                            <TableCell sx={{ fontSize: '0.85rem' }}><Chip label={inv.type} size="small" variant="outlined" /></TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>{formatCurrency(inv.amountInvested)}</TableCell>
-                            <TableCell align="right" sx={{ fontSize: '0.85rem' }}>{formatCurrency(inv.currentValue)}</TableCell>
-                            <TableCell align="right" sx={{ color: invReturn >= 0 ? 'success.main' : 'error.main', fontWeight: 600, fontSize: '0.85rem' }}>
-                              {formatCurrency(invReturn)}
-                            </TableCell>
-                            <TableCell align="right" sx={{ color: invReturnPercent >= 0 ? 'success.main' : 'error.main', fontWeight: 600, fontSize: '0.85rem' }}>
-                              {formatPercent(invReturnPercent)}
-                            </TableCell>
-                            <TableCell align="center">
-                              <IconButton size="small" color="error" onClick={() => handleDelete(inv._id)}>
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                          <Typography color="textSecondary" sx={{ fontSize: '0.9rem' }}>No investments yet. Add one to get started!</Typography>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
 
-            {/* Mobile Card View */}
-            {isMobile && (
-              <Stack spacing={2} sx={{ mt: 2 }}>
-                {paginatedInvestments.length > 0 ? (
-                  paginatedInvestments.map((inv) => {
-                    const invReturn = inv.currentValue - inv.amountInvested;
-                    const invReturnPercent = (invReturn / inv.amountInvested) * 100;
-                    return (
-                      <Box
-                        key={inv._id}
-                        sx={{
-                          p: 2,
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: 1.5,
-                          backgroundColor: 'rgba(255,255,255,0.02)',
-                          '&:hover': {
-                            backgroundColor: 'rgba(255,255,255,0.04)',
-                            borderColor: 'rgba(255,255,255,0.2)'
-                          },
-                          transition: 'all 0.2s ease'
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                          <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.9rem' }}>
-                              {inv.name}
-                            </Typography>
-                            <Chip label={inv.type} size="small" variant="outlined" sx={{ mt: 0.5 }} />
-                          </Box>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleDelete(inv._id)}
-                            sx={{ mt: -1, mr: -1 }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
+          {/* Mobile Card View */}
+          {isMobile && (
+            <Stack spacing={2} sx={{ mt: 2 }}>
+              {paginatedInvestments.length > 0 ? (
+                paginatedInvestments.map((inv) => {
+                  const invReturn = inv.currentValue - inv.amountInvested;
+                  const invReturnPercent = (invReturn / inv.amountInvested) * 100;
+                  return (
+                    <Box
+                      key={inv._id}
+                      sx={{
+                        p: 2,
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: 1.5,
+                        backgroundColor: 'rgba(255,255,255,0.02)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(255,255,255,0.04)',
+                          borderColor: 'rgba(255,255,255,0.2)'
+                        },
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                        <Box>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.9rem' }}>
+                            {inv.name}
+                          </Typography>
+                          <Chip label={inv.type} size="small" variant="outlined" sx={{ mt: 0.5 }} />
                         </Box>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDelete(inv._id)}
+                          sx={{ mt: -1, mr: -1 }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
 
-                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, pt: 1, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                          <Box>
-                            <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem', display: 'block' }}>
-                              Invested
-                            </Typography>
-                            <Typography variant="caption" sx={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                              {formatCurrency(inv.amountInvested)}
-                            </Typography>
-                          </Box>
-                          <Box>
-                            <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem', display: 'block' }}>
-                              Current
-                            </Typography>
-                            <Typography variant="caption" sx={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                              {formatCurrency(inv.currentValue)}
-                            </Typography>
-                          </Box>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, pt: 1, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                        <Box>
+                          <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem', display: 'block' }}>
+                            Invested
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                            {formatCurrency(inv.amountInvested)}
+                          </Typography>
                         </Box>
-
-                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, pt: 1 }}>
-                          <Box>
-                            <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem', display: 'block' }}>
-                              Return
-                            </Typography>
-                            <Typography 
-                              variant="caption" 
-                              sx={{ 
-                                fontSize: '0.85rem', 
-                                fontWeight: 600,
-                                color: invReturn >= 0 ? 'success.main' : 'error.main'
-                              }}
-                            >
-                              {formatCurrency(invReturn)}
-                            </Typography>
-                          </Box>
-                          <Box>
-                            <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem', display: 'block' }}>
-                              Return %
-                            </Typography>
-                            <Typography 
-                              variant="caption" 
-                              sx={{ 
-                                fontSize: '0.85rem', 
-                                fontWeight: 600,
-                                color: invReturnPercent >= 0 ? 'success.main' : 'error.main'
-                              }}
-                            >
-                              {formatPercent(invReturnPercent)}
-                            </Typography>
-                          </Box>
+                        <Box>
+                          <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem', display: 'block' }}>
+                            Current
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                            {formatCurrency(inv.currentValue)}
+                          </Typography>
                         </Box>
                       </Box>
-                    );
-                  })
-                ) : (
-                  <Typography color="textSecondary" sx={{ textAlign: 'center', py: 3, fontSize: '0.9rem' }}>
-                    No investments yet. Add one to get started!
-                  </Typography>
-                )}
-              </Stack>
-            )}
 
-            {investments.length > rowsPerPage && (
-              <TablePagination
-                rowsPerPageOptions={[3, 5, 10, 25]}
-                component="div"
-                count={investments.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={(e, newPage) => setPage(newPage)}
-                onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-              />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Add Investment Dialog */}
-        <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-          <DialogTitle sx={{ fontWeight: 700 }}>Add Investment</DialogTitle>
-          <DialogContent sx={{ pt: 2 }}>
-            <Stack spacing={2}>
-              <Controller
-                name="type"
-                control={control}
-                rules={{ required: 'Type is required' }}
-                render={({ field }) => (
-                  <FormControl fullWidth size="small" error={!!errors.type}>
-                    <InputLabel>Investment Type *</InputLabel>
-                    <Select {...field} label="Investment Type *">
-                      {INVESTMENT_TYPES.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-                    </Select>
-                  </FormControl>
-                )}
-              />
-
-              <Controller
-                name="name"
-                control={control}
-                rules={{ required: 'Name/Symbol is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Name/Symbol *"
-                    fullWidth
-                    size="small"
-                    error={!!errors.name}
-                    helperText={errors.name?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="platform"
-                control={control}
-                rules={{ required: 'Platform is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Platform *"
-                    fullWidth
-                    size="small"
-                    placeholder="e.g., Zerodha, Groww"
-                    error={!!errors.platform}
-                    helperText={errors.platform?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="amountInvested"
-                control={control}
-                rules={{ required: 'Amount is required', min: { value: 0.01, message: 'Amount must be > 0' } }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Amount Invested *"
-                    type="number"
-                    inputProps={{ step: '0.01' }}
-                    fullWidth
-                    size="small"
-                    error={!!errors.amountInvested}
-                    helperText={errors.amountInvested?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="currentValue"
-                control={control}
-                rules={{ required: 'Current value is required', min: { value: 0.01, message: 'Value must be > 0' } }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Current Value *"
-                    type="number"
-                    inputProps={{ step: '0.01' }}
-                    fullWidth
-                    size="small"
-                    error={!!errors.currentValue}
-                    helperText={errors.currentValue?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="purchaseDate"
-                control={control}
-                rules={{ required: 'Date is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Purchase Date *"
-                    type="date"
-                    fullWidth
-                    size="small"
-                    InputLabelProps={{ shrink: true }}
-                    error={!!errors.purchaseDate}
-                    helperText={errors.purchaseDate?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="units"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Units (optional)"
-                    type="number"
-                    inputProps={{ step: '0.01' }}
-                    fullWidth
-                    size="small"
-                  />
-                )}
-              />
+                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, pt: 1 }}>
+                        <Box>
+                          <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem', display: 'block' }}>
+                            Return
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontSize: '0.85rem',
+                              fontWeight: 600,
+                              color: invReturn >= 0 ? 'success.main' : 'error.main'
+                            }}
+                          >
+                            {formatCurrency(invReturn)}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem', display: 'block' }}>
+                            Return %
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontSize: '0.85rem',
+                              fontWeight: 600,
+                              color: invReturnPercent >= 0 ? 'success.main' : 'error.main'
+                            }}
+                          >
+                            {formatPercent(invReturnPercent)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  );
+                })
+              ) : (
+                <Typography color="textSecondary" sx={{ textAlign: 'center', py: 3, fontSize: '0.9rem' }}>
+                  No investments yet. Add one to get started!
+                </Typography>
+              )}
             </Stack>
-          </DialogContent>
-          <DialogActions sx={{ p: 2 }}>
-            <Button onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit(onSubmit)} variant="contained" color="primary">
-              Add Investment
-            </Button>
-          </DialogActions>
-        </Dialog>
+          )}
 
-        {/* Filter Modal */}
-        <Dialog
-          open={filterModalOpen}
-          onClose={() => setFilterModalOpen(false)}
-          maxWidth="sm"
-          fullWidth
-          PaperProps={{
-            sx: {
-              borderRadius: 2,
-              backgroundColor: 'rgba(15, 23, 42, 0.95)',
-            }
-          }}
-        >
-          <DialogTitle sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
-            📅 Filter Investments by Date Range
-          </DialogTitle>
-          <DialogContent sx={{ pt: 3 }}>
-            <Stack spacing={3}>
-              <TextField
-                label="From Date"
-                type="date"
-                value={tempFromDate}
-                onChange={(e) => setTempFromDate(e.target.value)}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'rgba(255,255,255,0.08)',
-                    borderRadius: 1,
-                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.12)' }
+          {investments.length > rowsPerPage && (
+            <TablePagination
+              rowsPerPageOptions={[3, 5, 10, 25]}
+              component="div"
+              count={investments.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={(e, newPage) => setPage(newPage)}
+              onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add Investment Dialog */}
+      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{
+          fontWeight: 700,
+          pb: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <IconButton
+            edge="start"
+            color="inherit"
+            onClick={() => setOpen(false)}
+            aria-label="close"
+            size="small"
+            sx={{ mr: 1 }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+          Add Investment
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Stack spacing={2}>
+            <Controller
+              name="type"
+              control={control}
+              rules={{ required: 'Type is required' }}
+              render={({ field }) => (
+                <FormControl fullWidth size="small" error={!!errors.type}>
+                  <InputLabel>Investment Type *</InputLabel>
+                  <Select {...field} label="Investment Type *">
+                    {INVESTMENT_TYPES.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              )}
+            />
+
+            <Controller
+              name="name"
+              control={control}
+              rules={{ required: 'Name/Symbol is required' }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Name/Symbol *"
+                  fullWidth
+                  size="small"
+                  error={!!errors.name}
+                  helperText={errors.name?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="platform"
+              control={control}
+              rules={{ required: 'Platform is required' }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Platform *"
+                  fullWidth
+                  size="small"
+                  placeholder="e.g., Zerodha, Groww"
+                  error={!!errors.platform}
+                  helperText={errors.platform?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="amountInvested"
+              control={control}
+              rules={{ required: 'Amount is required', min: { value: 0.01, message: 'Amount must be > 0' } }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Amount Invested *"
+                  type="number"
+                  inputProps={{ step: '0.01' }}
+                  fullWidth
+                  size="small"
+                  error={!!errors.amountInvested}
+                  helperText={errors.amountInvested?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="currentValue"
+              control={control}
+              rules={{ required: 'Current value is required', min: { value: 0.01, message: 'Value must be > 0' } }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Current Value *"
+                  type="number"
+                  inputProps={{ step: '0.01' }}
+                  fullWidth
+                  size="small"
+                  error={!!errors.currentValue}
+                  helperText={errors.currentValue?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="purchaseDate"
+              control={control}
+              rules={{ required: 'Date is required' }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Purchase Date *"
+                  type="date"
+                  fullWidth
+                  size="small"
+                  InputLabelProps={{ shrink: true }}
+                  error={!!errors.purchaseDate}
+                  helperText={errors.purchaseDate?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="units"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Units (optional)"
+                  type="number"
+                  inputProps={{ step: '0.01' }}
+                  fullWidth
+                  size="small"
+                />
+              )}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+
+          <Button onClick={handleSubmit(onSubmit)} variant="contained" color="primary">
+            Add Investment
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Filter Modal */}
+      <Dialog
+        open={filterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            backgroundColor: 'rgba(30, 41, 59, 0.98)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '1.2rem', color: '#fff', pb: 1 }}>
+          📅 Filter Investments by Date Range
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2.5, pb: 2 }}>
+          <Stack spacing={2.5} sx={{ width: '100%', mt: 1 }}>
+            <TextField
+              label="From Date"
+              type="date"
+              value={tempFromDate}
+              onChange={(e) => setTempFromDate(e.target.value)}
+              fullWidth
+              InputLabelProps={{ shrink: true, sx: { color: '#94a3b8 !important', fontSize: '0.95rem' } }}
+              variant="outlined"
+              slotProps={{
+                input: {
+                  sx: {
+                    colorScheme: 'dark',
+                    fontSize: '1rem',
+                    fontWeight: 500,
+                    '& .MuiInputBase-input': {
+                      color: '#ffffff !important',
+                      WebkitTextFillColor: '#ffffff !important',
+                    },
+                    '&::-webkit-calendar-picker-indicator': {
+                      // filter: 'invert(1)',
+                      cursor: 'pointer',
+                      opacity: 0.8,
+                      '&:hover': { opacity: 1 }
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(71, 85, 105, 0.5)'
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(148, 163, 184, 0.5)'
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#3b82f6',
+                      borderWidth: '2px'
+                    }
                   }
-                }}
-              />
-              <TextField
-                label="To Date"
-                type="date"
-                value={tempToDate}
-                onChange={(e) => setTempToDate(e.target.value)}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'rgba(255,255,255,0.08)',
-                    borderRadius: 1,
-                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.12)' }
+                }
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'rgba(15, 23, 42, 0.5)',
+                  borderRadius: 1.5,
+                }
+              }}
+            />
+            <TextField
+              label="To Date"
+              type="date"
+              value={tempToDate}
+              onChange={(e) => setTempToDate(e.target.value)}
+              fullWidth
+              InputLabelProps={{ shrink: true, sx: { color: '#94a3b8 !important', fontSize: '0.95rem' } }}
+              variant="outlined"
+              slotProps={{
+                input: {
+                  sx: {
+                    colorScheme: 'dark',
+                    fontSize: '1rem',
+                    fontWeight: 500,
+                    '& .MuiInputBase-input': {
+                      color: '#ffffff !important',
+                      WebkitTextFillColor: '#ffffff !important',
+                    },
+                    '&::-webkit-calendar-picker-indicator': {
+                      // filter: 'invert(1)',
+                      cursor: 'pointer',
+                      opacity: 0.8,
+                      '&:hover': { opacity: 1 }
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(71, 85, 105, 0.5)'
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(148, 163, 184, 0.5)'
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#3b82f6',
+                      borderWidth: '2px'
+                    }
                   }
-                }}
-              />
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ gap: 1, p: 2 }}>
+                }
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'rgba(15, 23, 42, 0.5)',
+                  borderRadius: 1.5,
+                }
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
             <Button
               onClick={() => {
                 setTempFromDate('');
                 setTempToDate(new Date().toISOString().split('T')[0]);
               }}
               variant="outlined"
+              startIcon={<RefreshIcon />}
+              sx={{
+                flex: 1,
+                color: '#94a3b8',
+                borderColor: 'rgba(255,255,255,0.1)',
+                borderRadius: 50,
+                textTransform: 'none',
+                py: 0.75,
+                fontSize: '0.875rem',
+                '&:hover': {
+                  borderColor: '#ffffff',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  color: '#ffffff'
+                }
+              }}
             >
               Reset
-            </Button>
-            <Button
-              onClick={() => setFilterModalOpen(false)}
-              variant="outlined"
-            >
-              Cancel
             </Button>
             <Button
               onClick={() => {
@@ -786,22 +784,33 @@ export default function Investments() {
               }}
               variant="contained"
               color="primary"
+              startIcon={<CheckIcon />}
+              sx={{
+                flex: 1,
+                borderRadius: 50,
+                textTransform: 'none',
+                py: 0.75,
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+              }}
             >
               Apply Filter
             </Button>
-          </DialogActions>
-        </Dialog>
+          </Stack>
+        </DialogActions>
+      </Dialog>
 
-        <ConfirmDialog
-          open={confirmOpen}
-          onClose={() => setConfirmOpen(false)}
-          title="Delete Investment"
-          message="This investment record will be permanently deleted. This action cannot be undone."
-          onConfirm={confirmDelete}
-          confirmText="Delete"
-          severity="error"
-        />
-      </Box>
-    </Box>
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="Delete Investment"
+        message="This investment record will be permanently deleted. This action cannot be undone."
+        onConfirm={confirmDelete}
+        confirmText="Delete"
+        severity="error"
+      />
+    </PageContainer>
   );
 }
+

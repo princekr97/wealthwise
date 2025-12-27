@@ -1,24 +1,63 @@
 /**
  * Settings Page
- * User profile and app settings
+ * 
+ * User profile and app settings with consistent MUI styling.
+ * Mobile-first responsive design.
  */
 
-import { useState } from 'react';
-import { User, Bell, Palette, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+  Tabs,
+  Tab,
+  Stack,
+  Switch,
+  FormControlLabel,
+  Divider,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import {
+  Person as PersonIcon,
+  Notifications as NotificationsIcon,
+  Palette as PaletteIcon,
+  Logout as LogoutIcon,
+} from '@mui/icons-material';
 import { useAuthStore } from '../store/authStore';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import PageContainer from '../components/layout/PageContainer';
+import PageHeader from '../components/layout/PageHeader';
+
+import { toast } from 'sonner';
 
 export default function Settings() {
-  const { user, logout } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('profile');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { user, logout, deleteAccount } = useAuthStore();
+  const [activeTab, setActiveTab] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmType, setConfirmType] = useState('logout'); // 'logout' or 'delete'
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    avatar: ''
   });
 
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
   const handleLogout = () => {
+    setConfirmType('logout');
+    setConfirmOpen(true);
+  };
+
+  const handleDeleteAccount = () => {
+    setConfirmType('delete');
     setConfirmOpen(true);
   };
 
@@ -26,171 +65,237 @@ export default function Settings() {
     logout();
   };
 
+  const confirmDeleteAccount = async () => {
+    const res = await deleteAccount();
+    if (res.success) {
+      toast.success('Your account has been permanently deleted.');
+    } else {
+      toast.error(res.message || 'Failed to delete account');
+      setConfirmOpen(false); // Only close if failed, successful delete will redirect
+    }
+  };
+
   return (
-    <div className="space-y-6 pb-20">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-6 text-white">
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-indigo-100">Manage your account and preferences</p>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="⚙️ Settings"
+        subtitle="Manage your account and preferences"
+      />
 
       {/* Tabs */}
-      <div className="flex gap-4 border-b border-gray-200 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`px-4 py-2 font-semibold border-b-2 transition whitespace-nowrap ${
-            activeTab === 'profile'
-              ? 'border-indigo-500 text-indigo-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
+      <Card sx={{ mb: 3 }}>
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant={isMobile ? 'scrollable' : 'standard'}
+          scrollButtons="auto"
+          sx={{
+            borderBottom: '1px solid rgba(255,255,255,0.1)',
+            '& .MuiTab-root': {
+              minHeight: { xs: 48, sm: 56 },
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            },
+          }}
         >
-          <User className="inline mr-2" size={18} /> Profile
-        </button>
-        <button
-          onClick={() => setActiveTab('notifications')}
-          className={`px-4 py-2 font-semibold border-b-2 transition whitespace-nowrap ${
-            activeTab === 'notifications'
-              ? 'border-indigo-500 text-indigo-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Bell className="inline mr-2" size={18} /> Notifications
-        </button>
-        <button
-          onClick={() => setActiveTab('appearance')}
-          className={`px-4 py-2 font-semibold border-b-2 transition whitespace-nowrap ${
-            activeTab === 'appearance'
-              ? 'border-indigo-500 text-indigo-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Palette className="inline mr-2" size={18} /> Appearance
-        </button>
-      </div>
+          <Tab icon={<PersonIcon />} label="Profile" iconPosition="start" />
+          <Tab icon={<NotificationsIcon />} label="Notifications" iconPosition="start" />
+          <Tab icon={<PaletteIcon />} label="Appearance" iconPosition="start" />
+        </Tabs>
+      </Card>
 
       {/* Profile Tab */}
-      {activeTab === 'profile' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-            <h2 className="text-xl font-bold mb-6">Profile Information</h2>
+      {activeTab === 0 && (
+        <Stack spacing={3}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
+                Profile Information
+              </Typography>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                <input
-                  type="text"
+              <Stack spacing={2.5}>
+                <TextField
+                  label="Name"
                   value={profileData.name}
                   onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  fullWidth
+                  size="small"
                 />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
+                <TextField
+                  label="Email"
                   value={profileData.email}
                   disabled
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                  fullWidth
+                  size="small"
+                  helperText="Email cannot be changed"
                 />
-              </div>
 
-              <button className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">
-                Save Changes
-              </button>
-            </div>
-          </div>
+                <Box>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    sx={{ minWidth: 120 }}
+                  >
+                    Save Changes
+                  </Button>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-            <h2 className="text-xl font-bold mb-6">Danger Zone</h2>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontSize: { xs: '1rem', sm: '1.1rem' }, color: 'error.main' }}>
+                Danger Zone
+              </Typography>
 
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition flex items-center gap-2"
-            >
-              <LogOut size={18} /> Logout
-            </button>
-          </div>
-        </div>
+              <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                <Button
+                  variant="outlined"
+                  color="warning"
+                  startIcon={<LogoutIcon />}
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  startIcon={<LogoutIcon sx={{ transform: 'rotate(180deg)' }} />}
+                  onClick={handleDeleteAccount}
+                >
+                  Delete Account
+                </Button>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Stack>
       )}
 
       {/* Notifications Tab */}
-      {activeTab === 'notifications' && (
-        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-          <h2 className="text-xl font-bold mb-6">Notification Preferences</h2>
+      {activeTab === 1 && (
+        <Card>
+          <CardContent>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
+              Notification Preferences
+            </Typography>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div>
-                <h3 className="font-semibold text-gray-900">Budget Alerts</h3>
-                <p className="text-sm text-gray-600">Get notified when you exceed budget limits</p>
-              </div>
-              <input type="checkbox" defaultChecked className="w-5 h-5" />
-            </div>
-
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div>
-                <h3 className="font-semibold text-gray-900">EMI Reminders</h3>
-                <p className="text-sm text-gray-600">Reminder for upcoming EMI payments</p>
-              </div>
-              <input type="checkbox" defaultChecked className="w-5 h-5" />
-            </div>
-
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div>
-                <h3 className="font-semibold text-gray-900">Bill Notifications</h3>
-                <p className="text-sm text-gray-600">Alerts for pending bills and due dates</p>
-              </div>
-              <input type="checkbox" defaultChecked className="w-5 h-5" />
-            </div>
-
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div>
-                <h3 className="font-semibold text-gray-900">Weekly Summary</h3>
-                <p className="text-sm text-gray-600">Get weekly expense and income summary</p>
-              </div>
-              <input type="checkbox" className="w-5 h-5" />
-            </div>
-          </div>
-        </div>
+            <Stack spacing={2} divider={<Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />}>
+              <NotificationItem
+                title="Budget Alerts"
+                description="Get notified when you exceed budget limits"
+                defaultChecked
+              />
+              <NotificationItem
+                title="EMI Reminders"
+                description="Reminder for upcoming EMI payments"
+                defaultChecked
+              />
+              <NotificationItem
+                title="Bill Notifications"
+                description="Alerts for pending bills and due dates"
+                defaultChecked
+              />
+              <NotificationItem
+                title="Weekly Summary"
+                description="Get weekly expense and income summary"
+                defaultChecked={false}
+              />
+            </Stack>
+          </CardContent>
+        </Card>
       )}
 
       {/* Appearance Tab */}
-      {activeTab === 'appearance' && (
-        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-          <h2 className="text-xl font-bold mb-6">Appearance</h2>
+      {activeTab === 2 && (
+        <Card>
+          <CardContent>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
+              Theme
+            </Typography>
 
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-3">Theme</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <button className="p-4 border-2 border-indigo-500 rounded-lg bg-white text-center">
-                  <div className="text-2xl mb-2">☀️</div>
-                  <p className="text-sm font-medium">Light</p>
-                </button>
-                <button className="p-4 border border-gray-200 rounded-lg bg-white text-center hover:border-indigo-500 transition">
-                  <div className="text-2xl mb-2">🌙</div>
-                  <p className="text-sm font-medium">Dark</p>
-                </button>
-                <button className="p-4 border border-gray-200 rounded-lg bg-white text-center hover:border-indigo-500 transition">
-                  <div className="text-2xl mb-2">⚙️</div>
-                  <p className="text-sm font-medium">Auto</p>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr 1fr 1fr', sm: 'repeat(3, 120px)' },
+                gap: 2,
+              }}
+            >
+              <ThemeOption icon="☀️" label="Light" selected={false} />
+              <ThemeOption icon="🌙" label="Dark" selected={true} />
+              <ThemeOption icon="⚙️" label="Auto" selected={false} />
+            </Box>
+          </CardContent>
+        </Card>
       )}
 
       <ConfirmDialog
         open={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        title="Logout"
-        message="Are you sure you want to logout? You will need to login again to access your account."
-        onConfirm={confirmLogout}
-        confirmText="Logout"
-        severity="warning"
+        onClose={() => { setConfirmOpen(false); setConfirmType('logout'); }}
+        title={confirmType === 'delete' ? "Delete Account" : "Logout"}
+        message={
+          confirmType === 'delete'
+            ? "Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be lost."
+            : "Are you sure you want to logout? You will need to login again to access your account."
+        }
+        onConfirm={confirmType === 'delete' ? confirmDeleteAccount : confirmLogout}
+        confirmText={confirmType === 'delete' ? "Delete Forever" : "Logout"}
+        severity={confirmType === 'delete' ? "error" : "warning"}
       />
-    </div>
+    </PageContainer>
+  );
+}
+
+/**
+ * NotificationItem - Individual notification setting row
+ */
+function NotificationItem({ title, description, defaultChecked }) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        py: 1,
+      }}
+    >
+      <Box>
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+          {title}
+        </Typography>
+        <Typography variant="caption" color="textSecondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+          {description}
+        </Typography>
+      </Box>
+      <Switch defaultChecked={defaultChecked} color="primary" />
+    </Box>
+  );
+}
+
+/**
+ * ThemeOption - Theme selection button
+ */
+function ThemeOption({ icon, label, selected }) {
+  return (
+    <Box
+      sx={{
+        p: { xs: 2, sm: 2.5 },
+        border: '2px solid',
+        borderColor: selected ? 'primary.main' : 'rgba(255,255,255,0.1)',
+        borderRadius: 2,
+        textAlign: 'center',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        backgroundColor: selected ? 'rgba(34, 197, 94, 0.1)' : 'transparent',
+        '&:hover': {
+          borderColor: selected ? 'primary.main' : 'rgba(255,255,255,0.3)',
+        },
+      }}
+    >
+      <Typography sx={{ fontSize: { xs: '1.5rem', sm: '2rem' }, mb: 0.5 }}>{icon}</Typography>
+      <Typography variant="caption" sx={{ fontWeight: 600, fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
+        {label}
+      </Typography>
+    </Box>
   );
 }

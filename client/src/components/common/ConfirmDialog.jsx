@@ -9,8 +9,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button
+  Button,
+  IconButton
 } from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 
 export default function ConfirmDialog({
   open,
@@ -53,9 +55,22 @@ export default function ConfirmDialog({
         sx={{
           fontWeight: 700,
           color: colors.title,
-          fontSize: '1.25rem'
+          fontSize: '1.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
         }}
       >
+        <IconButton
+          edge="start"
+          color="inherit"
+          onClick={onClose}
+          aria-label="close"
+          size="small"
+          sx={{ mr: 1, color: '#94A3B8' }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
         {title}
       </DialogTitle>
       <DialogContent sx={{ pt: 1, pb: 2 }}>
@@ -64,18 +79,7 @@ export default function ConfirmDialog({
         </p>
       </DialogContent>
       <DialogActions sx={{ p: 2, gap: 1 }}>
-        <Button
-          onClick={onClose}
-          variant="outlined"
-          disabled={loading}
-          sx={{
-            color: '#94A3B8',
-            borderColor: '#475569',
-            '&:hover': { borderColor: '#64748B', background: 'rgba(255,255,255,0.05)' }
-          }}
-        >
-          {cancelText}
-        </Button>
+
         <Button
           onClick={handleConfirm}
           variant="contained"

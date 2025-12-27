@@ -14,6 +14,7 @@ import lendingRoutes from './routes/lendingRoutes.js';
 import budgetRoutes from './routes/budgetRoutes.js';
 import goalRoutes from './routes/goalRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import groupRoutes from './routes/groupRoutes.js';
 import { connectDB } from './config/db.js';
 
 const app = express();
@@ -79,18 +80,18 @@ app.get('/api/health', async (req, res) => {
     if (mongoose.connection.readyState !== 1) {
       await connectDB();
     }
-    
+
     const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-    res.json({ 
-      status: 'ok', 
+    res.json({
+      status: 'ok',
       message: 'WealthWise API is running',
       database: dbStatus,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
     console.error('[health] Error:', error.message);
-    res.json({ 
-      status: 'ok', 
+    res.json({
+      status: 'ok',
       message: 'WealthWise API is running',
       database: 'error',
       error: error.message,
@@ -104,7 +105,7 @@ app.get('/api/test-db', async (req, res) => {
   try {
     console.log('[test-db] Testing MongoDB connection...');
     const uri = process.env.MONGODB_URI;
-    
+
     if (!uri) {
       return res.status(500).json({ error: 'MONGODB_URI not set' });
     }
@@ -117,15 +118,15 @@ app.get('/api/test-db', async (req, res) => {
     // Try to ping the database
     const adminDb = mongoose.connection.db.admin();
     const result = await adminDb.ping();
-    
-    res.json({ 
+
+    res.json({
       status: 'connected',
       ping: result,
       readyState: mongoose.connection.readyState
     });
   } catch (error) {
     console.error('[test-db] Error:', error.message);
-    res.status(503).json({ 
+    res.status(503).json({
       error: error.message,
       name: error.name,
       code: error.code
@@ -142,6 +143,7 @@ app.use('/api/lending', lendingRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/groups', groupRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

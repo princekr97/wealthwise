@@ -7,19 +7,24 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box, Card, CardContent, Button, TextField, Select, MenuItem, FormControl, InputLabel,
   Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Grid, Container, Stack, IconButton, Chip, Typography,
+  TableContainer, TableHead, TableRow, Grid, Stack, IconButton, Chip, Typography,
   useMediaQuery, useTheme, TablePagination, Alert, CircularProgress
 } from '@mui/material';
 import {
   BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend
+  Tooltip, ResponsiveContainer
 } from 'recharts';
-import { Add as AddIcon, Delete as DeleteIcon, FilterList as FilterListIcon } from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, FilterList as FilterListIcon, Refresh as RefreshIcon, Close as CloseIcon, Check as CheckIcon } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 import { lendingService } from '../services/lendingService';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import PageContainer from '../components/layout/PageContainer';
+import PageHeader from '../components/layout/PageHeader';
+import SummaryCard from '../components/layout/SummaryCard';
+import SummaryCardGrid from '../components/layout/SummaryCardGrid';
+import ChartCard, { ChartGrid, EmptyChartState, CategoryLegend } from '../components/layout/ChartCard';
 
 const STATUS_COLORS = {
   pending: { color: 'warning', label: '⏳ Pending' },
@@ -70,12 +75,12 @@ export default function Lending() {
       const itemDate = new Date(item.date).toISOString().split('T')[0];
       const from = fromDate ? new Date(fromDate).toISOString().split('T')[0] : null;
       const to = toDate ? new Date(toDate).toISOString().split('T')[0] : null;
-      
+
       if (from && itemDate < from) return false;
       if (to && itemDate > to) return false;
       return true;
     });
-    
+
     setFilteredLendings(filtered);
     setPage(0);
   }, [lendings, fromDate, toDate]);
@@ -165,610 +170,626 @@ export default function Lending() {
   }
 
   return (
-    <Box sx={{ py: { xs: 2, sm: 2, md: 3, lg: 4 }, px: { xs: 1, sm: 1, md: 2, lg: 4 } }}>
-      <Box sx={{ width: '100%', mx: 'auto' }}>
-        {/* Header */}
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: { xs: 2, sm: 3, md: 4 }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
-            <IconButton
-              onClick={() => {
-                setTempFromDate(fromDate);
-                setTempToDate(toDate);
-                setFilterModalOpen(true);
-              }}
-              sx={{
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                color: 'primary.main',
-                '&:hover': { backgroundColor: 'rgba(59, 130, 246, 0.2)' }
-              }}
-              title="Filter by date range"
-            >
-              <FilterListIcon />
-            </IconButton>
-            <Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem', lg: '1.75rem' } }}>💰 Lending & Borrowing</Typography>
-              <Typography variant="body2" color="textSecondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem', md: '0.95rem' } }}>Track money lent and borrowed from friends</Typography>
-            </Box>
+    <PageContainer>
+      <PageHeader
+        title="💰 Lending & Borrowing"
+        subtitle="Track money lent and borrowed from friends"
+        actionLabel="Add Record"
+        onAction={() => setOpen(true)}
+        leftContent={
+          <IconButton
+            onClick={() => {
+              setTempFromDate(fromDate);
+              setTempToDate(toDate);
+              setFilterModalOpen(true);
+            }}
+            sx={{
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              color: 'primary.main',
+              '&:hover': { backgroundColor: 'rgba(59, 130, 246, 0.2)' }
+            }}
+            title="Filter by date range"
+          >
+            <FilterListIcon />
+          </IconButton>
+        }
+      />
+
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      {/* Summary Cards */}
+      <SummaryCardGrid columns={4}>
+        <SummaryCard
+          icon="📥"
+          label="To Receive"
+          value={formatCurrency(totalGiven)}
+          valueColor="success"
+          subtitle={`${givenRecords.filter(r => r.status !== 'settled').length} pending`}
+        />
+        <SummaryCard
+          icon="📤"
+          label="To Pay"
+          value={formatCurrency(totalTaken)}
+          valueColor="error"
+          subtitle={`${takenRecords.filter(r => r.status !== 'settled').length} pending`}
+        />
+        <SummaryCard
+          icon={netPosition >= 0 ? "📈" : "📉"}
+          label="Net Position"
+          value={formatCurrency(netPosition)}
+          valueColor={netPosition >= 0 ? 'success' : 'error'}
+        />
+        <SummaryCard
+          icon="📋"
+          label="Records"
+          value={filteredLendings.length.toString()}
+          valueColor="primary"
+          subtitle={lendings.length !== filteredLendings.length ? `${lendings.length} total` : undefined}
+        />
+      </SummaryCardGrid>
+
+      <ChartGrid>
+        {/* Status Distribution */}
+        <ChartCard
+          title="📂 Status Distribution"
+          subtitle={statusData.length > 0 ? `${statusData.length} statuses` : undefined}
+          footer={statusData.length > 0 ? (
+            <CategoryLegend data={statusData} colors={COLORS} />
+          ) : undefined}
+        >
+          {statusData.length === 0 ? (
+            <EmptyChartState message="Add records to see distribution" />
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  innerRadius={isMobile ? 40 : (isTablet ? 55 : 65)}
+                  outerRadius={isMobile ? 70 : (isTablet ? 90 : 110)}
+                  paddingAngle={2}
+                  stroke="transparent"
+                  dataKey="value"
+                >
+                  {statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value) => value}
+                  contentStyle={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    padding: '8px 12px'
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </ChartCard>
+
+        {/* Given vs Taken */}
+        <ChartCard
+          title="📊 Financial Position"
+          subtitle="To Receive vs To Pay"
+        >
+          {statusData.length === 0 ? (
+            <EmptyChartState message="Add records to see comparison" />
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={[
+                  { name: 'To Receive', value: totalGiven },
+                  { name: 'To Pay', value: totalTaken }
+                ]}
+                margin={{ left: -10, right: 10, top: 10, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  stroke="rgba(255,255,255,0.5)"
+                  tickLine={false}
+                  fontSize={11}
+                  tick={{ fill: 'rgba(255,255,255,0.7)' }}
+                />
+                <YAxis
+                  stroke="rgba(255,255,255,0.5)"
+                  tickLine={false}
+                  fontSize={11}
+                  tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                  tick={{ fill: 'rgba(255,255,255,0.7)' }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    padding: '8px 12px'
+                  }}
+                  formatter={(value) => formatCurrency(value)}
+                />
+                <Bar
+                  dataKey="value"
+                  fill="#3B82F6"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={60}
+                >
+                  <Cell fill="#10B981" />
+                  <Cell fill="#EF4444" />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </ChartCard>
+      </ChartGrid>
+
+      {/* Tabs for Given/Taken */}
+      <Card>
+        <CardContent>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)}>
+              <Tab label={`📥 Money Given (${givenRecords.length})`} />
+              <Tab label={`📤 Money Taken (${takenRecords.length})`} />
+            </Tabs>
           </Box>
-          <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => setOpen(true)} size={isMobile ? 'small' : 'medium'}>
-            Add Record
-          </Button>
-        </Stack>
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-        {/* Summary Cards */}
-        <Grid container spacing={{ xs: 2, sm: 2, md: 3, lg: 3 }} sx={{ mb: { xs: 2, sm: 3, md: 4 } }}>
-          <Grid item xs={12} sm={6} md={6} lg={3}>
-            <Card><CardContent sx={{ minHeight: { xs: 110, sm: 130, md: 140 } }}>
-              <Typography color="textSecondary" variant="caption" sx={{ display: 'block', mb: 1, fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>To Receive 📥</Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: 'success.main', fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' } }}>{formatCurrency(totalGiven)}</Typography>
-            </CardContent></Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={3}>
-            <Card><CardContent sx={{ minHeight: { xs: 110, sm: 130, md: 140 } }}>
-              <Typography color="textSecondary" variant="caption" sx={{ display: 'block', mb: 1, fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>To Pay 📤</Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: 'error.main', fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' } }}>{formatCurrency(totalTaken)}</Typography>
-            </CardContent></Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={3}>
-            <Card><CardContent sx={{ minHeight: { xs: 110, sm: 130, md: 140 } }}>
-              <Typography color="textSecondary" variant="caption" sx={{ display: 'block', mb: 1, fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>Net Position</Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: netPosition >= 0 ? 'success.main' : 'error.main', fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' } }}>{formatCurrency(netPosition)}</Typography>
-            </CardContent></Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={3}>
-            <Card><CardContent sx={{ minHeight: { xs: 110, sm: 130, md: 140 } }}>
-              <Typography color="textSecondary" variant="caption" sx={{ display: 'block', mb: 1, fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>Total Records</Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' } }}>{lendings.length}</Typography>
-            </CardContent></Card>
-          </Grid>
-        </Grid>
-
-        {/* Charts */}
-        <Grid container spacing={{ xs: 2, sm: 2, md: 3, lg: 3 }} sx={{ mb: { xs: 2, sm: 3, md: 4 } }}>
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent sx={{ pb: 0 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '0.95rem', sm: '1rem', md: '1.1rem' } }}>
-                    📊 Status Distribution
-                  </Typography>
-                  {statusData.length > 0 && (
-                    <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.75rem' }}>
-                      {statusData.length} statuses
-                    </Typography>
-                  )}
-                </Box>
-              </CardContent>
-
-              <CardContent sx={{ pt: 1 }}>
-                {statusData.length > 0 ? (
-                  <>
-                    <Box sx={{ width: '100%', height: { xs: 250, sm: 280, md: 300 }, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie 
-                            data={statusData} 
-                            dataKey="value" 
-                            nameKey="name" 
-                            cx="50%" 
-                            cy="50%" 
-                            outerRadius={isMobile ? 70 : (isTablet ? 90 : 110)}
-                          >
-                            {statusData.map((entry, idx) => <Cell key={idx} fill={COLORS[idx]} />)}
-                          </Pie>
-                          <Tooltip 
-                            formatter={(v) => v} 
-                            contentStyle={{
-                              backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                              border: '1px solid rgba(255, 255, 255, 0.2)',
-                              borderRadius: 6,
-                              fontSize: 12,
-                              padding: '8px 12px'
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </Box>
-
-                    {/* Legend Grid */}
-                    <Box sx={{ 
-                      mt: 3, 
-                      pt: 2, 
-                      borderTop: '1px solid rgba(255,255,255,0.1)',
-                      display: 'grid',
-                      gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr' },
-                      gap: { xs: 1.5, sm: 2 },
-                      rowGap: { xs: 1.5, sm: 2 }
-                    }}>
-                      {statusData && statusData.length > 0 && statusData.map((item, index) => {
-                        const total = statusData.reduce((sum, i) => sum + (i.value || 0), 0);
-                        const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : '0';
-                        return (
-                          <Box 
-                            key={index}
-                            sx={{ 
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 0.5,
-                              p: 1.5,
-                              borderRadius: 1.5,
-                              backgroundColor: 'rgba(255,255,255,0.02)',
-                              border: '1px solid rgba(255,255,255,0.05)',
-                              '&:hover': {
-                                backgroundColor: 'rgba(255,255,255,0.04)',
-                                borderColor: 'rgba(255,255,255,0.1)'
-                              },
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <Box
-                                sx={{
-                                  width: 10,
-                                  height: 10,
-                                  borderRadius: '50%',
-                                  bgcolor: COLORS[index % COLORS.length],
-                                  flexShrink: 0
-                                }}
-                              />
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                  fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                                  fontWeight: 600,
-                                  flex: 1,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                {item.name}
-                              </Typography>
+          {/* Table - Desktop View */}
+          {!isMobile && (
+            <Box sx={{ mt: 2 }}>
+              <TableContainer sx={{ overflowX: 'auto' }}>
+                <Table size="medium">
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+                      <TableCell>Person</TableCell>
+                      {!isTablet && <TableCell>Contact</TableCell>}
+                      <TableCell align="right">Amount</TableCell>
+                      {!isTablet && <TableCell>Date</TableCell>}
+                      <TableCell>Status</TableCell>
+                      <TableCell align="center">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {paginatedRecords.length > 0 ? (
+                      paginatedRecords.map((record) => (
+                        <TableRow key={record._id} hover>
+                          <TableCell>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>{record.personName}</Typography>
+                              {record.notes && <Typography variant="caption" color="textSecondary">{record.notes.substring(0, 30)}...</Typography>}
                             </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 0.5 }}>
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                  fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                                  fontWeight: 600,
-                                  color: COLORS[index % COLORS.length]
-                                }}
-                              >
-                                {item.value} records
-                              </Typography>
-                              <Typography 
-                                variant="caption" 
-                                color="textSecondary"
-                                sx={{ 
-                                  fontSize: { xs: '0.65rem', sm: '0.7rem' }
-                                }}
-                              >
-                                {percentage}%
-                              </Typography>
-                            </Box>
-                          </Box>
-                        );
-                      })}
-                    </Box>
-                  </>
-                ) : (
-                  <Typography color="textSecondary" sx={{ textAlign: 'center', py: 4, fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                    No data
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent sx={{ pb: 0 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '0.95rem', sm: '1rem', md: '1.1rem' } }}>
-                    💵 Amount Breakdown
-                  </Typography>
-                </Box>
-              </CardContent>
-
-              <CardContent sx={{ pt: 1 }}>
-                {lendings.length > 0 ? (
-                  <Box sx={{ width: '100%', height: { xs: 250, sm: 280, md: 300 } }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={[
-                        { name: 'To Receive', amount: totalGiven },
-                        { name: 'To Pay', amount: totalTaken }
-                      ]}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-                        <XAxis 
-                          dataKey="name" 
-                          tick={{ fontSize: isMobile ? 10 : 12, fill: 'rgba(255,255,255,0.7)' }}
-                          axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
-                        />
-                        <YAxis 
-                          tick={{ fontSize: isMobile ? 10 : 12, fill: 'rgba(255,255,255,0.7)' }}
-                          tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
-                          axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
-                        />
-                        <Tooltip formatter={(v) => formatCurrency(v)} />
-                        <Bar dataKey="amount" fill="#22C55E" radius={[8, 8, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </Box>
-                ) : (
-                  <Typography color="textSecondary" sx={{ textAlign: 'center', py: 4, fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                    No data
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        {/* Tabs for Given/Taken */}
-        <Card>
-          <CardContent>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)}>
-                <Tab label={`📥 Money Given (${givenRecords.length})`} />
-                <Tab label={`📤 Money Taken (${takenRecords.length})`} />
-              </Tabs>
-            </Box>
-
-            {/* Table - Desktop View */}
-            {!isMobile && (
-              <Box sx={{ mt: 2 }}>
-                <TableContainer sx={{ overflowX: 'auto' }}>
-                  <Table size="medium">
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-                        <TableCell>Person</TableCell>
-                        {!isTablet && <TableCell>Contact</TableCell>}
-                        <TableCell align="right">Amount</TableCell>
-                        {!isTablet && <TableCell>Date</TableCell>}
-                        <TableCell>Status</TableCell>
-                        <TableCell align="center">Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {paginatedRecords.length > 0 ? (
-                        paginatedRecords.map((record) => (
-                          <TableRow key={record._id} hover>
-                            <TableCell>
-                              <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 600 }}>{record.personName}</Typography>
-                                {record.notes && <Typography variant="caption" color="textSecondary">{record.notes.substring(0, 30)}...</Typography>}
-                              </Box>
-                            </TableCell>
-                            {!isTablet && <TableCell>{record.contact || '-'}</TableCell>}
-                            <TableCell align="right" sx={{ fontWeight: 600 }}>{formatCurrency(record.amount)}</TableCell>
-                            {!isTablet && <TableCell>{formatDate(record.date)}</TableCell>}
-                            <TableCell>
-                              <Chip
-                                label={STATUS_COLORS[record.status]?.label}
-                                color={STATUS_COLORS[record.status]?.color}
-                                size="small"
-                              />
-                            </TableCell>
-                            <TableCell align="center">
-                              <IconButton size="small" color="error" onClick={() => handleDelete(record._id)}>
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={isTablet ? 4 : 6} align="center" sx={{ py: 3 }}>
-                            <Typography color="textSecondary">
-                              {activeTab === 0 ? 'No money given yet' : 'No money taken yet'}
-                            </Typography>
+                          </TableCell>
+                          {!isTablet && <TableCell>{record.contact || '-'}</TableCell>}
+                          <TableCell align="right" sx={{ fontWeight: 600 }}>{formatCurrency(record.amount)}</TableCell>
+                          {!isTablet && <TableCell>{formatDate(record.date)}</TableCell>}
+                          <TableCell>
+                            <Chip
+                              label={STATUS_COLORS[record.status]?.label}
+                              color={STATUS_COLORS[record.status]?.color}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell align="center">
+                            <IconButton size="small" color="error" onClick={() => handleDelete(record._id)}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
                           </TableCell>
                         </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                {displayRecords.length > rowsPerPage && (
-                  <TablePagination
-                    rowsPerPageOptions={[3, 5, 10, 25]}
-                    component="div"
-                    count={displayRecords.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={(e, newPage) => setPage(newPage)}
-                    onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-                  />
-                )}
-              </Box>
-            )}
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={isTablet ? 4 : 6} align="center" sx={{ py: 3 }}>
+                          <Typography color="textSecondary">
+                            {activeTab === 0 ? 'No money given yet' : 'No money taken yet'}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              {displayRecords.length > rowsPerPage && (
+                <TablePagination
+                  rowsPerPageOptions={[3, 5, 10, 25]}
+                  component="div"
+                  count={displayRecords.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={(e, newPage) => setPage(newPage)}
+                  onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+                />
+              )}
+            </Box>
+          )}
 
-            {/* Mobile Card View */}
-            {isMobile && (
-              <Stack spacing={2} sx={{ mt: 2 }}>
-                {paginatedRecords.length > 0 ? (
-                  paginatedRecords.map((record) => (
-                    <Box
-                      key={record._id}
-                      sx={{
-                        p: 2,
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 1.5,
-                        backgroundColor: 'rgba(255,255,255,0.02)',
-                        '&:hover': {
-                          backgroundColor: 'rgba(255,255,255,0.04)',
-                          borderColor: 'rgba(255,255,255,0.2)'
-                        },
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.95rem', mb: 0.5 }}>
-                            {record.personName}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.75rem' }}>
-                            {formatDate(record.date)}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ textAlign: 'right' }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.95rem', mb: 0.5, color: 'success.main' }}>
-                            {formatCurrency(record.amount)}
-                          </Typography>
-                          <Chip
-                            label={STATUS_COLORS[record.status]?.label}
-                            color={STATUS_COLORS[record.status]?.color}
-                            size="small"
-                          />
-                        </Box>
+          {/* Mobile Card View */}
+          {isMobile && (
+            <Stack spacing={2} sx={{ mt: 2 }}>
+              {paginatedRecords.length > 0 ? (
+                paginatedRecords.map((record) => (
+                  <Box
+                    key={record._id}
+                    sx={{
+                      p: 2,
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 1.5,
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      '&:hover': {
+                        backgroundColor: 'rgba(255,255,255,0.04)',
+                        borderColor: 'rgba(255,255,255,0.2)'
+                      },
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.95rem', mb: 0.5 }}>
+                          {record.personName}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.75rem' }}>
+                          {formatDate(record.date)}
+                        </Typography>
                       </Box>
-
-                      {record.contact && (
-                        <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.75rem', mb: 1 }}>
-                          📱 {record.contact}
+                      <Box sx={{ textAlign: 'right' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.95rem', mb: 0.5, color: 'success.main' }}>
+                          {formatCurrency(record.amount)}
                         </Typography>
-                      )}
-
-                      {record.notes && (
-                        <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.75rem', mb: 1.5, fontStyle: 'italic' }}>
-                          {record.notes.substring(0, 50)}...
-                        </Typography>
-                      )}
-
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                        <IconButton size="small" color="error" onClick={() => handleDelete(record._id)}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
+                        <Chip
+                          label={STATUS_COLORS[record.status]?.label}
+                          color={STATUS_COLORS[record.status]?.color}
+                          size="small"
+                        />
                       </Box>
                     </Box>
-                  ))
-                ) : (
-                  <Typography color="textSecondary" sx={{ textAlign: 'center', py: 3 }}>
-                    {activeTab === 0 ? 'No money given yet' : 'No money taken yet'}
-                  </Typography>
-                )}
-                {displayRecords.length > rowsPerPage && (
-                  <TablePagination
-                    rowsPerPageOptions={[3, 5, 10]}
-                    component="div"
-                    count={displayRecords.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={(e, newPage) => setPage(newPage)}
-                    onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-                  />
-                )}
-              </Stack>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Add Record Dialog */}
-        <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-          <DialogTitle sx={{ fontWeight: 700 }}>Add Lending Record</DialogTitle>
-          <DialogContent sx={{ pt: 2 }}>
-            <Stack spacing={2}>
-              <Controller
-                name="personName"
-                control={control}
-                rules={{ required: 'Person name is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Person Name *"
-                    fullWidth
-                    size="small"
-                    error={!!errors.personName}
-                    helperText={errors.personName?.message}
-                  />
-                )}
-              />
+                    {record.contact && (
+                      <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.75rem', mb: 1 }}>
+                        📱 {record.contact}
+                      </Typography>
+                    )}
 
-              <Controller
-                name="contact"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Contact (phone/email)"
-                    fullWidth
-                    size="small"
-                  />
-                )}
-              />
+                    {record.notes && (
+                      <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.75rem', mb: 1.5, fontStyle: 'italic' }}>
+                        {record.notes.substring(0, 50)}...
+                      </Typography>
+                    )}
 
-              <Controller
-                name="amount"
-                control={control}
-                rules={{ required: 'Amount is required', min: { value: 0.01, message: 'Amount must be > 0' } }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Amount *"
-                    type="number"
-                    inputProps={{ step: '0.01' }}
-                    fullWidth
-                    size="small"
-                    error={!!errors.amount}
-                    helperText={errors.amount?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="type"
-                control={control}
-                render={({ field }) => (
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Type *</InputLabel>
-                    <Select {...field} label="Type *">
-                      <MenuItem value="given">📥 Money Given (To Receive)</MenuItem>
-                      <MenuItem value="taken">📤 Money Taken (To Pay)</MenuItem>
-                    </Select>
-                  </FormControl>
-                )}
-              />
-
-              <Controller
-                name="date"
-                control={control}
-                rules={{ required: 'Date is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Date *"
-                    type="date"
-                    fullWidth
-                    size="small"
-                    InputLabelProps={{ shrink: true }}
-                    error={!!errors.date}
-                    helperText={errors.date?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="expectedReturnDate"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Expected Return Date"
-                    type="date"
-                    fullWidth
-                    size="small"
-                    InputLabelProps={{ shrink: true }}
-                  />
-                )}
-              />
-
-              <Controller
-                name="status"
-                control={control}
-                render={({ field }) => (
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Status *</InputLabel>
-                    <Select {...field} label="Status *">
-                      <MenuItem value="pending">⏳ Pending</MenuItem>
-                      <MenuItem value="partial">⚠️ Partial</MenuItem>
-                      <MenuItem value="settled">✅ Settled</MenuItem>
-                    </Select>
-                  </FormControl>
-                )}
-              />
-
-              <Controller
-                name="notes"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Notes"
-                    fullWidth
-                    multiline
-                    rows={2}
-                    size="small"
-                  />
-                )}
-              />
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                      <IconButton size="small" color="error" onClick={() => handleDelete(record._id)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                ))
+              ) : (
+                <Typography color="textSecondary" sx={{ textAlign: 'center', py: 3 }}>
+                  {activeTab === 0 ? 'No money given yet' : 'No money taken yet'}
+                </Typography>
+              )}
+              {displayRecords.length > rowsPerPage && (
+                <TablePagination
+                  rowsPerPageOptions={[3, 5, 10]}
+                  component="div"
+                  count={displayRecords.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={(e, newPage) => setPage(newPage)}
+                  onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+                />
+              )}
             </Stack>
-          </DialogContent>
-          <DialogActions sx={{ p: 2 }}>
-            <Button onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit(onSubmit)} variant="contained" color="primary">
-              Add Record
-            </Button>
-          </DialogActions>
-        </Dialog>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Filter Modal */}
-        <Dialog
-          open={filterModalOpen}
-          onClose={() => setFilterModalOpen(false)}
-          maxWidth="sm"
-          fullWidth
-          PaperProps={{
-            sx: {
-              borderRadius: 2,
-              backgroundColor: 'rgba(15, 23, 42, 0.95)',
-            }
-          }}
-        >
-          <DialogTitle sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
-            📅 Filter Records by Date Range
-          </DialogTitle>
-          <DialogContent sx={{ pt: 3 }}>
-            <Stack spacing={3}>
-              <TextField
-                label="From Date"
-                type="date"
-                value={tempFromDate}
-                onChange={(e) => setTempFromDate(e.target.value)}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'rgba(255,255,255,0.08)',
-                    borderRadius: 1,
-                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.12)' }
+      {/* Add Record Dialog */}
+      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{
+          fontWeight: 700,
+          pb: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <IconButton
+            edge="start"
+            color="inherit"
+            onClick={() => setOpen(false)}
+            aria-label="close"
+            size="small"
+            sx={{ mr: 1 }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+          Add Lending Record
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Stack spacing={2}>
+            <Controller
+              name="personName"
+              control={control}
+              rules={{ required: 'Person name is required' }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Person Name *"
+                  fullWidth
+                  size="small"
+                  error={!!errors.personName}
+                  helperText={errors.personName?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="contact"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Contact (phone/email)"
+                  fullWidth
+                  size="small"
+                />
+              )}
+            />
+
+            <Controller
+              name="amount"
+              control={control}
+              rules={{ required: 'Amount is required', min: { value: 0.01, message: 'Amount must be > 0' } }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Amount *"
+                  type="number"
+                  inputProps={{ step: '0.01' }}
+                  fullWidth
+                  size="small"
+                  error={!!errors.amount}
+                  helperText={errors.amount?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="type"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth size="small">
+                  <InputLabel>Type *</InputLabel>
+                  <Select {...field} label="Type *">
+                    <MenuItem value="given">📥 Money Given (To Receive)</MenuItem>
+                    <MenuItem value="taken">📤 Money Taken (To Pay)</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+            />
+
+            <Controller
+              name="date"
+              control={control}
+              rules={{ required: 'Date is required' }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Date *"
+                  type="date"
+                  fullWidth
+                  size="small"
+                  InputLabelProps={{ shrink: true }}
+                  error={!!errors.date}
+                  helperText={errors.date?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="expectedReturnDate"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Expected Return Date"
+                  type="date"
+                  fullWidth
+                  size="small"
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+            />
+
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth size="small">
+                  <InputLabel>Status *</InputLabel>
+                  <Select {...field} label="Status *">
+                    <MenuItem value="pending">⏳ Pending</MenuItem>
+                    <MenuItem value="partial">⚠️ Partial</MenuItem>
+                    <MenuItem value="settled">✅ Settled</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+            />
+
+            <Controller
+              name="notes"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Notes"
+                  fullWidth
+                  multiline
+                  rows={2}
+                  size="small"
+                />
+              )}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+
+          <Button onClick={handleSubmit(onSubmit)} variant="contained" color="primary">
+            Add Record
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={filterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            backgroundColor: 'rgba(30, 41, 59, 0.98)',
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          fontWeight: 700,
+          pb: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <IconButton
+            edge="start"
+            color="inherit"
+            onClick={() => setFilterModalOpen(false)}
+            aria-label="close"
+            size="small"
+            sx={{ mr: 1 }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+          Filter Records by Date Range
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2.5, pb: 2 }}>
+          <Stack spacing={2.5} sx={{ width: '100%', mt: 1 }}>
+            <TextField
+              label="From Date"
+              type="date"
+              value={tempFromDate}
+              onChange={(e) => setTempFromDate(e.target.value)}
+              fullWidth
+              InputLabelProps={{ shrink: true, sx: { color: '#94a3b8 !important', fontSize: '0.95rem' } }}
+              variant="outlined"
+              slotProps={{
+                input: {
+                  sx: {
+                    colorScheme: 'dark',
+                    fontSize: '1rem',
+                    fontWeight: 500,
+                    '& .MuiInputBase-input': {
+                      color: '#ffffff !important',
+                      WebkitTextFillColor: '#ffffff !important',
+                    },
+                    '&::-webkit-calendar-picker-indicator': {
+                      // filter: 'invert(1)',
+                      cursor: 'pointer',
+                      opacity: 0.8,
+                      '&:hover': { opacity: 1 }
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(71, 85, 105, 0.5)'
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(148, 163, 184, 0.5)'
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#3b82f6',
+                      borderWidth: '2px'
+                    }
                   }
-                }}
-              />
-              <TextField
-                label="To Date"
-                type="date"
-                value={tempToDate}
-                onChange={(e) => setTempToDate(e.target.value)}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'rgba(255,255,255,0.08)',
-                    borderRadius: 1,
-                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.12)' }
+                }
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'rgba(15, 23, 42, 0.5)',
+                  borderRadius: 1.5,
+                }
+              }}
+            />
+            <TextField
+              label="To Date"
+              type="date"
+              value={tempToDate}
+              onChange={(e) => setTempToDate(e.target.value)}
+              fullWidth
+              InputLabelProps={{ shrink: true, sx: { color: '#94a3b8 !important', fontSize: '0.95rem' } }}
+              variant="outlined"
+              slotProps={{
+                input: {
+                  sx: {
+                    colorScheme: 'dark',
+                    fontSize: '1rem',
+                    fontWeight: 500,
+                    '& .MuiInputBase-input': {
+                      color: '#ffffff !important',
+                      WebkitTextFillColor: '#ffffff !important',
+                    },
+                    '&::-webkit-calendar-picker-indicator': {
+                      // filter: 'invert(1)',
+                      cursor: 'pointer',
+                      opacity: 0.8,
+                      '&:hover': { opacity: 1 }
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(71, 85, 105, 0.5)'
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(148, 163, 184, 0.5)'
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#3b82f6',
+                      borderWidth: '2px'
+                    }
                   }
-                }}
-              />
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ gap: 1, p: 2 }}>
+                }
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'rgba(15, 23, 42, 0.5)',
+                  borderRadius: 1.5,
+                }
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
             <Button
               onClick={() => {
                 setTempFromDate('');
                 setTempToDate(new Date().toISOString().split('T')[0]);
               }}
               variant="outlined"
+              startIcon={<RefreshIcon />}
+              sx={{
+                flex: 1,
+                color: '#94a3b8',
+                borderColor: 'rgba(255,255,255,0.1)',
+                borderRadius: 50,
+                textTransform: 'none',
+                py: 0.75,
+                fontSize: '0.875rem',
+                '&:hover': {
+                  borderColor: '#ffffff',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  color: '#ffffff'
+                }
+              }}
             >
               Reset
-            </Button>
-            <Button
-              onClick={() => setFilterModalOpen(false)}
-              variant="outlined"
-            >
-              Cancel
             </Button>
             <Button
               onClick={() => {
@@ -778,22 +799,33 @@ export default function Lending() {
               }}
               variant="contained"
               color="primary"
+              startIcon={<CheckIcon />}
+              sx={{
+                flex: 1,
+                borderRadius: 50,
+                textTransform: 'none',
+                py: 0.75,
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+              }}
             >
               Apply Filter
             </Button>
-          </DialogActions>
-        </Dialog>
+          </Stack>
+        </DialogActions>
+      </Dialog>
 
-        <ConfirmDialog
-          open={confirmOpen}
-          onClose={() => setConfirmOpen(false)}
-          title="Delete Record"
-          message="This lending record will be permanently deleted. This action cannot be undone."
-          onConfirm={confirmDelete}
-          confirmText="Delete"
-          severity="error"
-        />
-      </Box>
-    </Box>
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="Delete Record"
+        message="This lending record will be permanently deleted. This action cannot be undone."
+        onConfirm={confirmDelete}
+        confirmText="Delete"
+        severity="error"
+      />
+    </PageContainer>
   );
 }
+

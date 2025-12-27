@@ -11,20 +11,20 @@ const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Name is required'],
-      trim: true
+      trim: true,
+      default: 'WealthWise User'
     },
     email: {
       type: String,
-      required: [true, 'Email is required'],
       unique: true,
       lowercase: true,
-      trim: true
+      trim: true,
+      sparse: true // Allow nulls while maintaining uniqueness for non-nulls
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
-      minlength: 6
+      minlength: 6,
+      default: null
     },
     avatar: {
       type: String,
@@ -33,6 +33,28 @@ const userSchema = new mongoose.Schema(
     currency: {
       type: String,
       default: 'INR'
+    },
+    phoneNumber: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true
+    },
+    otp: {
+      type: String,
+      default: null
+    },
+    otpExpires: {
+      type: Date,
+      default: null
+    },
+    resetPasswordToken: {
+      type: String,
+      default: null
+    },
+    resetPasswordExpire: {
+      type: Date,
+      default: null
     }
   },
   {

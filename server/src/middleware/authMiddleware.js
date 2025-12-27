@@ -5,6 +5,7 @@
  */
 
 import jwt from 'jsonwebtoken';
+import User from '../models/userModel.js';
 
 /**
  * Express middleware to protect routes with JWT authentication.
@@ -14,7 +15,7 @@ import jwt from 'jsonwebtoken';
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
  */
-export const protect = (req, res, next) => {
+export const protect = async (req, res, next) => {
   let token;
 
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
@@ -22,11 +23,16 @@ export const protect = (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Attach user ID to request for downstream handlers
-      req.user = { id: decoded.id };
+      // Attach full user object (excluding password)
+      req.user = await User.findById(decoded.id).select('-password');
+
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized, user not found' });
+      }
+
       return next();
     } catch (error) {
-      console.error('JWT verification failed:', error.message);
+      console.error('JWT verification/Fetch failed:', error.message);
       return res.status(401).json({ message: 'Not authorized, token failed' });
     }
   }

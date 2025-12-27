@@ -1,6 +1,6 @@
 /**
  * Global Styles for WealthWise
- * Ensures consistent form input styling across all pages
+ * Modern Premium Dark Theme with Animations
  */
 
 import { GlobalStyles as MuiGlobalStyles } from '@mui/material';
@@ -9,72 +9,231 @@ export default function GlobalStyles() {
   return (
     <MuiGlobalStyles
       styles={{
-        // TextField and input styling
-        '& input, & textarea, & select': {
-          color: '#0F172A !important',
-          backgroundColor: '#F8FAFC !important',
-          fontSize: '0.9375rem'
+        // =====================================================
+        // BASE STYLES & ANIMATIONS
+        // =====================================================
+
+        '*': {
+          boxSizing: 'border-box',
+          margin: 0,
+          padding: 0
         },
+
+        'html, body, #root': {
+          minHeight: '100vh',
+          backgroundColor: '#0A0F1E',
+          color: '#F9FAFB'
+        },
+
+        // Smooth scrolling
+        html: {
+          scrollBehavior: 'smooth'
+        },
+
+        // =====================================================
+        // CUSTOM SCROLLBAR
+        // =====================================================
+
+        '*::-webkit-scrollbar': {
+          width: '8px',
+          height: '8px'
+        },
+        '*::-webkit-scrollbar-track': {
+          background: 'rgba(255, 255, 255, 0.02)',
+          borderRadius: '4px'
+        },
+        '*::-webkit-scrollbar-thumb': {
+          background: 'linear-gradient(180deg, rgba(16, 185, 129, 0.4) 0%, rgba(59, 130, 246, 0.4) 100%)',
+          borderRadius: '4px',
+          border: '2px solid transparent',
+          backgroundClip: 'content-box',
+          '&:hover': {
+            background: 'linear-gradient(180deg, rgba(16, 185, 129, 0.6) 0%, rgba(59, 130, 246, 0.6) 100%)',
+            backgroundClip: 'content-box'
+          }
+        },
+
+        // =====================================================
+        // ANIMATIONS
+        // =====================================================
+
+        '@keyframes fadeIn': {
+          '0%': { opacity: 0, transform: 'translateY(10px)' },
+          '100%': { opacity: 1, transform: 'translateY(0)' }
+        },
+
+        '@keyframes pulse': {
+          '0%, 100%': { opacity: 1 },
+          '50%': { opacity: 0.6 }
+        },
+
+        '@keyframes shimmer': {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' }
+        },
+
+        '@keyframes glow': {
+          '0%, 100%': { boxShadow: '0 0 20px rgba(16, 185, 129, 0.3)' },
+          '50%': { boxShadow: '0 0 40px rgba(16, 185, 129, 0.5)' }
+        },
+
+        // =====================================================
+        // UTILITY CLASSES
+        // =====================================================
+
+        '.animate-fade-in': {
+          animation: 'fadeIn 0.5s ease-out forwards'
+        },
+
+        '.animate-pulse': {
+          animation: 'pulse 2s ease-in-out infinite'
+        },
+
+        '.animate-glow': {
+          animation: 'glow 3s ease-in-out infinite'
+        },
+
+        // =====================================================
+        // FORM INPUT FIXES
+        // =====================================================
+
         // Autofill styling
-        '& input:-webkit-autofill': {
-          WebkitBoxShadow: '0 0 0 1000px #F8FAFC inset !important',
-          WebkitTextFillColor: '#0F172A !important'
-        },
-        '& input:-webkit-autofill:focus': {
+        '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
           WebkitBoxShadow: '0 0 0 1000px #FFFFFF inset !important',
-          WebkitTextFillColor: '#0F172A !important'
+          WebkitTextFillColor: '#111827 !important',
+          caretColor: '#111827',
+          borderRadius: '12px'
         },
-        // Select styling
-        '& .MuiSelect-root': {
-          color: '#0F172A !important'
+
+        // Number input spinners
+        'input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button': {
+          opacity: 1,
+          height: 'auto'
         },
-        '& .MuiSelect-icon': {
-          color: '#0F172A !important'
+
+        // =====================================================
+        // CHART STYLING
+        // =====================================================
+
+        '& .recharts-tooltip-wrapper': {
+          outline: 'none'
         },
-        // Input label styling
-        '& .MuiInputLabel-root': {
-          color: '#475569 !important'
+
+        '& .recharts-default-tooltip': {
+          backgroundColor: 'rgba(10, 15, 30, 0.95) !important',
+          border: '1px solid rgba(255, 255, 255, 0.1) !important',
+          borderRadius: '12px !important',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4) !important',
+          padding: '12px 16px !important'
         },
-        '& .MuiInputLabel-root.Mui-focused': {
-          color: '#22C55E !important'
+
+        '& .recharts-tooltip-label': {
+          color: '#F9FAFB !important',
+          fontWeight: '700 !important',
+          marginBottom: '8px !important',
+          fontSize: '0.875rem !important'
         },
-        // Dialog text color
-        '& .MuiDialog-paper': {
-          backgroundColor: '#1E293B'
+
+        '& .recharts-tooltip-item': {
+          color: '#9CA3AF !important',
+          fontSize: '0.8125rem !important'
         },
-        '& .MuiDialogTitle-root': {
-          color: '#F1F5F9',
-          fontWeight: 700
+
+        '& .recharts-tooltip-item-value': {
+          color: '#10B981 !important',
+          fontWeight: '600 !important'
         },
-        '& .MuiDialogContent-root': {
-          color: '#CBD5E1'
+
+        '& .recharts-legend-wrapper': {
+          paddingTop: '16px !important'
         },
-        // Card text
-        '& .MuiCard-root': {
-          backgroundColor: 'rgba(30, 41, 59, 0.8)'
+
+        '& .recharts-legend-item-text': {
+          color: '#9CA3AF !important',
+          fontSize: '0.8125rem !important',
+          fontWeight: '500 !important'
         },
-        // Table styling
-        '& .MuiTableHead-root': {
-          backgroundColor: 'rgba(255, 255, 255, 0.05)'
-        },
-        '& .MuiTableCell-root': {
-          color: '#F1F5F9',
-          borderColor: 'rgba(255, 255, 255, 0.1)'
-        },
-        // Button styling
-        '& .MuiButton-root': {
-          fontWeight: 600
-        },
-        // Typography
-        '& .MuiTypography-root': {
-          color: '#F1F5F9'
-        },
+
+        // =====================================================
+        // TYPOGRAPHY ENHANCEMENTS
+        // =====================================================
+
         '& .MuiTypography-colorTextSecondary': {
-          color: '#CBD5E1 !important'
+          color: '#9CA3AF !important'
         },
-        // Form labels
-        '& label': {
-          color: '#475569'
+
+        // =====================================================
+        // SELECTION STYLE
+        // =====================================================
+
+        '::selection': {
+          backgroundColor: 'rgba(16, 185, 129, 0.3)',
+          color: '#F9FAFB'
+        },
+
+        // =====================================================
+        // FOCUS VISIBLE
+        // =====================================================
+
+        '*:focus-visible': {
+          outline: '2px solid rgba(16, 185, 129, 0.6)',
+          outlineOffset: '2px'
+        },
+
+        // =====================================================
+        // TOAST NOTIFICATIONS (Sonner)
+        // =====================================================
+
+        '[data-sonner-toast]': {
+          backgroundColor: '#1F2937 !important',
+          border: '1px solid rgba(255, 255, 255, 0.1) !important',
+          borderRadius: '12px !important',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4) !important',
+          padding: '16px !important'
+        },
+
+        '[data-sonner-toast][data-type="success"]': {
+          backgroundColor: 'rgba(16, 185, 129, 0.1) !important',
+          borderColor: 'rgba(16, 185, 129, 0.3) !important'
+        },
+
+        '[data-sonner-toast][data-type="error"]': {
+          backgroundColor: 'rgba(239, 68, 68, 0.1) !important',
+          borderColor: 'rgba(239, 68, 68, 0.3) !important'
+        },
+
+        '[data-sonner-toast][data-type="warning"]': {
+          backgroundColor: 'rgba(245, 158, 11, 0.1) !important',
+          borderColor: 'rgba(245, 158, 11, 0.3) !important'
+        },
+
+        '[data-sonner-toast][data-type="info"]': {
+          backgroundColor: 'rgba(59, 130, 246, 0.1) !important',
+          borderColor: 'rgba(59, 130, 246, 0.3) !important'
+        },
+
+        '[data-sonner-toast] [data-title]': {
+          color: '#F9FAFB !important',
+          fontWeight: '600 !important',
+          fontSize: '0.9375rem !important'
+        },
+
+        '[data-sonner-toast] [data-description]': {
+          color: '#9CA3AF !important',
+          fontSize: '0.8125rem !important'
+        },
+
+        '[data-sonner-toast] [data-button]': {
+          backgroundColor: 'rgba(255, 255, 255, 0.1) !important',
+          color: '#F9FAFB !important',
+          borderRadius: '8px !important',
+          padding: '8px 12px !important',
+          fontSize: '0.8125rem !important',
+          fontWeight: '600 !important',
+          border: '1px solid rgba(255, 255, 255, 0.2) !important',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.15) !important'
+          }
         }
       }}
     />
