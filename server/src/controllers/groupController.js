@@ -2,6 +2,8 @@ import Group from '../models/groupModel.js';
 import GroupExpense from '../models/groupExpenseModel.js';
 import User from '../models/userModel.js';
 import crypto from 'crypto';
+import { getUserGroups } from '../services/shadowUserService.js';
+
 
 // @desc    Create a new group
 // @route   POST /api/groups
@@ -19,7 +21,8 @@ const createGroup = async (req, res) => {
         processedMembers.push({
             userId: req.user._id,
             name: req.user.name,
-            email: req.user.email
+            email: req.user.email,
+            phone: req.user.phoneNumber // Include phone from authenticated user
         });
 
         if (members && members.length > 0) {
@@ -79,18 +82,23 @@ const createGroup = async (req, res) => {
     }
 };
 
-// @desc    Get user's groups
+// @desc    Get user's groups (created OR member of, including shadow-linked)
 // @route   GET /api/groups
 // @access  Private
 const getGroups = async (req, res) => {
     try {
-        // Find groups where the user is the creator OR is in the members list
-        const groups = await Group.find({
-            $or: [
-                { createdBy: req.user._id },
-                { 'members.userId': req.user._id }
-            ]
-        }).sort({ updatedAt: -1 });
+        // Get user details for shadow matching
+        const user = await User.findById(req.user._id);
+        
+        // Use enhanced service that finds:
+        // 1. Groups user created
+        // 2. Groups where user is a registered member
+        // 3. Groups where user was added as shadow and now linked
+        const groups = await getUserGroups(
+            req.user._id,
+            user.email,
+            user.phoneNumber
+        );
 
         res.json(groups);
     } catch (error) {
@@ -307,7 +315,7 @@ const addMemberToGroup = async (req, res) => {
     }
 };
 
-// @desc    Remove member from group
+// @desc    Remove member from group (safe with balance check)
 // @route   DELETE /api/groups/:id/members/:memberId
 // @access  Private
 const removeMember = async (req, res) => {
@@ -342,43 +350,64 @@ const removeMember = async (req, res) => {
         const memberToRemove = group.members[memberIndex];
         const targetUserId = memberToRemove.userId?._id?.toString() || memberToRemove.userId || memberToRemove._id?.toString();
 
-        // Remove member from array
-        group.members.splice(memberIndex, 1);
-        await group.save();
-
-        // Cascade delete expenses involving this member
-        // 1. Expenses paid by this member
-        // 2. Expenses where this member is in splits
-        // We need to be careful with ID matching again
-        
-        // Strategy: Find all expenses, filter in JS (safer for shadow IDs), then delete
+        // ============================================
+        // CRITICAL: Calculate member's balance
+        // ============================================
         const allExpenses = await GroupExpense.find({ group: group._id });
-        const expensesToDelete = [];
+        let memberBalance = 0;
 
         for (const exp of allExpenses) {
-            // Check payer
             const payerId = String(exp.paidBy?._id || exp.paidBy);
+            
+            // If this member paid the expense, they are owed
             if (payerId === String(targetUserId)) {
-                expensesToDelete.push(exp._id);
-                continue;
+                memberBalance += exp.amount;
             }
 
-            // Check splits
+            // If this member is in splits, they owe
             if (exp.splits) {
-                const isInSplits = exp.splits.some(split => 
-                    String(split.user?._id || split.user) === String(targetUserId)
-                );
-                if (isInSplits) {
-                    expensesToDelete.push(exp._id);
-                }
+                exp.splits.forEach(split => {
+                    const splitUserId = String(split.user?._id || split.user);
+                    if (splitUserId === String(targetUserId)) {
+                        memberBalance -= split.amount;
+                    }
+                });
             }
         }
 
-        if (expensesToDelete.length > 0) {
-            await GroupExpense.deleteMany({ _id: { $in: expensesToDelete } });
+        // BLOCK removal if unsettled balance (with ₹1 tolerance for rounding)
+        if (Math.abs(memberBalance) > 1) {
+            res.status(400);
+            const owesOrOwed = memberBalance > 0 ? 'is owed' : 'owes';
+            throw new Error(
+                `Cannot remove member with unsettled balance. ${memberToRemove.name} ${owesOrOwed} ₹${Math.abs(memberBalance).toFixed(2)}. Please settle all debts first.`
+            );
         }
 
-        res.json({ message: 'Member and associated expenses removed', removedMemberId: targetUserId });
+        // Safe to remove: Balance is settled
+        // Soft delete member (keeps data for audit)
+        if (!memberToRemove.isActive === undefined) {
+            // Add soft delete fields if not present (backward compatibility)
+            memberToRemove.isActive = false;
+            memberToRemove.removedAt = new Date();
+            memberToRemove.removedBy = req.user._id;
+        } else {
+            memberToRemove.isActive = false;
+            memberToRemove.removedAt = new Date();
+            memberToRemove.removedBy = req.user._id;
+        }
+
+        await group.save();
+
+        // Note: We do NOT delete expenses anymore
+        // All historical data is preserved for audit trail
+
+        res.json({ 
+            message: 'Member removed successfully', 
+            removedMemberId: targetUserId,
+            finalBalance: memberBalance.toFixed(2),
+            expensesPreserved: true
+        });
     } catch (error) {
         res.status(400).json({ message: error.message });
     }

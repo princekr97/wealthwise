@@ -15,7 +15,8 @@ import {
     Chip,
     Accordion,
     AccordionSummary,
-    AccordionDetails
+    AccordionDetails,
+    alpha
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -42,12 +43,22 @@ export default function Groups() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+    const [groupBalances, setGroupBalances] = useState({});
+
+    const getAvatarColor = (name) => {
+        if (!name) return '#666';
+        const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const hue = hash % 360;
+        return `hsl(${hue}, 70%, 50%)`;
+    };
 
     // Global Stats
     const [stats, setStats] = useState({
         totalOwed: 0,
         totalOwe: 0,
-        netBalance: 0
+        netBalance: 0,
+        todaySpending: 0,
+        monthSpending: 0
     });
 
     useEffect(() => {
@@ -65,89 +76,127 @@ export default function Groups() {
             // Calculate Global Stats
             // We need to fetch details for each group to get expenses and calculate balances
             // This is a bit heavy, but fine for MVP
+            // Calculate Global Stats
+            // We need to fetch details for each group to get expenses and calculate balances
             let totalOwed = 0;
             let totalOwe = 0;
+            let todaySpending = 0;
+            let monthSpending = 0;
+            const today = new Date();
 
             const promises = groupsData.map(g => groupService.getGroupDetails(g._id));
             const details = await Promise.all(promises);
+            const myIdStr = String(user._id);
+            const myEmail = user.email ? user.email.toLowerCase() : '';
+            const balances = {};
 
             details.forEach(groupDetail => {
-                if (!groupDetail.expenses) return;
+                if (!groupDetail || !groupDetail.expenses) return;
 
-                // --- ROBUST ID RESOLUTION LOGIC (Same as GroupDetails) ---
+                // Build Identity Set for "Me" in this group
+                const myIdentifiers = new Set();
+                myIdentifiers.add(myIdStr);
+                if (myEmail) myIdentifiers.add(myEmail);
 
-                // 1. Helper to get consistent string ID for any member
-                const getMemberId = (m) => {
-                    if (!m) return 'unknown';
-                    if (m.userId && typeof m.userId === 'object' && m.userId._id) return String(m.userId._id);
-                    if (m.userId) return String(m.userId);
-                    return String(m.email || m.name); // Fallback
-                };
+                if (groupDetail.members) {
+                    groupDetail.members.forEach(m => {
+                        let isMe = false;
+                        if (m.userId) {
+                            const uId = (typeof m.userId === 'object' ? m.userId._id : m.userId);
+                            if (String(uId) === myIdStr) isMe = true;
+                        }
+                        if (!isMe && m.email && m.email.toLowerCase() === myEmail) isMe = true;
 
-                // 2. Build Lookups for this group
-                const memberLookup = {};
-                const nameLookup = {};
+                        if (isMe) {
+                            if (m._id) myIdentifiers.add(String(m._id));
+                            if (m.name) myIdentifiers.add(m.name.toLowerCase().trim());
+                        }
+                    });
+                }
 
-                groupDetail.members.forEach(m => {
-                    const realId = getMemberId(m);
-                    memberLookup[realId] = realId;
-                    if (m.name) nameLookup[m.name.toLowerCase().trim()] = realId;
-                });
-
-                // 3. Helper to resolve any participant in an expense to a specific Member ID
-                const resolveId = (participant) => {
-                    if (!participant) return null;
-                    const id = participant._id || participant.id || (typeof participant === 'string' ? participant : null);
-                    if (id && memberLookup[String(id)]) return memberLookup[String(id)];
-
-                    if (participant.name) {
-                        const name = participant.name.toLowerCase().trim();
-                        if (nameLookup[name]) return nameLookup[name];
-                    }
-                    return id ? String(id) : null;
-                };
-
-                // 4. Find "Me" in this group to know MY consistent ID
-                const me = groupDetail.members.find(m => {
-                    const mUserId = m.userId && (m.userId._id || m.userId);
-                    if (mUserId && String(mUserId) === String(user._id)) return true;
-                    if (m.email && user.email && m.email.toLowerCase() === user.email.toLowerCase()) return true;
-                    return false;
-                });
-
-                // If I'm not in this group (shouldn't happen for fetched groups), skip
-                if (!me) return;
-
-                const myKey = getMemberId(me);
                 let myGroupBalance = 0;
 
-                // 5. Calculate Balance
                 groupDetail.expenses.forEach(exp => {
-                    // Paid by me?
-                    const payerId = resolveId(exp.paidBy);
-                    if (payerId === myKey) {
-                        myGroupBalance += exp.amount;
+                    const amount = exp.amount;
+
+                    // 1. Did I Pay?
+                    let isPayer = false;
+                    const payer = exp.paidBy;
+                    if (payer) {
+                        const pId = payer._id || payer;
+                        if (myIdentifiers.has(String(pId))) isPayer = true;
+
+                        if (!isPayer) {
+                            const pName = (typeof payer === 'object' ? payer.name : String(payer));
+                            if (pName && myIdentifiers.has(pName.toLowerCase().trim())) isPayer = true;
+                        }
+
+                        if (!isPayer && exp.paidByName && myIdentifiers.has(exp.paidByName.toLowerCase().trim())) isPayer = true;
                     }
 
-                    // Splits
+                    if (isPayer) {
+                        myGroupBalance += amount;
+                    }
+
+                    // 2. Did I Split?
                     if (exp.splits) {
                         exp.splits.forEach(split => {
-                            const splitUserId = resolveId(split.user);
-                            if (splitUserId === myKey) {
+                            let isSplitUser = false;
+                            const sUser = split.user;
+
+                            if (sUser) {
+                                const sId = sUser._id || sUser;
+                                if (myIdentifiers.has(String(sId))) isSplitUser = true;
+
+                                if (!isSplitUser) {
+                                    const sName = (typeof sUser === 'object' ? sUser.name : String(sUser));
+                                    if (sName && myIdentifiers.has(sName.toLowerCase().trim())) isSplitUser = true;
+                                }
+                            }
+
+                            if (!isSplitUser && split.userName && myIdentifiers.has(split.userName.toLowerCase().trim())) {
+                                isSplitUser = true;
+                            }
+
+                            if (isSplitUser) {
                                 myGroupBalance -= split.amount;
+
+                                // Calculate Spending Stats
+                                // Exclude Settlements (Debt Repayments/Receivals) from "Spending"
+                                if (exp.date && exp.category !== 'Settlement') {
+                                    const expDate = new Date(exp.date);
+                                    if (!isNaN(expDate.getTime())) {
+                                        // Check Today
+                                        if (expDate.toDateString() === today.toDateString()) {
+                                            todaySpending += split.amount;
+                                        }
+                                        // Check This Month
+                                        if (expDate.getMonth() === today.getMonth() && expDate.getFullYear() === today.getFullYear()) {
+                                            monthSpending += split.amount;
+                                        }
+                                    }
+                                }
                             }
                         });
                     }
                 });
 
+                // Floating point fix
+                myGroupBalance = Math.round(myGroupBalance * 100) / 100;
+
                 if (myGroupBalance > 0.01) totalOwed += myGroupBalance;
-                if (myGroupBalance < -0.01) totalOwe += Math.abs(myGroupBalance);
+                else if (myGroupBalance < -0.01) totalOwe += Math.abs(myGroupBalance);
+
+                balances[groupDetail._id] = myGroupBalance;
             });
+            setGroupBalances(balances);
 
             setStats({
                 totalOwed,
                 totalOwe,
-                netBalance: totalOwed - totalOwe
+                netBalance: totalOwed - totalOwe,
+                todaySpending,
+                monthSpending
             });
 
         } catch (err) {
@@ -385,6 +434,87 @@ export default function Groups() {
                                     NET BALANCE
                                 </Typography>
                             </Box>
+
+                            {/* Card 4 - Today Spending */}
+                            <Box
+                                sx={{
+                                    backgroundColor: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '10px',
+                                    p: 1.5,
+                                    height: 90,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    textAlign: 'center'
+                                }}
+                            >
+                                <Typography sx={{ fontSize: '1.3rem', mb: 0.5 }}>📅</Typography>
+                                <Typography
+                                    sx={{
+                                        fontSize: '1.3rem',
+                                        fontWeight: 700,
+                                        color: '#38bdf8', // Light Blue
+                                        mb: 0.2,
+                                        lineHeight: 1
+                                    }}
+                                >
+                                    {formatCurrency(stats.todaySpending)}
+                                </Typography>
+                                <Typography
+                                    sx={{
+                                        fontSize: '0.55rem',
+                                        fontWeight: 500,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px',
+                                        color: '#6B7280'
+                                    }}
+                                >
+                                    TODAY'S SPEND
+                                </Typography>
+                            </Box>
+
+                            {/* Card 5 - Month Spending */}
+                            <Box
+                                sx={{
+                                    backgroundColor: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '10px',
+                                    p: 1.5,
+                                    height: 90,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    textAlign: 'center',
+                                    gridColumn: 'span 2' // Make it full width if alone in row? Or just let it flow.
+                                }}
+                            >
+                                <Typography sx={{ fontSize: '1.3rem', mb: 0.5 }}>🗓️</Typography>
+                                <Typography
+                                    sx={{
+                                        fontSize: '1.3rem',
+                                        fontWeight: 700,
+                                        color: '#fbbf24', // Amber
+                                        mb: 0.2,
+                                        lineHeight: 1
+                                    }}
+                                >
+                                    {formatCurrency(stats.monthSpending)}
+                                </Typography>
+                                <Typography
+                                    sx={{
+                                        fontSize: '0.55rem',
+                                        fontWeight: 500,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px',
+                                        color: '#6B7280'
+                                    }}
+                                >
+                                    THIS MONTH
+                                </Typography>
+                            </Box>
                         </Box>
                     </AccordionDetails>
                 </Accordion>
@@ -445,7 +575,8 @@ export default function Groups() {
                         </Button>
                     </Box>
                 ) : (
-                    /* Clean List View (Splitwise Style) */
+                    /* Clean List View */
+
                     <Stack spacing={1}> {/* Reduced spacing */}
                         {groups.map((group) => (
                             <Card
@@ -520,7 +651,6 @@ export default function Groups() {
                                                         fontSize: '0.6rem', // Reduced from 0.7
                                                         border: '2px solid rgba(15, 23, 42, 1)',
                                                         backgroundColor: '#14B8A6',
-                                                        color: '#FFFFFF',
                                                         fontWeight: 600
                                                     }
                                                 }}
@@ -529,19 +659,14 @@ export default function Groups() {
                                                     <Avatar
                                                         key={member._id || member.userId || member.email || idx}
                                                         alt={member.name}
+                                                        src={`https://api.dicebear.com/7.x/notionists/svg?seed=${member.name}`}
                                                         sx={{
-                                                            backgroundColor: [
-                                                                '#14B8A6', // Teal
-                                                                '#8B5CF6', // Purple
-                                                                '#3B82F6', // Blue
-                                                                '#F59E0B', // Orange
-                                                                '#EC4899', // Pink
-                                                                '#10B981'  // Green
-                                                            ][idx % 6]
+                                                            width: 20,
+                                                            height: 20,
+                                                            border: '2px solid rgba(15, 23, 42, 1)',
+                                                            background: `linear-gradient(135deg, ${getAvatarColor(member.name)}, ${alpha(getAvatarColor(member.name), 0.7)})`
                                                         }}
-                                                    >
-                                                        {member.name[0].toUpperCase()}
-                                                    </Avatar>
+                                                    />
                                                 ))}
                                             </AvatarGroup>
                                         </Box>
@@ -567,6 +692,6 @@ export default function Groups() {
                 onClose={() => setIsAddDialogOpen(false)}
                 onGroupCreated={handleGroupCreated}
             />
-        </PageContainer>
+        </PageContainer >
     );
 }

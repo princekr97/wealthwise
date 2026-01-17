@@ -37,13 +37,35 @@ const groupSchema = new mongoose.Schema(
                     type: String,
                     trim: true,
                     lowercase: true
+                    // Optional: User might not know friend's email
                 },
                 phone: {
                     type: String,
-                    trim: true,
-                    // Making it strictly required might break existing docs if not handled carefully, 
-                    // but user insisted "mobile no is madatory".
-                    // We'll trust the controller to enforce this for new groups.
+                    required: function() {
+                        // 1. If no name, not required (empty/removed member)
+                        if (!this.name) return false;
+                        
+                        // 2. If valid registered user (has userId), phone is opt-in (fetched from profile)
+                        if (this.userId) return false;
+
+                        // 3. For shadow users (no userId), phone is required so we can link them later
+                        return typeof this.name === 'string' && this.name.trim().length > 0;
+                    },
+                    trim: true
+                },
+                // Soft delete support for member removal
+                isActive: {
+                    type: Boolean,
+                    default: true
+                },
+                removedAt: {
+                    type: Date,
+                    default: null
+                },
+                removedBy: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'User',
+                    default: null
                 }
             }
         ],

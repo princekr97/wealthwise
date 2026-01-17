@@ -7,6 +7,7 @@
 import jwt from 'jsonwebtoken';
 import Joi from 'joi';
 import User from '../models/userModel.js';
+import { linkShadowMembersToUser } from '../services/shadowUserService.js';
 
 /**
  * Generate a JWT token for a given user ID.
@@ -62,6 +63,10 @@ export const registerUser = async (req, res, next) => {
 
     const user = await User.create({ name, email, password, phoneNumber });
 
+    //  **NEW: Auto-link shadow members**
+    // Find and link any groups where this user was added before registration
+    const linkingResult = await linkShadowMembersToUser(user);
+
     const token = generateToken(user._id);
 
     res.status(201).json({
@@ -73,6 +78,12 @@ export const registerUser = async (req, res, next) => {
         phoneNumber: user.phoneNumber,
         currency: user.currency,
         avatar: user.avatar
+      },
+      // Include linking info to show user which groups they were added to
+      shadowUserLinking: {
+        groupsLinked: linkingResult.linkedGroupsCount,
+        groupNames: linkingResult.groupNames,
+        message: linkingResult.message
       }
     });
   } catch (err) {

@@ -142,7 +142,7 @@ const updateExpense = async (req, res) => {
     }
 };
 
-// @desc    Delete expense
+// @desc    Delete expense (soft delete for audit trail)
 // @route   DELETE /api/groups/:groupId/expenses/:expenseId
 // @access  Private
 const deleteExpense = async (req, res) => {
@@ -155,8 +155,13 @@ const deleteExpense = async (req, res) => {
             throw new Error('Expense not found');
         }
 
-        await expense.deleteOne();
-        res.json({ message: 'Expense deleted' });
+        // Soft delete: Mark as deleted instead of removing
+        expense.isDeleted = true;
+        expense.deletedAt = new Date();
+        expense.deletedBy = req.user?._id || null;
+        await expense.save();
+
+        res.json({ message: 'Expense deleted', deletedAt: expense.deletedAt });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -167,7 +172,7 @@ const deleteExpense = async (req, res) => {
 // @access  Private
 const settleDebt = async (req, res) => {
     try {
-        const { payerId, receiverId, amount } = req.body;
+        const { payerId, receiverId, amount, payerName, receiverName } = req.body;
         const { groupId } = req.params;
 
         // Verify group exists
@@ -177,19 +182,79 @@ const settleDebt = async (req, res) => {
             throw new Error('Group not found');
         }
 
+        // ENHANCEMENT: Calculate actual debt for validation (non-blocking)
+        let actualDebt = 0;
+        let warningMessage = null;
+        
+        try {
+            const expenses = await GroupExpense.find({ group: groupId });
+            
+            expenses.forEach(exp => {
+                const expPayerId = String(exp.paidBy?._id || exp.paidBy);
+                
+                // If receiver paid an expense
+                if (expPayerId === String(receiverId)) {
+                    exp.splits?.forEach(split => {
+                        const splitUserId = String(split.user?._id || split.user);
+                        // And payer was in the split, payer owes receiver
+                        if (splitUserId === String(payerId)) {
+                            actualDebt += split.amount;
+                        }
+                    });
+                }
+                
+                // If payer paid an expense
+                if (expPayerId === String(payerId)) {
+                    exp.splits?.forEach(split => {
+                        const splitUserId = String(split.user?._id || split.user);
+                        // And receiver was in the split, receiver owes payer (reduce debt)
+                        if (splitUserId === String(receiverId)) {
+                            actualDebt -= split.amount;
+                        }
+                    });
+                }
+            });
+            
+            // Warn if settlement exceeds debt by more than ₹10 (reasonable buffer)
+            if (amount > actualDebt + 10) {
+                warningMessage = `Note: Settlement amount (₹${amount}) exceeds calculated debt (₹${actualDebt.toFixed(2)})`;
+            }
+        } catch (calcError) {
+            // If debt calculation fails, continue anyway (backward compatibility)
+            console.warn('Debt calculation failed, proceeding with settlement:', calcError);
+        }
+
+        // Create settlement expense
+        // CRITICAL: Settlement logic to CANCEL debt
+        // Original debt: receiverId paid expenses, payerId was in splits → payerId owes receiverId
+        // Settlement: payerId gives receiverId cash
+        // To cancel debt in expense model: Record as payerId "paid", receiverId is in splits
+        // This creates OPPOSITE transaction: payerId paid, receiverId owes → cancels original
         const expense = await GroupExpense.create({
             group: groupId,
             description: 'Settlement',
             amount,
             date: Date.now(),
             category: 'Settlement',
-            paidBy: payerId,
+            paidBy: payerId,  // The DEBTOR making the payment
+            paidByName: payerName,  // Store name for shadow users
             splits: [
-                { user: receiverId, amount: amount, owed: amount }
+                { 
+                    user: receiverId,  // The CREDITOR receiving payment
+                    userName: receiverName,  // Store name for shadow users
+                    amount: amount, 
+                    owed: amount 
+                }
             ]
         });
 
-        res.status(201).json(expense);
+        // Return success with optional warning
+        const response = {
+            ...expense.toObject(),
+            warning: warningMessage
+        };
+
+        res.status(201).json(response);
 
     } catch (error) {
         res.status(400).json({ message: error.message });

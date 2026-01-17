@@ -101,7 +101,7 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded 
 
             <DialogContent sx={{ mt: 1 }}>
                 <Typography variant="body2" sx={{ mb: 3, color: 'rgba(255, 255, 255, 0.6)', lineHeight: 1.6 }}>
-                    Add a friend to split expenses with. If they use WealthWise, we'll link their account.
+                    Add a friend with their mobile number. When they register, they'll automatically see this group!
                 </Typography>
 
                 <Stack spacing={2.5}>
@@ -128,17 +128,26 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded 
                     />
 
                     <Controller
-                        name="email"
+                        name="phone"
                         control={control}
-                        render={({ field }) => (
+                        rules={{
+                            required: 'Mobile number is required',
+                            pattern: {
+                                value: /^[0-9]{10}$/,
+                                message: 'Enter 10-digit mobile number'
+                            }
+                        }}
+                        render={({ field, fieldState: { error } }) => (
                             <StyledTextField
                                 {...field}
                                 fullWidth
-                                placeholder="Email (Optional)"
+                                placeholder="Mobile Number (Required)"
+                                error={!!error}
+                                helperText={error?.message}
                                 InputProps={{
                                     startAdornment: (
                                         <InputAdornment position="start">
-                                            <EmailIcon sx={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: 20 }} />
+                                            <PhoneIcon sx={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: 20 }} />
                                         </InputAdornment>
                                     )
                                 }}
@@ -147,17 +156,25 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded 
                     />
 
                     <Controller
-                        name="phone"
+                        name="email"
                         control={control}
-                        render={({ field }) => (
+                        rules={{
+                            pattern: {
+                                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                                message: 'Invalid email format'
+                            }
+                        }}
+                        render={({ field, fieldState: { error } }) => (
                             <StyledTextField
                                 {...field}
                                 fullWidth
-                                placeholder="Phone (Optional)"
+                                placeholder="Email (Optional)"
+                                error={!!error}
+                                helperText={error?.message}
                                 InputProps={{
                                     startAdornment: (
                                         <InputAdornment position="start">
-                                            <PhoneIcon sx={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: 20 }} />
+                                            <EmailIcon sx={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: 20 }} />
                                         </InputAdornment>
                                     )
                                 }}

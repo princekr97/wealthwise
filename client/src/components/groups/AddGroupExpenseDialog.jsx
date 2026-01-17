@@ -548,9 +548,10 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                         {...field}
                                         fullWidth
                                         displayEmpty
+                                        sx={{ color: '#acb1b8ff' }}
                                         value={field.value || ''}
                                     >
-                                        <MenuItem value="" disabled sx={{ fontSize: '0.85rem' }}>Select Type</MenuItem>
+                                        <MenuItem value="" disabled sx={{ fontSize: '0.85rem' }}>Select Category</MenuItem>
                                         {CATEGORIES.map(c => {
                                             const Icon = CATEGORY_ICONS[c] || CategoryIcon;
                                             return (
@@ -579,6 +580,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                     fullWidth
                                     displayEmpty
                                     value={field.value || ''}
+                                    sx={{ color: '#c6cdd6ff' }}
                                 >
                                     <MenuItem value="" disabled sx={{ fontSize: '0.85rem' }}>Select Member</MenuItem>
                                     {members.map(member => {
@@ -716,43 +718,45 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
 
                                         <Box sx={{ width: 110 }}>
                                             {isSelected ? (
-                                                <Controller
-                                                    name={`splits.${index}.amount`}
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <TextField
-                                                            {...field}
-                                                            placeholder="0"
-                                                            type="number"
-                                                            variant="outlined"
-                                                            size="small"
-                                                            disabled={splitType === 'equal'} // Auto-calc in equal mode
-                                                            InputProps={{
-                                                                startAdornment: <Typography sx={{ mr: 0.5, color: splitType === 'equal' ? '#94a3b8' : '#64748b', fontSize: '0.75rem' }}>₹</Typography>
-                                                            }}
-                                                            sx={{
-                                                                '& .MuiOutlinedInput-root': {
-                                                                    borderRadius: '10px',
-                                                                    bgcolor: splitType === 'equal' ? '#f1f5f9' : 'white',
-                                                                    '& fieldset': { borderColor: splitType === 'equal' ? 'transparent' : '#e2e8f0' },
-                                                                    '&:hover fieldset': { borderColor: splitType === 'equal' ? 'transparent' : '#cbd5e0' },
-                                                                    '&.Mui-focused fieldset': { borderColor: splitType === 'equal' ? 'transparent' : '#4f46e5' }
-                                                                },
-                                                                '& .MuiInputBase-input': {
-                                                                    fontSize: '0.8rem',
-                                                                    fontWeight: 700,
-                                                                    textAlign: 'right',
-                                                                    color: '#1e293b',
-                                                                },
-                                                                '& .MuiInputBase-input.Mui-disabled': {
-                                                                    opacity: 1,
-                                                                    color: '#1e293b !important',
-                                                                    WebkitTextFillColor: '#1e293b !important',
-                                                                }
-                                                            }}
-                                                        />
-                                                    )}
-                                                />
+                                                <Box onClick={(e) => e.stopPropagation()}>
+                                                    <Controller
+                                                        name={`splits.${index}.amount`}
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <TextField
+                                                                {...field}
+                                                                placeholder="0"
+                                                                type="number"
+                                                                variant="outlined"
+                                                                size="small"
+                                                                disabled={splitType === 'equal'} // Auto-calc in equal mode
+                                                                InputProps={{
+                                                                    startAdornment: <Typography sx={{ mr: 0.5, color: splitType === 'equal' ? '#111112ff' : '#101011ff', fontSize: '0.85rem' }}>₹</Typography>
+                                                                }}
+                                                                sx={{
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        borderRadius: '10px',
+                                                                        bgcolor: splitType === 'equal' ? '#f1f5f9' : 'white',
+                                                                        '& fieldset': { borderColor: splitType === 'equal' ? 'transparent' : '#e2e8f0' },
+                                                                        '&:hover fieldset': { borderColor: splitType === 'equal' ? 'transparent' : '#cbd5e0' },
+                                                                        '&.Mui-focused fieldset': { borderColor: splitType === 'equal' ? 'transparent' : '#4f46e5' }
+                                                                    },
+                                                                    '& .MuiInputBase-input': {
+                                                                        fontSize: '0.8rem',
+                                                                        fontWeight: 700,
+                                                                        textAlign: 'right',
+                                                                        color: '#1e293b',
+                                                                    },
+                                                                    '& .MuiInputBase-input.Mui-disabled': {
+                                                                        opacity: 1,
+                                                                        color: '#1e293b !important',
+                                                                        WebkitTextFillColor: '#1e293b !important',
+                                                                    }
+                                                                }}
+                                                            />
+                                                        )}
+                                                    />
+                                                </Box>
                                             ) : (
                                                 <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', textAlign: 'right', fontWeight: 500, py: 1, pr: 1.5 }}>
                                                     ₹0

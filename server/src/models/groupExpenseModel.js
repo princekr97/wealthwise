@@ -72,7 +72,22 @@ const groupExpenseSchema = new mongoose.Schema(
                     required: true
                 }
             }
-        ]
+        ],
+        // Soft delete support for audit trail
+        isDeleted: {
+            type: Boolean,
+            default: false,
+            index: true // For quick filtering
+        },
+        deletedAt: {
+            type: Date,
+            default: null
+        },
+        deletedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            default: null
+        }
     },
     {
         timestamps: true
@@ -100,6 +115,23 @@ groupExpenseSchema.index({ 'splits.user': 1 });
 groupExpenseSchema.index({ category: 1 });
 
 // Note: Indexes are applied when the server starts and don't affect real-time data sync
+
+// ============================================
+// SOFT DELETE QUERY MIDDLEWARE
+// ============================================
+// Automatically exclude deleted expenses from all queries
+// This ensures backward compatibility - existing code continues to work unchanged
+
+groupExpenseSchema.pre(/^find/, function(next) {
+    // Only filter if query hasn't explicitly set isDeleted
+    if (this.getQuery().isDeleted === undefined) {
+        this.where({ isDeleted: { $ne: true } });
+    }
+    next();
+});
+
+// To query ALL expenses including deleted: use .find({ isDeleted: { $exists: true } })
+// To query ONLY deleted: use .find({ isDeleted: true })
 
 const GroupExpense = mongoose.model('GroupExpense', groupExpenseSchema);
 

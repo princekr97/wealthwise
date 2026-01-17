@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Typography, useTheme, useMediaQuery, Tooltip as MuiTooltip } from '@mui/material';
 import {
     PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
     BarChart, Bar, XAxis, YAxis, CartesianGrid
@@ -20,7 +20,14 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
 
         if (!currentUser) return { totalGroupSpend: 0, myTotalSpend: 0, myNetBalance: 0 };
 
-        const currentUserId = String(currentUser._id || currentUser);
+        // Helper for safe ID comparison
+        const getSafeId = (obj) => {
+            if (!obj) return '';
+            if (typeof obj === 'object') return String(obj._id || obj.id || '');
+            return String(obj);
+        };
+
+        const currentUserId = getSafeId(currentUser);
 
         expenses.forEach(exp => {
             if (exp.category === 'Settlement') return;
@@ -28,41 +35,32 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
             // Total Spend
             totalGroupSpend += exp.amount;
 
-            // My Spend (Paid By Me) - STRICT CHECK + NAME FALLBACK
-            let payerIdNormalized;
-            let payerName;
+            // My Spend (Paid By Me)
+            const payerId = getSafeId(exp.paidBy);
+            const payerName = exp.paidBy && exp.paidBy.name;
 
-            if (exp.paidBy && typeof exp.paidBy === 'object') {
-                payerIdNormalized = String(exp.paidBy._id || exp.paidBy.id);
-                payerName = exp.paidBy.name;
-            } else {
-                payerIdNormalized = String(exp.paidBy);
-            }
-
-            const isIdMatch = payerIdNormalized === currentUserId && payerIdNormalized !== 'null' && payerIdNormalized !== 'undefined';
+            const isIdMatch = currentUserId && payerId === currentUserId;
             // Only try name match if ID match fails AND we have valid names to compare
-            const isNameMatch = !isIdMatch && payerName && currentUser.name && payerName.trim().toLowerCase() === currentUser.name.trim().toLowerCase();
+            const isNameMatch = !isIdMatch && payerName && currentUser.name &&
+                payerName.trim().toLowerCase() === currentUser.name.trim().toLowerCase();
 
             if (isIdMatch || isNameMatch) {
                 myTotalSpend += exp.amount;
-                myNetBalance += exp.amount;
+                myNetBalance += exp.amount; // + Credit (Paid)
             }
 
             // My consumption (Split)
             if (exp.splits) {
                 exp.splits.forEach(split => {
-                    const splitUserId = String(split.user?._id || split.user);
-                    const splitUserName = split.user?.name || split.userName; // Handle fallback name in split
+                    const splitUserId = getSafeId(split.user);
+                    const splitUserName = split.user?.name || split.userName;
 
-                    const isSplitIdMatch = splitUserId === currentUserId;
-                    const isSplitNameMatch = !isSplitIdMatch && splitUserName && currentUser.name && splitUserName.trim().toLowerCase() === currentUser.name.trim().toLowerCase();
+                    const isSplitIdMatch = currentUserId && splitUserId === currentUserId;
+                    const isSplitNameMatch = !isSplitIdMatch && splitUserName && currentUser.name &&
+                        splitUserName.trim().toLowerCase() === currentUser.name.trim().toLowerCase();
 
                     if (isSplitIdMatch || isSplitNameMatch) {
-                        // Correct logic: if I am in the split, I "consumed" this amount.
-                        // If I paid, it was added above (+Paid).
-                        // Consumed is always subtracted (-Consumed).
-                        // Net = Paid - Consumed.
-                        myNetBalance -= split.amount;
+                        myNetBalance -= split.amount; // - Debit (Consumed)
                     }
                 });
             }
@@ -70,8 +68,6 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
 
         return { totalGroupSpend, myTotalSpend, myNetBalance };
     }, [expenses, currentUser]);
-
-    // 1. Prepare Data: Expenses by Category
     const categoryData = React.useMemo(() => {
         const map = {};
         expenses.forEach(exp => {
@@ -296,18 +292,23 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
                             >
                                 {formatCurrency(Math.abs(stats.myNetBalance))}
                             </Typography>
-                            <Typography
-                                sx={{
-                                    fontSize: '0.65rem',
-                                    fontWeight: 600,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '1px',
-                                    color: '#94A3B8',
-                                    opacity: 0.9
-                                }}
-                            >
-                                YOUR NET BALANCE
-                            </Typography>
+
+                            <MuiTooltip title="Net Balance = (Total you paid) - (Your share of expenses)" arrow>
+                                <Typography
+                                    sx={{
+                                        fontSize: '0.65rem',
+                                        fontWeight: 600,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '1px',
+                                        color: '#94A3B8',
+                                        opacity: 0.9,
+                                        cursor: 'help',
+                                        borderBottom: '1px dotted #94A3B8'
+                                    }}
+                                >
+                                    YOUR NET BALANCE (?)
+                                </Typography>
+                            </MuiTooltip>
                             <Typography
                                 sx={{
                                     fontSize: '0.65rem',

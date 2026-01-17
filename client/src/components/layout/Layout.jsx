@@ -231,8 +231,8 @@ export function Layout({ children }) {
             alignItems: 'center',
             justifyContent: 'space-between',
             borderBottom: `1px solid ${colors.border}`,
-            bgcolor: 'rgba(15, 23, 42, 0.3)', // More transparent header
-            backdropFilter: 'blur(10px)',
+            bgcolor: '#0F172A', // Solid background for best performance
+            // _removed_ backdropFilter for performance
             position: 'sticky',
             top: 0,
             zIndex: 100

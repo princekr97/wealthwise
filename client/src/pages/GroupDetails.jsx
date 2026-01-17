@@ -25,7 +25,8 @@ import {
     MenuItem,
     Accordion,
     AccordionSummary,
-    AccordionDetails
+    AccordionDetails,
+    alpha
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -68,14 +69,19 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 
 import { generateGroupReport, generateGroupCSV } from '../utils/groupReport';
 import { formatCurrency } from '../utils/formatters';
+import { calculateSettlements } from '../utils/settlementCalculator';
+import { SettlementSuggestionsList } from '../components/groups/SettlementSuggestionCard';
 import { toast } from 'sonner';
 import { useAuthStore } from '../store/authStore';
+
+
 
 export default function GroupDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user: authUser } = useAuthStore();
     const [user, setUser] = useState(null);
+
 
     // Get user from auth store or localStorage
     useEffect(() => {
@@ -138,20 +144,41 @@ export default function GroupDetails() {
     };
 
 
-    const handleDownloadReport = () => {
+    const [exporting, setExporting] = useState(false);
+
+    const handleDownloadReport = async () => {
         if (group && expenses) {
-            generateGroupReport(group, expenses, balances);
             setExportAnchorEl(null);
-            toast.success('PDF Report downloaded');
+            setExporting(true);
+            try {
+                // Tiny delay to let UI render the loader
+                await new Promise(resolve => setTimeout(resolve, 100));
+                generateGroupReport(group, expenses, balances);
+                toast.success('PDF Report downloaded');
+            } catch (error) {
+                console.error('Export failed:', error);
+                toast.error('Failed to generate report');
+            } finally {
+                setExporting(false);
+            }
         }
     };
 
 
-    const handleDownloadCSV = () => {
+    const handleDownloadCSV = async () => {
         if (group && expenses) {
-            generateGroupCSV(group, expenses);
             setExportAnchorEl(null);
-            toast.success('CSV Export downloaded');
+            setExporting(true);
+            try {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                generateGroupCSV(group, expenses);
+                toast.success('CSV Export downloaded');
+            } catch (error) {
+                console.error('Export failed:', error);
+                toast.error('Failed to generate CSV');
+            } finally {
+                setExporting(false);
+            }
         }
     };
 
@@ -291,15 +318,18 @@ export default function GroupDetails() {
         // BALANCE CALCULATION WITH SETTLEMENT SUPPORT
         // ====================================
         expenses.forEach(exp => {
-            if (!exp.paidBy) return;
+            // 1. Payer Logic
+            let payerParticipant = exp.paidBy;
+            if (!payerParticipant && exp.paidByName) {
+                payerParticipant = { name: exp.paidByName };
+            }
 
-            const payerId = resolveId(exp.paidBy);
+            const payerId = resolveId(payerParticipant);
             const amount = exp.amount;
 
             // Calculate Balance Impact
             // Rule: Payer gets credit (+), Split users get debit (-)
 
-            // 1. Payer Logic
             // If I PAID, I am Owed money (or reduce my debt).
             // Example: Paid 500. Balance += 500.
             if (payerId) {
@@ -308,11 +338,20 @@ export default function GroupDetails() {
             }
 
             // 2. Split/Receiver Logic
-            // If I AM IN SPLIT, I Owe money (or reduce my credit).
-            // Example: Split 500. Balance -= 500.
             exp.splits.forEach(split => {
-                const userId = resolveId(split.user);
-                if (!userId) return;
+                let splitParticipant = split.user;
+                if (!splitParticipant && split.userName) {
+                    splitParticipant = { name: split.userName };
+                }
+
+                const userId = resolveId(splitParticipant);
+
+                // DEBUG: Log failures
+                if (!userId) {
+                    // console.warn(`Failed to resolve split user:`, split.user || split.userName, 'in expense:', exp.description);
+                    return;
+                }
+
                 if (balanceMap[userId] === undefined) balanceMap[userId] = 0;
                 balanceMap[userId] -= split.amount;
             });
@@ -335,6 +374,13 @@ export default function GroupDetails() {
         const myKey = me ? getMemberId(me) : user._id;
         return balances[myKey] || 0;
     }, [group, user, balances, getMemberId]);
+
+    const getAvatarColor = (name) => {
+        if (!name) return '#666';
+        const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const hue = hash % 360;
+        return `hsl(${hue}, 70%, 50%)`;
+    };
 
     const getCategoryIcon = (category) => {
         if (!category) return <CategoryIcon />;
@@ -441,8 +487,76 @@ export default function GroupDetails() {
                     }}
                 >
                     <ArrowBackIcon sx={{ fontSize: 18 }} /> {/* 20 -> 18 */}
-                    <Typography sx={{ fontWeight: 500, fontSize: '0.9rem' }}>Back to Groups</Typography>
                 </Box>
+
+                {/* Top Action Icons */}
+                {/* Top Action Icons */}
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                    <Box
+                        title="Add Expense"
+                        onClick={() => setIsExpenseDialogOpen(true)}
+                        className="glass-card-clean"
+                        sx={{
+                            width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', borderRadius: '12px',
+                            background: 'rgba(20, 184, 166, 0.1)', border: '1px solid rgba(255, 255, 255, 0.1)',
+                            color: '#14B8A6', transition: 'all 0.2s',
+                            '&:hover': { background: 'rgba(20, 184, 166, 0.2)' }
+                        }}
+                    >
+                        <AddIcon />
+                    </Box>
+
+                    <Box
+                        title="Export Report"
+                        onClick={(e) => !exporting && setExportAnchorEl(e.currentTarget)}
+                        className="glass-card-clean"
+                        sx={{
+                            width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: exporting ? 'wait' : 'pointer', borderRadius: '12px',
+                            background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)',
+                            color: 'text.primary', transition: 'all 0.2s',
+                            '&:hover': { background: 'rgba(255, 255, 255, 0.1)' }
+                        }}
+                    >
+                        {exporting ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
+                    </Box>
+
+                    <Box
+                        title="Edit Group"
+                        onClick={() => setIsEditDialogOpen(true)}
+                        className="glass-card-clean"
+                        sx={{
+                            width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', borderRadius: '12px',
+                            background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)',
+                            color: 'text.primary', transition: 'all 0.2s',
+                            '&:hover': { background: 'rgba(255, 255, 255, 0.1)' }
+                        }}
+                    >
+                        <EditIcon />
+                    </Box>
+
+                    <Box
+                        title="Delete Group"
+                        onClick={() => setConfirmDialog({
+                            open: true,
+                            title: 'Delete Group',
+                            message: 'Are you sure you want to delete this group? This action cannot be undone.',
+                            onConfirm: handleDeleteGroup
+                        })}
+                        className="glass-card-clean"
+                        sx={{
+                            width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', borderRadius: '12px',
+                            background: 'rgba(255, 50, 50, 0.1)', border: '1px solid rgba(255, 255, 255, 0.1)',
+                            color: '#FF6B6B', transition: 'all 0.2s',
+                            '&:hover': { background: 'rgba(255, 50, 50, 0.2)' }
+                        }}
+                    >
+                        <DeleteIcon />
+                    </Box>
+                </Stack>
             </Box>
 
             {/* 2. Group Summary Card - Ultra Clean Glass - Reduced Sizes */}
@@ -525,9 +639,31 @@ export default function GroupDetails() {
                                         if (isMe) return null;
 
                                         return (
-                                            <Box key={memberId} sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#CBD5E1' }}> {/* Reduced font */}
-                                                <Typography sx={{ fontSize: '0.85rem' }}>{name} {bal >= 0 ? 'owes you' : 'you owe'}</Typography>
-                                                <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: bal >= 0 ? '#34D399' : '#F87171' }}>
+                                            <Box key={memberId} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', color: '#CBD5E1' }}> {/* Reduced font */}
+                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                    <Box
+                                                        sx={{
+                                                            width: 24, // Slightly larger to show background
+                                                            height: 24,
+                                                            borderRadius: '50%',
+                                                            marginRight: 1,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            background: `linear-gradient(135deg, ${getAvatarColor(name)}, ${alpha(getAvatarColor(name), 0.7)})`,
+                                                            overflow: 'hidden',
+                                                            boxShadow: `0 2px 8px ${alpha(getAvatarColor(name), 0.25)}`
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={`https://api.dicebear.com/7.x/notionists/svg?seed=${name}`}
+                                                            alt={name}
+                                                            style={{ width: '100%', height: '100%' }}
+                                                        />
+                                                    </Box>
+                                                    <Typography sx={{ fontSize: '0.85rem' }}>{name} {bal >= 0 ? 'you owe' : 'owes you'}</Typography>
+                                                </Box>
+                                                <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: bal >= 0 ? '#F87171' : '#34D399' }}>
                                                     {formatCurrency(Math.abs(bal))}
                                                 </Typography>
                                             </Box>
@@ -539,73 +675,7 @@ export default function GroupDetails() {
                 </Box>
             </Box>
 
-            {/* 3. Action Buttons Row - Reduced Sizes */}
-            <Stack direction="row" spacing={1.75} justifyContent="center" sx={{ mb: 3.5 }}> {/* Reduced spacing/mb */}
-                {/* Primary Add Button */}
-                <Box
-                    onClick={() => setIsExpenseDialogOpen(true)}
-                    sx={{
-                        width: 54, // 64 -> 54
-                        height: 54,
-                        borderRadius: '16px', // Reduced
-                        background: 'linear-gradient(135deg, #14B8A6 0%, #0D9488 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        boxShadow: '0 8px 20px rgba(20, 184, 166, 0.4)',
-                        transition: 'transform 0.2s',
-                        '&:active': { transform: 'scale(0.95)' },
-                        '&:hover': { transform: 'scale(1.05)' }
-                    }}
-                >
-                    <AddIcon sx={{ color: 'white', fontSize: 28 }} /> {/* 32 -> 28 */}
-                </Box>
 
-                {/* Secondary Actions */}
-                {[
-                    { icon: <DownloadIcon sx={{ fontSize: '1.25rem' }} />, onClick: (e) => setExportAnchorEl(e.currentTarget), color: 'white' },
-                    { icon: <EditIcon sx={{ fontSize: '1.25rem' }} />, onClick: () => setIsEditDialogOpen(true), color: 'white' },
-                    { icon: <DeleteIcon sx={{ fontSize: '1.25rem' }} />, onClick: () => setIsDeleteDialogOpen(true), color: '#F87171' }
-                ].map((action, idx) => (
-                    <Box
-                        key={idx}
-                        onClick={action.onClick}
-                        className="glass-card-clean"
-                        sx={{
-                            width: 48, // 56 -> 48
-                            height: 48,
-                            borderRadius: '14px', // Reduced
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: action.color,
-                            transition: 'background 0.2s',
-                            '&:active': { background: 'rgba(255,255,255,0.15)' }
-                        }}
-                    >
-                        {action.icon}
-                    </Box>
-                ))}
-            </Stack>
-
-            {/* Popover Menu for Downloads */}
-            <Menu
-                anchorEl={exportAnchorEl}
-                open={Boolean(exportAnchorEl)}
-                onClose={() => setExportAnchorEl(null)}
-                PaperProps={{
-                    sx: {
-                        bgcolor: '#1e293b',
-                        color: 'white',
-                        border: '1px solid rgba(255,255,255,0.1)'
-                    }
-                }}
-            >
-                <MenuItem onClick={handleDownloadReport}>Download PDF</MenuItem>
-                <MenuItem onClick={handleDownloadCSV}>Export CSV</MenuItem>
-            </Menu>
 
             {/* 4. Tabs Navigation - Reduced Sizes */}
             <Box sx={{ borderBottom: '2px solid rgba(255,255,255,0.1)', mb: 3, px: 2 }}> {/* mb: 4 -> 3 */}
@@ -732,94 +802,78 @@ export default function GroupDetails() {
             {/* TAB 2: BALANCES */}
             {tabValue === 2 && (
                 <Box sx={{ px: { xs: 0, sm: 2 }, pb: 3 }}>
-                    <Stack spacing={1.5}> {/* 2 -> 1.5 */}
-                        {Object.entries(balances)
-                            .filter(([_, bal]) => Math.abs(bal) > 0.1)
-                            .map(([memberId, bal]) => {
-                                const member = group.members.find(m => {
-                                    const mId = (m.userId && typeof m.userId === 'object' && m.userId._id)
-                                        ? String(m.userId._id) : String(m.userId || m.email || m.name);
-                                    return mId === memberId;
-                                });
-                                const name = member?.name || 'Unknown';
-                                const isMe = member && (
-                                    (member.userId && String(member.userId._id || member.userId) === String(user?._id)) ||
-                                    (member.email && user?.email && member.email.toLowerCase() === user.email.toLowerCase())
-                                );
+                    {/* Settlement Suggestions Section */}
+                    {(() => {
+                        console.log('Balances being passed to calculateSettlements:', balances);
+                        const settlements = calculateSettlements(balances, group.members);
+                        console.log('Calculated settlements:', settlements);
 
-                                return (
-                                    <Box
-                                        key={memberId}
-                                        className="glass-card-clean"
-                                        sx={{
-                                            p: 2, // 2.5 -> 2
-                                            borderRadius: '16px', // 20 -> 16
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 1.5
-                                        }}
-                                    >
-                                        <Avatar
-                                            src={member?.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${name}`}
-                                            alt={name}
-                                            sx={{
-                                                width: 42, height: 42, // 50 -> 42
-                                                border: '2px solid rgba(255,255,255,0.2)',
-                                                bgcolor: isMe ? '#14B8A6' : '#8B5CF6' // Teal or Purple 
-                                            }}
-                                        >
-                                            {name[0]}
-                                        </Avatar>
-
-                                        <Box sx={{ flex: 1 }}>
-                                            <Typography sx={{ fontWeight: 600, color: 'white', fontSize: '0.9rem' }}> {/* 1 -> 0.9 */}
-                                                {isMe ? 'You' : name}
-                                            </Typography>
-                                            <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8' }}> {/* 0.8 -> 0.75 */}
-                                                {bal >= 0 ? 'owes you' : 'you owe'}
-                                            </Typography>
-                                        </Box>
-
-                                        <Box sx={{ textAlign: 'right' }}>
-                                            <Typography sx={{
-                                                fontWeight: 700,
-                                                fontSize: '1.1rem', // 1.25 -> 1.1
-                                                color: bal >= 0 ? '#34D399' : '#F87171', // Emerald or Red
-                                                mb: 0.25
-                                            }}>
-                                                {formatCurrency(Math.abs(bal))}
-                                            </Typography>
-                                            {/* Settle Button - Only if balance is significant */}
-                                            {Math.abs(bal) > 1 && (
-                                                <Button
-                                                    size="small"
-                                                    onClick={() => setIsSettleDialogOpen(true)}
-                                                    sx={{
-                                                        background: '#14B8A6',
-                                                        color: 'white',
-                                                        fontSize: '0.7rem',
-                                                        textTransform: 'none',
-                                                        borderRadius: '8px',
-                                                        px: 1.5,
-                                                        py: 0.5,
-                                                        minWidth: 'auto',
-                                                        '&:hover': { background: '#0D9488' }
-                                                    }}
-                                                >
-                                                    Settle Up
-                                                </Button>
-                                            )}
-                                        </Box>
-                                    </Box>
-                                );
-                            })}
-
-                        {Object.keys(balances).length === 0 && (
-                            <Box sx={{ textAlign: 'center', py: 3, color: '#94A3B8' }}>
-                                <Typography sx={{ fontSize: '0.9rem' }}>Everyone is settled up! 🎉</Typography>
-                            </Box>
-                        )}
-                    </Stack>
+                        if (settlements.length > 0) {
+                            // Show only settlement suggestions (cleaner, more actionable)
+                            return (
+                                <SettlementSuggestionsList
+                                    settlements={settlements}
+                                    onSettle={async (settlement) => {
+                                        try {
+                                            console.log('Before settlement:', { balances, settlement });
+                                            await groupService.settleDebt(id, {
+                                                payerId: settlement.from.userId,
+                                                receiverId: settlement.to.userId,
+                                                amount: settlement.amount,
+                                                payerName: settlement.from.name,
+                                                receiverName: settlement.to.name
+                                            });
+                                            toast.success(`Settlement recorded: ${settlement.from.name} → ${settlement.to.name}`);
+                                            await fetchGroupDetails();
+                                            console.log('After settlement - new group:', group);
+                                            console.log('After settlement - new balances:', balances);
+                                        } catch (error) {
+                                            console.error('Settlement error:', error);
+                                            toast.error('Failed to record settlement');
+                                        }
+                                    }}
+                                    onSettleAll={async () => {
+                                        try {
+                                            for (const settlement of settlements) {
+                                                await groupService.settleDebt(id, {
+                                                    payerId: settlement.from.userId,
+                                                    receiverId: settlement.to.userId,
+                                                    amount: settlement.amount,
+                                                    payerName: settlement.from.name,
+                                                    receiverName: settlement.to.name
+                                                });
+                                            }
+                                            toast.success(`${settlements.length} settlements recorded!`);
+                                            await fetchGroupDetails();
+                                        } catch (error) {
+                                            toast.error('Failed to record all settlements');
+                                        }
+                                    }}
+                                />
+                            );
+                        } else {
+                            // Show "All Settled" message when no settlements needed
+                            return (
+                                <Box
+                                    sx={{
+                                        p: { xs: 3, sm: 4 },
+                                        textAlign: 'center',
+                                        background: 'rgba(255, 255, 255, 0.02)',
+                                        borderRadius: 3,
+                                        border: '1px dashed rgba(255, 255, 255, 0.1)'
+                                    }}
+                                >
+                                    <Typography variant="h2" sx={{ fontSize: '3rem', mb: 2 }}>🎉</Typography>
+                                    <Typography variant="h6" sx={{ color: 'text.primary', mb: 1, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                        All Settled Up!
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: { xs: '0.85rem', sm: '0.875rem' } }}>
+                                        No outstanding balances in this group.
+                                    </Typography>
+                                </Box>
+                            );
+                        }
+                    })()}
                 </Box>
             )}
 
@@ -871,6 +925,23 @@ export default function GroupDetails() {
                 }}
                 group={group}
             />
+
+            {/* Popover Menu for Downloads */}
+            <Menu
+                anchorEl={exportAnchorEl}
+                open={Boolean(exportAnchorEl)}
+                onClose={() => setExportAnchorEl(null)}
+                PaperProps={{
+                    sx: {
+                        bgcolor: '#1e293b',
+                        color: 'white',
+                        border: '1px solid rgba(255,255,255,0.1)'
+                    }
+                }}
+            >
+                <MenuItem onClick={handleDownloadReport}>Download PDF</MenuItem>
+                <MenuItem onClick={handleDownloadCSV}>Export CSV</MenuItem>
+            </Menu>
 
             <ConfirmDialog
                 open={isDeleteDialogOpen}
