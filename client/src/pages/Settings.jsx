@@ -34,11 +34,14 @@ import PageContainer from '../components/layout/PageContainer';
 import PageHeader from '../components/layout/PageHeader';
 
 import { toast } from 'sonner';
+import { useThemeContext } from '../context/ThemeContext';
+import { gradients, gradientCategories, getGradientsByCategory } from '../theme/gradients';
 
 export default function Settings() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { user, logout, deleteAccount } = useAuthStore();
+  const { currentGradient, setGradient } = useThemeContext();
   const [activeTab, setActiveTab] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmType, setConfirmType] = useState('logout'); // 'logout' or 'delete'
@@ -97,14 +100,14 @@ export default function Settings() {
             },
           }}
         >
+          <Tab icon={<PaletteIcon />} label="Appearance" iconPosition="start" />
           <Tab icon={<PersonIcon />} label="Profile" iconPosition="start" />
           <Tab icon={<NotificationsIcon />} label="Notifications" iconPosition="start" />
-          <Tab icon={<PaletteIcon />} label="Appearance" iconPosition="start" />
         </Tabs>
       </Card>
 
       {/* Profile Tab */}
-      {activeTab === 0 && (
+      {activeTab === 1 && (
         <Stack spacing={3}>
           <Card>
             <CardContent>
@@ -173,7 +176,7 @@ export default function Settings() {
       )}
 
       {/* Notifications Tab */}
-      {activeTab === 1 && (
+      {activeTab === 2 && (
         <Card>
           <CardContent>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
@@ -207,24 +210,107 @@ export default function Settings() {
       )}
 
       {/* Appearance Tab */}
-      {activeTab === 2 && (
+      {activeTab === 0 && (
         <Card>
           <CardContent>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
-              Theme
+              Background Theme
             </Typography>
 
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr 1fr 1fr', sm: 'repeat(3, 120px)' },
-                gap: 2,
-              }}
-            >
-              <ThemeOption icon="☀️" label="Light" selected={false} />
-              <ThemeOption icon="🌙" label="Dark" selected={true} />
-              <ThemeOption icon="⚙️" label="Auto" selected={false} />
-            </Box>
+            <Stack spacing={4}>
+              {Object.keys(gradientCategories).map((category) => {
+                const categoryGradients = getGradientsByCategory(category);
+                if (categoryGradients.length === 0) return null;
+
+                return (
+                  <Box key={category}>
+                    <Typography
+                      variant="subtitle2"
+                      color="textSecondary"
+                      sx={{ mb: 1.5, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}
+                    >
+                      {gradientCategories[category]}
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' },
+                        gap: 2,
+                      }}
+                    >
+                      {categoryGradients.map(({ key, name, gradient, textColor }) => (
+                        <Box
+                          key={key}
+                          onClick={() => {
+                            setGradient(key);
+                            toast.success(`Theme updated to ${name}`);
+                          }}
+                          sx={{
+                            position: 'relative',
+                            aspectRatio: '16/9',
+                            borderRadius: 2,
+                            background: gradient,
+                            cursor: 'pointer',
+                            overflow: 'hidden',
+                            border: '2px solid',
+                            borderColor: currentGradient === key ? '#10B981' : 'transparent',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              transform: 'scale(1.02)',
+                              boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+                            },
+                          }}
+                        >
+                          {currentGradient === key && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 8,
+                                right: 8,
+                                width: 24,
+                                height: 24,
+                                borderRadius: '50%',
+                                bgcolor: '#10B981',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'white',
+                                fontSize: '0.875rem',
+                              }}
+                            >
+                              ✓
+                            </Box>
+                          )}
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              p: 1.5,
+                              background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: 'white',
+                                fontWeight: 600,
+                                display: 'block',
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              {name}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Stack>
           </CardContent>
         </Card>
       )}

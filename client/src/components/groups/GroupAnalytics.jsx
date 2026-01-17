@@ -117,14 +117,14 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
 
     return (
         <Box sx={{ mt: 1 }}>
-            {/* Premium Metric Cards - Redesigned */}
+            {/* Premium Metric Cards - Redesigned & Compact */}
             <Box
                 sx={{
                     display: 'grid',
                     gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
                     gridTemplateRows: 'auto auto',
-                    gap: { xs: 2, sm: 2.5 },  // 16-20px gaps
-                    mb: 4
+                    gap: { xs: 1.5, sm: 2 },  // Reduced from 2/2.5
+                    mb: 3 // Reduced from 4
                 }}
             >
                 {/* Card 1 - Total Group Spending */}
@@ -136,8 +136,8 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
                         backdropFilter: 'blur(12px)',
                         WebkitBackdropFilter: 'blur(12px)',
                         border: '1px solid rgba(59, 130, 246, 0.2)',
-                        borderRadius: '20px',
-                        padding: { xs: 3, sm: 4 },
+                        borderRadius: '16px', // Reduced from 20
+                        padding: { xs: 2.5, sm: 3 }, // Reduced from 3/4
                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                         position: 'relative',
                         overflow: 'hidden',
@@ -156,22 +156,22 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
                         }
                     }}
                 >
-                    <Box sx={{ fontSize: '2.5rem', mb: 1.5, lineHeight: 1 }}>💰</Box>
+                    <Box sx={{ fontSize: '2rem', mb: 1, lineHeight: 1 }}>💰</Box> {/* Reduced icon/mb */}
                     <Typography
                         sx={{
-                            fontSize: { xs: '2rem', sm: '2.25rem' },  // 32-36pt
+                            fontSize: { xs: '1.5rem', sm: '1.75rem' },  // Reduced from 2/2.25
                             fontWeight: 700,
                             color: '#3B82F6',
                             letterSpacing: '-0.02em',
                             lineHeight: 1.1,
-                            mb: 0.5
+                            mb: 0.4
                         }}
                     >
                         {formatCurrency(stats.totalGroupSpend)}
                     </Typography>
                     <Typography
                         sx={{
-                            fontSize: '0.75rem',  // 12pt
+                            fontSize: '0.65rem',  // Reduced from 0.75
                             fontWeight: 600,
                             textTransform: 'uppercase',
                             letterSpacing: '1px',
@@ -192,8 +192,8 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
                         backdropFilter: 'blur(12px)',
                         WebkitBackdropFilter: 'blur(12px)',
                         border: '1px solid rgba(20, 184, 166, 0.2)',
-                        borderRadius: '20px',
-                        padding: { xs: 3, sm: 4 },
+                        borderRadius: '16px',
+                        padding: { xs: 2.5, sm: 3 },
                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                         position: 'relative',
                         overflow: 'hidden',
@@ -212,22 +212,22 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
                         }
                     }}
                 >
-                    <Box sx={{ fontSize: '2.5rem', mb: 1.5, lineHeight: 1 }}>💸</Box>
+                    <Box sx={{ fontSize: '2rem', mb: 1, lineHeight: 1 }}>💸</Box>
                     <Typography
                         sx={{
-                            fontSize: { xs: '2rem', sm: '2.25rem' },  // 32-36pt
+                            fontSize: { xs: '1.5rem', sm: '1.75rem' },
                             fontWeight: 700,
                             color: '#10B981',
                             letterSpacing: '-0.02em',
                             lineHeight: 1.1,
-                            mb: 0.5
+                            mb: 0.4
                         }}
                     >
                         {formatCurrency(stats.myTotalSpend)}
                     </Typography>
                     <Typography
                         sx={{
-                            fontSize: '0.75rem',  // 12pt
+                            fontSize: '0.65rem',
                             fontWeight: 600,
                             textTransform: 'uppercase',
                             letterSpacing: '1px',
@@ -250,8 +250,8 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
                         backdropFilter: 'blur(8px)',
                         WebkitBackdropFilter: 'blur(8px)',
                         border: `1px solid ${stats.myNetBalance >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 107, 107, 0.2)'}`,
-                        borderRadius: '20px',
-                        padding: { xs: 3, sm: 4 },
+                        borderRadius: '16px',
+                        padding: { xs: 2.5, sm: 3 },
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -280,25 +280,25 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
                     }}
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box sx={{ fontSize: '2.5rem', lineHeight: 1 }}>
+                        <Box sx={{ fontSize: '2rem', lineHeight: 1 }}>
                             {stats.myNetBalance >= 0 ? '📈' : '📉'}
                         </Box>
                         <Box>
                             <Typography
                                 sx={{
-                                    fontSize: { xs: '1.75rem', sm: '2rem' },  // 28-32pt
+                                    fontSize: { xs: '1.5rem', sm: '1.75rem' },
                                     fontWeight: 700,
                                     color: stats.myNetBalance >= 0 ? '#10B981' : '#FF6B6B',
                                     letterSpacing: '-0.02em',
                                     lineHeight: 1.1,
-                                    mb: 0.5
+                                    mb: 0.4
                                 }}
                             >
                                 {formatCurrency(Math.abs(stats.myNetBalance))}
                             </Typography>
                             <Typography
                                 sx={{
-                                    fontSize: '0.75rem',  // 12pt
+                                    fontSize: '0.65rem',
                                     fontWeight: 600,
                                     textTransform: 'uppercase',
                                     letterSpacing: '1px',
@@ -310,10 +310,10 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
                             </Typography>
                             <Typography
                                 sx={{
-                                    fontSize: '0.7rem',
+                                    fontSize: '0.65rem',
                                     color: stats.myNetBalance >= 0 ? '#10B981' : '#FF6B6B',
                                     fontWeight: 500,
-                                    mt: 0.5
+                                    mt: 0.4
                                 }}
                             >
                                 {stats.myNetBalance >= 0 ? 'You are owed' : 'You owe'}
@@ -324,7 +324,7 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
                     {stats.myNetBalance >= 0 && Math.abs(stats.myNetBalance) > 0.1 && (
                         <Box
                             sx={{
-                                fontSize: '1.5rem',
+                                fontSize: '1.25rem',
                                 animation: 'pulse 2s ease-in-out infinite'
                             }}
                         >
@@ -355,8 +355,8 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
                                 cx="50%"
                                 cy="50%"
                                 labelLine={false}
-                                innerRadius={isMobile ? 40 : 60}
-                                outerRadius={isMobile ? 70 : 90}
+                                innerRadius={isMobile ? 35 : 55} // Reduced
+                                outerRadius={isMobile ? 65 : 85} // Reduced
                                 paddingAngle={2}
                                 fill="#8884d8"
                                 dataKey="value"

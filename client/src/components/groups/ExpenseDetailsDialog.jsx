@@ -19,13 +19,25 @@ import {
     Restaurant as FoodIcon,
     Flight as TravelIcon,
     Home as HomeIcon,
-    LocalGroceryStore as UtilitiesIcon,
-    TheaterComedy as EntertainmentIcon,
-    Favorite as HealthIcon,
-    AttachMoney as MoneyIcon,
+    Commute as TransportIcon,
+    Bolt as UtilitiesIcon,
+    SportsEsports as EntertainmentIcon,
     Receipt as BillIcon,
-    KeyboardArrowDown as ArrowDownIcon,
-    KeyboardArrowUp as ArrowUpIcon
+    AttachMoney as MoneyIcon,
+    Category as CategoryIcon,
+    ShoppingBag as ShoppingIcon,
+    LocalHospital as HealthcareIcon,
+    School as EducationIcon,
+    Spa as PersonalCareIcon,
+    ShoppingCart as GroceriesIcon,
+    Shield as InsuranceIcon,
+    TrendingUp as InvestmentsIcon,
+    CardGiftcard as GiftsIcon,
+    Savings as SavingsIcon,
+    Hotel as StaysIcon,
+    LocalCafe as DrinksIcon,
+    LocalGasStation as FuelIcon,
+    Hotel as HotelIcon
 } from '@mui/icons-material';
 
 // Transition for the dialog
@@ -34,15 +46,83 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 });
 
 const getCategoryIcon = (category) => {
-    switch (category) {
-        case 'Food and Drink': return <FoodIcon />;
-        case 'Transportation': return <TravelIcon />;
-        case 'Home': return <HomeIcon />;
-        case 'Utilities': return <UtilitiesIcon />;
-        case 'Entertainment': return <EntertainmentIcon />;
-        case 'Life': return <HealthIcon />;
-        case 'Settlement': return <MoneyIcon />;
-        default: return <BillIcon />;
+    if (!category) return <CategoryIcon />;
+    const normalized = category.toLowerCase().trim();
+
+    // Exact matches (lowercase)
+    switch (normalized) {
+        case 'food':
+        case 'food & dining':
+        case 'food and drink':
+        case 'drinks':
+        case 'dining':
+            return <FoodIcon />;
+
+        case 'groceries':
+            return <GroceriesIcon />;
+
+        case 'travel':
+        case 'flight':
+            return <TravelIcon />;
+
+        case 'stays':
+        case 'hotel':
+            return <HotelIcon />;
+
+        case 'bills':
+        case 'utilities':
+        case 'subscription':
+        case 'bill':
+            return <BillIcon />;
+
+        case 'shopping':
+            return <ShoppingIcon />;
+
+        case 'gifts':
+            return <GiftsIcon />;
+
+        case 'fuel':
+        case 'transportation':
+        case 'transport':
+        case 'commute':
+            return <TransportIcon />;
+
+        case 'health':
+        case 'healthcare':
+        case 'life':
+        case 'medical':
+            return <HealthcareIcon />;
+
+        case 'entertainment':
+        case 'movies':
+            return <EntertainmentIcon />;
+
+        case 'education':
+            return <EducationIcon />;
+
+        case 'personal care':
+            return <PersonalCareIcon />;
+
+        case 'rent':
+        case 'home':
+        case 'housing':
+            return <HomeIcon />;
+
+        case 'insurance':
+            return <InsuranceIcon />;
+
+        case 'savings':
+        case 'investment':
+        case 'investments':
+            return <InvestmentsIcon />;
+
+        case 'settlement':
+        case 'general':
+        case 'money':
+            return <MoneyIcon />;
+
+        default:
+            return <CategoryIcon />;
     }
 };
 
@@ -110,8 +190,9 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
             PaperProps={{
                 elevation: 0,
                 sx: {
-                    borderRadius: '28px',
-                    background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)', // Match Theme Dialog
+                    borderRadius: '24px', // Slightly smaller radius
+                    background: 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), var(--active-gradient)',
+                    backgroundAttachment: 'fixed',
                     m: 2,
                     p: 0,
                     position: 'relative',
@@ -121,15 +202,15 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
                 }
             }}
         >
-            <DialogContent sx={{ p: '24px !important', color: 'white' }}>
+            <DialogContent sx={{ p: '20px !important', color: 'white' }}> {/* Reduced padding from 24px */}
                 {/* Close Icon */}
                 <IconButton
                     onClick={onClose}
                     size="small"
                     sx={{
                         position: 'absolute',
-                        top: 20,
-                        right: 20,
+                        top: 16,
+                        right: 16,
                         zIndex: 10,
                         color: 'rgba(255,255,255,0.4)',
                         '&:hover': { bgcolor: 'rgba(255,255,255,0.05)', color: 'white' }
@@ -139,89 +220,89 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
                 </IconButton>
 
                 {/* Top Section */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3.5, mt: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2.5, mt: 1 }}> {/* Reduced mb from 3.5 */}
                     <Avatar
                         sx={{
                             bgcolor: 'rgba(255, 255, 255, 0.05)',
                             color: '#10B981',
-                            width: 72,
-                            height: 72,
-                            borderRadius: '24px',
-                            mb: 2.5,
-                            fontSize: '2.5rem',
+                            width: 64, // Reduced from 72
+                            height: 64, // Reduced from 72
+                            borderRadius: '20px',
+                            mb: 2, // Reduced from 2.5
+                            fontSize: '2rem', // Reduced from 2.5rem
                             border: '1px solid rgba(255, 255, 255, 0.1)',
-                            boxShadow: '0 12px 24px rgba(0, 0, 0, 0.2)'
+                            boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)'
                         }}
                     >
                         {getCategoryIcon(expense.category)}
                     </Avatar>
 
-                    <Typography variant="h5" sx={{ fontWeight: 800, color: 'white', mb: 0.5, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: 'white', mb: 0.25, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1.2px', fontSize: '1.1rem' }}> {/* Adjusted font size and spacing */}
                         {expense.description}
                     </Typography>
 
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', fontWeight: 500 }}>
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}> {/* Reduced mb from 3 */}
+                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: 500 }}>
                             {formattedDate}
                         </Typography>
-                        <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.2)' }} />
-                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', fontWeight: 500 }}>
+                        <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.2)' }} />
+                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: 500 }}>
                             Added by <span style={{ fontWeight: 700, color: 'white' }}>{payerName}</span>
                         </Typography>
                     </Stack>
 
-                    <Typography variant="h2" sx={{ fontWeight: 900, color: 'white', fontSize: '3.2rem', mb: 3.5 }}>
+                    <Typography variant="h3" sx={{ fontWeight: 900, color: 'white', fontSize: '2.5rem', mb: 2.5 }}> {/* Reduced font size from 3.2rem and mb from 3.5 */}
                         ₹{expense.amount}
                     </Typography>
 
-                    <Stack direction="row" spacing={2}>
+                    <Stack direction="row" spacing={1.5}> {/* Reduced spacing from 2 */}
                         <IconButton
                             onClick={() => {
                                 onEdit && onEdit(expense);
                                 onClose();
                             }}
-                            sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#3b82f6', width: 48, height: 48, borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+                            sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#3b82f6', width: 42, height: 42, borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
                         >
-                            <EditIcon sx={{ fontSize: '1.4rem' }} />
+                            <EditIcon sx={{ fontSize: '1.2rem' }} /> {/* Reduced icon size */}
                         </IconButton>
                         <IconButton
                             onClick={() => onDelete && onDelete(expense._id)}
-                            sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#ef4444', width: 48, height: 48, borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+                            sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#ef4444', width: 42, height: 42, borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
                         >
-                            <DeleteIcon sx={{ fontSize: '1.4rem' }} />
+                            <DeleteIcon sx={{ fontSize: '1.2rem' }} />
                         </IconButton>
                         <IconButton
-                            sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#10B981', width: 48, height: 48, borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+                            sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#10B981', width: 42, height: 42, borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
                         >
-                            <ShareIcon sx={{ fontSize: '1.4rem' }} />
+                            <ShareIcon sx={{ fontSize: '1.2rem' }} />
                         </IconButton>
                     </Stack>
                 </Box>
 
-                <Divider sx={{ borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.1)', mb: 3.5 }} />
+                <Divider sx={{ borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.1)', mb: 2.5 }} /> {/* Reduced mb from 3.5 */}
 
                 {/* Paid By */}
-                <Box sx={{ mb: 4 }}>
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '2px', mb: 2 }}>
+                <Box sx={{ mb: 3 }}> {/* Reduced mb from 4 */}
+                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1.5px', mb: 1.5 }}>
                         Paid By
                     </Typography>
                     <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{
-                        p: 2,
-                        borderRadius: '20px',
+                        p: 1.5, // Reduced padding from 2
+                        borderRadius: '16px', // Reduced radius
                         bgcolor: 'rgba(255,255,255,0.03)',
                         border: '1px solid rgba(255,255,255,0.05)',
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                     }}>
-                        <Stack direction="row" alignItems="center" spacing={2}>
+                        <Stack direction="row" alignItems="center" spacing={1.5}>
                             <Avatar
                                 src={payerAvatar}
-                                sx={{ width: 44, height: 44, border: '2px solid rgba(255,255,255,0.1)' }}
+                                sx={{ width: 36, height: 36, border: '2px solid rgba(255,255,255,0.1)' }} // Reduced size from 44
                             />
-                            <Typography sx={{ fontSize: '1.05rem', fontWeight: 700, color: 'white' }}>
+                            <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: 'white' }}> {/* Reduced font size */}
                                 {payerName}
                             </Typography>
                         </Stack>
-                        <Typography sx={{ fontSize: '1.2rem', fontWeight: 800, color: 'white' }}>
+                        <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: 'white' }}> {/* Reduced font size */}
                             ₹{expense.amount}
                         </Typography>
                     </Stack>
@@ -229,10 +310,10 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
 
                 {/* Split Among */}
                 <Box>
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '2px', mb: 2 }}>
+                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1.5px', mb: 1.5 }}>
                         Split Among
                     </Typography>
-                    <Stack spacing={1.5}>
+                    <Stack spacing={1}> {/* Reduced spacing from 1.5 */}
                         {splits.map((split, index) => {
                             let rawSplitName = split.name ||
                                 split.userName ||
@@ -269,22 +350,22 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
 
                             return (
                                 <Stack key={index} direction="row" alignItems="center" justifyContent="space-between" sx={{
-                                    p: 1.5,
-                                    borderRadius: '18px',
+                                    p: 1.25, // Reduced padding from 1.5
+                                    borderRadius: '14px', // Reduced radius
                                     bgcolor: 'rgba(255,255,255,0.02)',
                                     border: '1px solid rgba(255,255,255,0.03)',
                                     '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' }
                                 }}>
-                                    <Stack direction="row" alignItems="center" spacing={2}>
+                                    <Stack direction="row" alignItems="center" spacing={1.5}>
                                         <Avatar
                                             src={splitAvatar}
-                                            sx={{ width: 40, height: 40, opacity: 0.9 }}
+                                            sx={{ width: 32, height: 32, opacity: 0.9 }} // Reduced size from 40
                                         />
-                                        <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
+                                        <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}> {/* Reduced font size */}
                                             {splitName}
                                         </Typography>
                                     </Stack>
-                                    <Typography sx={{ fontSize: '1.05rem', fontWeight: 700, color: 'white' }}>
+                                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: 'white' }}> {/* Reduced font size */}
                                         ₹{split.amount}
                                     </Typography>
                                 </Stack>

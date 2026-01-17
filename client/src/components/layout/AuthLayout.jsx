@@ -24,12 +24,7 @@ export default function AuthLayout({ children }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                // Gradient background matching app theme
-                background: `
-          radial-gradient(circle at top left, rgba(59, 130, 246, 0.3), transparent 50%),
-          radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.25), transparent 50%),
-          linear-gradient(180deg, #020617 0%, #0F172A 100%)
-        `,
+                backgroundColor: 'transparent',
                 // Mobile-first padding
                 px: { xs: 2, sm: 3, md: 4 },
                 py: { xs: 4, sm: 6, md: 8 },

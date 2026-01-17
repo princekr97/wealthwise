@@ -14,14 +14,18 @@ import { muiTheme } from './theme/muiTheme.js';
 import GlobalStyles from './theme/GlobalStyles.jsx';
 import './styles/index.css';
 
+import { ThemeContextProvider } from './context/ThemeContext';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <ThemeProvider theme={muiTheme}>
-      <CssBaseline />
-      <GlobalStyles />
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </ThemeProvider>
+    <ThemeContextProvider>
+      <ThemeProvider theme={muiTheme}>
+        <CssBaseline />
+        <GlobalStyles />
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </ThemeProvider>
+    </ThemeContextProvider>
   </React.StrictMode>
 );

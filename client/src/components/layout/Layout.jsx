@@ -64,7 +64,8 @@ export function Layout({ children }) {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: colors.bgSidebar,
+        bgcolor: 'rgba(15, 23, 42, 0.4)', // Glassy sidebar
+        backdropFilter: 'blur(20px)',
         borderRight: `1px solid ${colors.border}`
       }}
     >
@@ -181,21 +182,8 @@ export function Layout({ children }) {
     <Box sx={{
       display: 'flex',
       minHeight: '100vh',
-      // Midnight Ocean gradient applied to root container
-      background: 'linear-gradient(120deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%)',
+      bgcolor: 'transparent',
       position: 'relative',
-      // Add subtle overlay for readability
-      '&::before': {
-        content: '""',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.05) 0%, rgba(15, 23, 42, 0.6) 100%)',
-        pointerEvents: 'none',
-        zIndex: 0
-      }
     }}>
       {/* Desktop Sidebar */}
       <Box
@@ -223,7 +211,7 @@ export function Layout({ children }) {
           display: { xs: 'block', lg: 'none' },
           '& .MuiDrawer-paper': {
             width: SIDEBAR_WIDTH,
-            bgcolor: colors.bgSidebar,
+            bgcolor: 'transparent', // Make drawer paper transparent to show SidebarContent's glass
             border: 'none'
           }
         }}
@@ -243,7 +231,7 @@ export function Layout({ children }) {
             alignItems: 'center',
             justifyContent: 'space-between',
             borderBottom: `1px solid ${colors.border}`,
-            bgcolor: 'rgba(15, 23, 42, 0.5)', // Semi-transparent to show gradient
+            bgcolor: 'rgba(15, 23, 42, 0.3)', // More transparent header
             backdropFilter: 'blur(10px)',
             position: 'sticky',
             top: 0,

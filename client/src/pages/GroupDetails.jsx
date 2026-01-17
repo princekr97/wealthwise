@@ -52,7 +52,8 @@ import {
     TrendingUp as InvestmentsIcon,
     CardGiftcard as GiftsIcon,
     Savings as SavingsIcon,
-    Category as CategoryIcon
+    Category as CategoryIcon,
+    Hotel as HotelIcon
 } from '@mui/icons-material';
 import { groupService } from '../services/groupService';
 import PageContainer from '../components/layout/PageContainer';
@@ -105,6 +106,13 @@ export default function GroupDetails() {
     const [error, setError] = useState(null);
     const [tabValue, setTabValue] = useState(0);
     const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
+
+    // Refresh handler for expense updates
+    const handleExpenseDialogClose = async () => {
+        setIsExpenseDialogOpen(false);
+        setEditingExpense(null);
+        await fetchGroupDetails(); // Force refresh to show new data immediately
+    };
     const [isSettleDialogOpen, setIsSettleDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -329,18 +337,88 @@ export default function GroupDetails() {
     }, [group, user, balances, getMemberId]);
 
     const getCategoryIcon = (category) => {
-        switch (category) {
-            case 'General': return <MoneyIcon />;
-            case 'Food and Drink': return <FoodIcon />;
-            case 'Transportation': return <TransportIcon />;
-            case 'Home': return <HomeIcon />;
-            case 'Utilities': return <UtilitiesIcon />;
-            case 'Entertainment': return <EntertainmentIcon />;
-            case 'Life': return <HealthIcon />;
-            case 'Settlement': return <MoneyIcon />;
-            default: return <BillIcon />;
+        if (!category) return <CategoryIcon />;
+        const normalized = category.toLowerCase().trim();
+
+        // Exact matches (lowercase)
+        switch (normalized) {
+            case 'food':
+            case 'food & dining':
+            case 'food and drink':
+            case 'drinks':
+            case 'dining':
+                return <FoodIcon />;
+
+            case 'groceries':
+                return <GroceriesIcon />;
+
+            case 'travel':
+            case 'flight':
+                return <TravelIcon />;
+
+            case 'stays':
+            case 'hotel':
+                return <HotelIcon />;
+
+            case 'bills':
+            case 'utilities':
+            case 'subscription':
+            case 'bill':
+                return <BillIcon />;
+
+            case 'shopping':
+                return <ShoppingIcon />;
+
+            case 'gifts':
+                return <GiftsIcon />;
+
+            case 'fuel':
+            case 'transportation':
+            case 'transport':
+            case 'commute':
+                return <TransportIcon />;
+
+            case 'health':
+            case 'healthcare':
+            case 'life':
+            case 'medical':
+                return <HealthIcon />;
+
+            case 'entertainment':
+            case 'movies':
+                return <EntertainmentIcon />;
+
+            case 'education':
+                return <EducationIcon />;
+
+            case 'personal care':
+                return <PersonalCareIcon />;
+
+            case 'rent':
+            case 'home':
+            case 'housing':
+                return <HomeIcon />;
+
+            case 'insurance':
+                return <InsuranceIcon />;
+
+            case 'savings':
+            case 'investment':
+            case 'investments':
+                return <InvestmentsIcon />;
+
+            case 'settlement':
+            case 'general':
+            case 'money':
+                return <MoneyIcon />;
+
+            default:
+                return <CategoryIcon />;
         }
     };
+
+    // State for expanded balance card
+    const [expandedBalance, setExpandedBalance] = useState(false);
 
     if (loading) return <PageLoader message="Loading Group Details..." />;
     if (error) return <Alert severity="error">{error}</Alert>;
@@ -348,481 +426,322 @@ export default function GroupDetails() {
 
     return (
         <PageContainer>
-            {/* Header */}
-            <Box sx={{ mb: 3 }}>
-                <Button
-                    startIcon={<ArrowBackIcon />}
+            {/* 1. Custom Header & Navigation - Reduced Sizes */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}> {/* mb: 3 -> 2.5 */}
+                <Box
                     onClick={() => navigate('/app/groups')}
-                    sx={{ mb: 2, color: 'text.secondary' }}
-                >
-                    Back to Groups
-                </Button>
-
-                {/* Group Info + Balance - Premium Frosted Glass */}
-                <Accordion
                     sx={{
-                        mb: 3,
-                        borderRadius: '20px !important',
-                        background: myBalance >= 0
-                            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 182, 212, 0.08) 100%)'
-                            : 'linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(251, 113, 133, 0.08) 100%)',
-                        backdropFilter: 'blur(16px)',
-                        WebkitBackdropFilter: 'blur(16px)',
-                        border: myBalance >= 0
-                            ? '1px solid rgba(16, 185, 129, 0.2)'
-                            : '1px solid rgba(255, 107, 107, 0.2)',
-                        '&:before': { display: 'none' },
-                        boxShadow: myBalance >= 0
-                            ? '0 8px 24px rgba(16, 185, 129, 0.12)'
-                            : '0 8px 24px rgba(255, 107, 107, 0.12)',
-                        transition: 'all 0.3s ease'
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.75, // Reduced gap
+                        cursor: 'pointer',
+                        color: 'text.secondary',
+                        transition: 'color 0.2s',
+                        '&:hover': { color: 'text.primary' }
                     }}
                 >
-                    <AccordionSummary
-                        expandIcon={<ExpandMoreIcon sx={{
-                            color: myBalance >= 0 ? 'success.main' : 'error.main',
-                            transition: 'transform 0.3s ease'
-                        }} />}
-                        sx={{
-                            px: { xs: 2.5, sm: 3 },
-                            py: 1.5,
-                            '& .MuiAccordionSummary-content': { my: 1.5 },
-                            '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': {
-                                transform: 'rotate(180deg)' // Smooth rotate animation
-                            }
-                        }}
-                    >
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: '100%', pr: 2 }}>
-                            <Box>
-                                <Typography
-                                    variant="h5"
-                                    sx={{
-                                        fontWeight: 700,
-                                        fontSize: { xs: '1.5rem', sm: '1.75rem' }, // 24-28pt
-                                        letterSpacing: '-0.01em',
-                                        mb: 0.5
-                                    }}
-                                >
-                                    {group.name}
-                                </Typography>
-                                <Box
-                                    component="span"
-                                    sx={{
-                                        display: 'inline-block',
-                                        px: 1.5,
-                                        py: 0.5,
-                                        borderRadius: '12px',
-                                        background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(20, 184, 166, 0.15) 100%)',
-                                        border: '1px solid rgba(6, 182, 212, 0.3)',
-                                        fontSize: '0.7rem',
-                                        fontWeight: 600,
-                                        color: '#06B6D4'
-                                    }}
-                                >
-                                    {group.members.length} members
-                                </Box>
-                            </Box>
-                            <Stack direction="row" spacing={1} alignItems="baseline">
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        color: myBalance >= 0 ? 'success.main' : 'error.main',
-                                        opacity: 0.85,
-                                        fontWeight: 600,
-                                        fontSize: '0.75rem'
-                                    }}
-                                >
-                                    {myBalance >= 0 ? 'Owed' : 'Owe'}
-                                </Typography>
-                                <Typography
-                                    variant="h6"
-                                    sx={{
-                                        fontWeight: 800,
-                                        fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                                        color: myBalance >= 0 ? '#10B981' : '#FF6B6B',
-                                        letterSpacing: '-0.01em'
-                                    }}
-                                >
-                                    {formatCurrency(Math.abs(myBalance))}
-                                </Typography>
-                            </Stack>
-                        </Stack>
-                    </AccordionSummary>
-                    <AccordionDetails sx={{ px: { xs: 2.5, sm: 3 }, pb: 3 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ opacity: 0.7, mb: 2, fontSize: '0.8rem' }}>
-                            Created {new Date(group.createdAt).toLocaleDateString()}
-                        </Typography>
-
-                        <Divider sx={{ my: 2, opacity: 0.2 }} />
-
-                        {/* Full Balance with Settle Button */}
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
-                            <Stack direction="row" spacing={1.5} alignItems="baseline">
-                                <Typography
-                                    variant="body1"
-                                    sx={{
-                                        color: myBalance >= 0 ? 'success.main' : 'error.main',
-                                        opacity: 0.85,
-                                        fontWeight: 600
-                                    }}
-                                >
-                                    {myBalance >= 0 ? 'You are owed' : 'You owe'}
-                                </Typography>
-                                <Typography
-                                    variant="h3"
-                                    sx={{
-                                        fontWeight: 900,
-                                        fontSize: { xs: '2rem', sm: '2.5rem' },
-                                        color: myBalance >= 0 ? '#10B981' : '#FF6B6B',
-                                        letterSpacing: '-0.02em'
-                                    }}
-                                >
-                                    {formatCurrency(Math.abs(myBalance))}
-                                </Typography>
-                            </Stack>
-                            {Math.abs(myBalance) > 0.1 && (
-                                <Button
-                                    variant="contained"
-                                    size="large"
-                                    sx={{
-                                        minWidth: 140,
-                                        background: myBalance > 0
-                                            ? 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)'
-                                            : 'linear-gradient(135deg, #FF6B6B 0%, #FB7185 100%)',
-                                        color: 'white',
-                                        fontWeight: 700,
-                                        fontSize: '1rem',
-                                        borderRadius: '12px',
-                                        px: 3,
-                                        py: 1.5,
-                                        boxShadow: myBalance > 0
-                                            ? '0 4px 16px rgba(16, 185, 129, 0.3)'
-                                            : '0 4px 16px rgba(255, 107, 107, 0.3)',
-                                        '&:hover': {
-                                            background: myBalance > 0
-                                                ? 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)'
-                                                : 'linear-gradient(135deg, #FF6B6B 0%, #FB7185 100%)',
-                                            boxShadow: myBalance > 0
-                                                ? '0 6px 24px rgba(16, 185, 129, 0.4)'
-                                                : '0 6px 24px rgba(255, 107, 107, 0.4)',
-                                            transform: 'translateY(-2px)'
-                                        }
-                                    }}
-                                    onClick={() => setIsSettleDialogOpen(true)}
-                                >
-                                    Settle Up
-                                </Button>
-                            )}
-                        </Stack>
-                    </AccordionDetails>
-                </Accordion>
-
-                {/* Premium Action Buttons - Floating with Clear Hierarchy */}
-                <Stack direction="row" spacing={2} sx={{ mb: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
-                    {/* Primary CTA - Add Expense (Larger, Gradient) */}
-                    <Tooltip title="Add Expense" arrow>
-                        <IconButton
-                            size="large"
-                            sx={{
-                                width: { xs: 56, sm: 64 },
-                                height: { xs: 56, sm: 64 },
-                                background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
-                                color: 'white',
-                                boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)',
-                                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                                '&:hover': {
-                                    background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
-                                    boxShadow: '0 6px 24px rgba(16, 185, 129, 0.5)',
-                                    transform: 'translateY(-2px) scale(1.05)'
-                                },
-                                '&:active': {
-                                    transform: 'translateY(0) scale(0.95)'
-                                }
-                            }}
-                            onClick={() => setIsExpenseDialogOpen(true)}
-                        >
-                            <AddIcon sx={{ fontSize: { xs: 28, sm: 32 } }} />
-                        </IconButton>
-                    </Tooltip>
-
-                    {/* Secondary Actions - Ghost Style */}
-                    <Tooltip title="Download Report" arrow>
-                        <IconButton
-                            size="large"
-                            sx={{
-                                width: 48,
-                                height: 48,
-                                border: '1.5px solid rgba(255, 255, 255, 0.2)',
-                                borderRadius: '12px',
-                                color: 'text.primary',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                    borderColor: 'rgba(255, 255, 255, 0.4)',
-                                    transform: 'translateY(-2px)'
-                                }
-                            }}
-                            onClick={(e) => setExportAnchorEl(e.currentTarget)}
-                        >
-                            <DownloadIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-
-                    <Tooltip title="Edit Group" arrow>
-                        <IconButton
-                            size="large"
-                            sx={{
-                                width: 48,
-                                height: 48,
-                                border: '1.5px solid rgba(255, 255, 255, 0.2)',
-                                borderRadius: '12px',
-                                color: 'text.primary',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                    borderColor: 'rgba(255, 255, 255, 0.4)',
-                                    transform: 'translateY(-2px)'
-                                }
-                            }}
-                            onClick={() => setIsEditDialogOpen(true)}
-                        >
-                            <EditIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-
-                    <Tooltip title="Delete Group" arrow>
-                        <IconButton
-                            size="large"
-                            sx={{
-                                width: 48,
-                                height: 48,
-                                border: '1.5px solid rgba(239, 68, 68, 0.3)',
-                                borderRadius: '12px',
-                                color: 'error.main',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                    borderColor: 'rgba(239, 68, 68, 0.6)',
-                                    transform: 'translateY(-2px)'
-                                }
-                            }}
-                            onClick={() => setIsDeleteDialogOpen(true)}
-                        >
-                            <DeleteIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-
-                    <Menu
-                        anchorEl={exportAnchorEl}
-                        open={Boolean(exportAnchorEl)}
-                        onClose={() => setExportAnchorEl(null)}
-                    >
-                        <MenuItem onClick={handleDownloadReport}>Download PDF</MenuItem>
-                        <MenuItem onClick={handleDownloadCSV}>Export CSV</MenuItem>
-                    </Menu>
-                </Stack>
-
+                    <ArrowBackIcon sx={{ fontSize: 18 }} /> {/* 20 -> 18 */}
+                    <Typography sx={{ fontWeight: 500, fontSize: '0.9rem' }}>Back to Groups</Typography>
+                </Box>
             </Box>
 
-            {/* Premium Tabs - Bold Gradient Underline */}
-            <Tabs
-                value={tabValue}
-                onChange={(e, v) => setTabValue(v)}
-                sx={{
-                    borderBottom: 1,
-                    borderColor: 'divider',
-                    mb: 3,
-                    '& .MuiTabs-indicator': {
-                        height: 3,
-                        background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
-                        borderRadius: '2px 2px 0 0'
-                    },
-                    '& .MuiTab-root': {
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        textTransform: 'none',
-                        color: 'text.secondary',
-                        transition: 'all 0.2s ease',
-                        minHeight: 48,
-                        '&.Mui-selected': {
-                            color: 'primary.main',
-                            fontWeight: 700
-                        },
+            {/* 2. Group Summary Card - Ultra Clean Glass - Reduced Sizes */}
+            <Box sx={{ px: { xs: 0, sm: 2 }, mb: 3 }}> {/* mb: 4 -> 3 */}
+                <Box
+                    className="glass-card-clean"
+                    onClick={() => setExpandedBalance(!expandedBalance)}
+                    sx={{
+                        p: 2.5, // Reduced from 3
+                        borderRadius: '20px', // Reduced from 24px
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
                         '&:hover': {
-                            color: 'text.primary'
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
                         }
+                    }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                        <Box>
+                            <Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '1.5rem', sm: '1.75rem' }, mb: 0.75, color: 'white' }}> {/* Reduced font */}
+                                {group.name}
+                            </Typography>
+                            <Box sx={{
+                                display: 'inline-flex',
+                                px: 1.25, // Reduced
+                                py: 0.4,  // Reduced
+                                borderRadius: '99px',
+                                background: 'rgba(45, 212, 191, 0.15)',
+                                border: '1px solid rgba(45, 212, 191, 0.3)',
+                                color: '#5EEAD4', // Teal 300
+                                fontSize: '0.65rem', // Reduced
+                                fontWeight: 600
+                            }}>
+                                {group.members.length} members
+                            </Box>
+                        </Box>
+
+                        <Box sx={{ textAlign: 'right' }}>
+                            <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8', mb: 0.4 }}> {/* Reduced */}
+                                {myBalance >= 0 ? 'You are owed' : 'You owe'}
+                            </Typography>
+                            <Typography sx={{
+                                fontSize: { xs: '1.35rem', sm: '1.75rem' }, // Reduced
+                                fontWeight: 700,
+                                color: myBalance >= 0 ? '#34D399' : '#F87171',
+                                lineHeight: 1
+                            }}>
+                                {formatCurrency(Math.abs(myBalance))}
+                            </Typography>
+
+                            {expandedBalance ? (
+                                <ExpandMoreIcon sx={{ color: 'white', ml: 'auto', mt: 0.5, fontSize: '1.25rem', transform: 'rotate(180deg)', transition: 'transform 0.3s' }} />
+                            ) : (
+                                <ExpandMoreIcon sx={{ color: 'white', ml: 'auto', mt: 0.5, fontSize: '1.25rem', transition: 'transform 0.3s' }} />
+                            )}
+                        </Box>
+                    </Box>
+
+                    {/* Expanded Balance Details */}
+                    {expandedBalance && (
+                        <Box sx={{ mt: 2.5, pt: 2.5, borderTop: '1px solid rgba(255,255,255,0.1)' }}> {/* Reduced spacing */}
+                            <Stack spacing={1.25}> {/* Reduced spacing */}
+                                {Object.entries(balances)
+                                    .filter(([id, val]) => Math.abs(val) > 0.1) // Hide zero balances
+                                    .map(([memberId, bal]) => {
+                                        // Find member name logic
+                                        const member = group.members.find(m => {
+                                            const mId = (m.userId && typeof m.userId === 'object' && m.userId._id)
+                                                ? String(m.userId._id) : String(m.userId || m.email || m.name);
+                                            return mId === memberId;
+                                        });
+                                        const name = member?.name || 'Unknown';
+
+                                        // Don't show my own entry in "expanded" - logic check
+                                        const isMe = member && (
+                                            (member.userId && String(member.userId._id || member.userId) === String(user?._id)) ||
+                                            (member.email && user?.email && member.email.toLowerCase() === user.email.toLowerCase())
+                                        );
+                                        if (isMe) return null;
+
+                                        return (
+                                            <Box key={memberId} sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#CBD5E1' }}> {/* Reduced font */}
+                                                <Typography sx={{ fontSize: '0.85rem' }}>{name} {bal >= 0 ? 'owes you' : 'you owe'}</Typography>
+                                                <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: bal >= 0 ? '#34D399' : '#F87171' }}>
+                                                    {formatCurrency(Math.abs(bal))}
+                                                </Typography>
+                                            </Box>
+                                        );
+                                    })}
+                            </Stack>
+                        </Box>
+                    )}
+                </Box>
+            </Box>
+
+            {/* 3. Action Buttons Row - Reduced Sizes */}
+            <Stack direction="row" spacing={1.75} justifyContent="center" sx={{ mb: 3.5 }}> {/* Reduced spacing/mb */}
+                {/* Primary Add Button */}
+                <Box
+                    onClick={() => setIsExpenseDialogOpen(true)}
+                    sx={{
+                        width: 54, // 64 -> 54
+                        height: 54,
+                        borderRadius: '16px', // Reduced
+                        background: 'linear-gradient(135deg, #14B8A6 0%, #0D9488 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        boxShadow: '0 8px 20px rgba(20, 184, 166, 0.4)',
+                        transition: 'transform 0.2s',
+                        '&:active': { transform: 'scale(0.95)' },
+                        '&:hover': { transform: 'scale(1.05)' }
+                    }}
+                >
+                    <AddIcon sx={{ color: 'white', fontSize: 28 }} /> {/* 32 -> 28 */}
+                </Box>
+
+                {/* Secondary Actions */}
+                {[
+                    { icon: <DownloadIcon sx={{ fontSize: '1.25rem' }} />, onClick: (e) => setExportAnchorEl(e.currentTarget), color: 'white' },
+                    { icon: <EditIcon sx={{ fontSize: '1.25rem' }} />, onClick: () => setIsEditDialogOpen(true), color: 'white' },
+                    { icon: <DeleteIcon sx={{ fontSize: '1.25rem' }} />, onClick: () => setIsDeleteDialogOpen(true), color: '#F87171' }
+                ].map((action, idx) => (
+                    <Box
+                        key={idx}
+                        onClick={action.onClick}
+                        className="glass-card-clean"
+                        sx={{
+                            width: 48, // 56 -> 48
+                            height: 48,
+                            borderRadius: '14px', // Reduced
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: action.color,
+                            transition: 'background 0.2s',
+                            '&:active': { background: 'rgba(255,255,255,0.15)' }
+                        }}
+                    >
+                        {action.icon}
+                    </Box>
+                ))}
+            </Stack>
+
+            {/* Popover Menu for Downloads */}
+            <Menu
+                anchorEl={exportAnchorEl}
+                open={Boolean(exportAnchorEl)}
+                onClose={() => setExportAnchorEl(null)}
+                PaperProps={{
+                    sx: {
+                        bgcolor: '#1e293b',
+                        color: 'white',
+                        border: '1px solid rgba(255,255,255,0.1)'
                     }
                 }}
             >
-                <Tab label="Dashboard" />
-                <Tab label="Expenses" />
-                <Tab label="Balances" />
-            </Tabs>
+                <MenuItem onClick={handleDownloadReport}>Download PDF</MenuItem>
+                <MenuItem onClick={handleDownloadCSV}>Export CSV</MenuItem>
+            </Menu>
 
-            {/* Expenses List (Index 1) */}
-            <Box role="tabpanel" hidden={tabValue !== 1}>
-                {tabValue === 1 && (
-                    <List>
-                        {expenses.length === 0 ? (
-                            <Stack alignItems="center" spacing={2.5} sx={{ py: 4.5, px: 2 }}>
+            {/* 4. Tabs Navigation - Reduced Sizes */}
+            <Box sx={{ borderBottom: '2px solid rgba(255,255,255,0.1)', mb: 3, px: 2 }}> {/* mb: 4 -> 3 */}
+                <Stack direction="row" spacing={3}> {/* spacing: 4 -> 3 */}
+                    {['Dashboard', 'Expenses', 'Balances'].map((tab, index) => (
+                        <Box
+                            key={tab}
+                            onClick={() => setTabValue(index)}
+                            sx={{
+                                pb: 1.25, // Reduced
+                                cursor: 'pointer',
+                                color: tabValue === index ? 'white' : 'rgba(255,255,255,0.5)',
+                                fontWeight: 600,
+                                fontSize: '0.9rem', // 1rem -> 0.9rem
+                                position: 'relative',
+                                transition: 'color 0.2s',
+                                '&:hover': { color: 'white' }
+                            }}
+                        >
+                            {tab}
+                            {tabValue === index && (
                                 <Box sx={{
-                                    width: 160, // Reduced from 200
-                                    height: 128, // Reduced from 160
-                                    mb: 1.5,
-                                    borderRadius: 3,
-                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    border: '1px dashed rgba(255,255,255,0.1)'
-                                }}>
-                                    <Typography variant="h1" sx={{ fontSize: '3.2rem', opacity: 0.5 }}> {/* Reduced from 4rem */}
-                                        {group.type === 'Trip' ? '✈️' : group.type === 'Home' ? '🏠' : '📝'}
-                                    </Typography>
-                                </Box>
-
-                                <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '1.1rem' }}>
-                                    No expenses yet
-                                </Typography>
-
-                                <Stack spacing={1.5} sx={{ width: '100%', maxWidth: 280 }}> {/* Reduced maxWidth */}
-                                    <Button
-                                        variant="contained"
-                                        size="large"
-                                        fullWidth
-                                        onClick={() => setIsExpenseDialogOpen(true)}
-                                        sx={{
-                                            py: 1.2, // Reduced from 1.5
-                                            borderRadius: '10px',
-                                            background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
-                                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                                            textTransform: 'none',
-                                            fontSize: '0.9rem', // Reduced
-                                            fontWeight: 600
-                                        }}
-                                    >
-                                        Add Your First Expense
-                                        <Typography component="span" sx={{ display: 'block', fontSize: '0.65rem', opacity: 0.8, mt: 0.4, width: '100%' }}>
-                                            (Friends will be added automatically)
-                                        </Typography>
-                                    </Button>
-
-                                    <Typography variant="caption" sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}>
-                                        OR
-                                    </Typography>
-
-                                    <Button
-                                        variant="outlined"
-                                        size="large"
-                                        fullWidth
-                                        onClick={() => setIsAddMemberDialogOpen(true)}
-                                        sx={{
-                                            py: 1.2, // Reduced
-                                            borderRadius: '24px', // Reduced pill
-                                            borderColor: 'rgba(255,255,255,0.2)',
-                                            color: 'text.primary',
-                                            textTransform: 'none',
-                                            fontWeight: 600,
-                                            fontSize: '0.9rem',
-                                            '&:hover': {
-                                                borderColor: 'rgba(255,255,255,0.4)',
-                                                bgcolor: 'rgba(255,255,255,0.02)'
-                                            }
-                                        }}
-                                        endIcon={<AddIcon sx={{ bgcolor: '#4f46e5', color: 'white', borderRadius: '50%', p: 0.4, width: 20, height: 20 }} />}
-                                    >
-                                        Add Your Friends First
-                                    </Button>
-                                </Stack>
-                            </Stack>
-                        ) : (
-                            expenses.map((expense) => (
-                                <Paper
-                                    key={expense._id}
-                                    onClick={() => setSelectedExpense(expense)}
-                                    sx={{
-                                        mb: 1.2,
-                                        bgcolor: 'rgba(255,255,255,0.02)',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' }
-                                    }}
-                                > {/* Reduced mb */}
-                                    <ListItem>
-                                        <ListItemAvatar>
-                                            <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white', width: 36, height: 36, fontSize: '1rem' }}> {/* Smaller avatar */}
-                                                {getCategoryIcon(expense.category)}
-                                            </Avatar>
-                                        </ListItemAvatar>
-                                        <ListItemText
-                                            primary={<Typography variant="body1" sx={{ fontSize: '0.95rem' }}>{expense.description}</Typography>}
-                                            secondary={
-                                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                                                    {getPayerName(expense)} paid {formatCurrency(expense.amount)} • {new Date(expense.date).toLocaleString()}
-                                                </Typography>
-                                            }
-                                        />
-                                        <Box sx={{ textAlign: 'right' }}>
-                                            <Typography
-                                                variant="subtitle2"
-                                                sx={{
-                                                    fontWeight: 600,
-                                                    fontSize: '0.85rem', // Reduced
-                                                    color: expense.category === 'Settlement' ? 'info.main' : 'success.main'
-                                                }}
-                                            >
-                                                {expense.category === 'Settlement' ? 'Settlement' :
-                                                    formatCurrency(expense.amount)
-                                                }
-                                            </Typography>
-                                            {(expense.paidBy?._id === user?._id || group.createdBy === user?._id) && (
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handleDeleteExpense(expense._id)}
-                                                    sx={{ ml: 1, opacity: 0.6, '&:hover': { opacity: 1, color: 'error.main' } }}
-                                                >
-                                                    <DeleteIcon fontSize="small" />
-                                                </IconButton>
-                                            )}
-                                        </Box>
-                                    </ListItem>
-                                </Paper>
-                            ))
-                        )}
-                    </List>
-                )}
+                                    position: 'absolute',
+                                    bottom: -2,
+                                    left: 0,
+                                    right: 0,
+                                    height: '2px', // 3px -> 2px
+                                    borderRadius: '3px',
+                                    background: '#14B8A6'
+                                }} />
+                            )}
+                        </Box>
+                    ))}
+                </Stack>
             </Box>
 
+            {/* 5. Content Sections */}
 
-
-            {/* Dashboard Tab (Index 0) */}
-            <Box role="tabpanel" hidden={tabValue !== 0}>
-                {tabValue === 0 && (
+            {/* TAB 0: DASHBOARD */}
+            {tabValue === 0 && (
+                <Box sx={{ px: { xs: 0, sm: 2 }, pb: 3 }}>
+                    {/* Reuse GroupAnalytics but wrap it or customize it if needed. 
+                        For now, we will render it directly as it has good charts.
+                        Ideally, we would refactor GroupAnalytics to match the exact card style requested,
+                        but let's wrap it in a clean container.
+                    */}
                     <GroupAnalytics
                         expenses={expenses}
                         members={group.members}
                         currency={group.currency}
                         currentUser={user}
                     />
-                )}
-            </Box>
+                </Box>
+            )}
 
-            {/* Balances Tab */}
-            <Box role="tabpanel" hidden={tabValue !== 2}>
-                {tabValue === 2 && (
-                    <Stack spacing={1.5}> {/* Use Stack instead of Grid for consistent width */}
+            {/* TAB 1: EXPENSES */}
+            {tabValue === 1 && (
+                <Box sx={{ px: { xs: 0, sm: 2 }, pb: 3 }}>
+                    <Stack spacing={1.5}> {/* spacing: 2 -> 1.5 */}
+                        {expenses.length === 0 ? (
+                            <Box sx={{ textAlign: 'center', py: 6, opacity: 0.6 }}> {/* Reduced py */}
+                                <Typography variant="h2" sx={{ mb: 1.5, fontSize: '2.5rem' }}>📝</Typography>
+                                <Typography variant="h6" sx={{ fontSize: '1.1rem' }}>No expenses yet</Typography>
+                                <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>Add your first expense to get started!</Typography>
+                            </Box>
+                        ) : (
+                            expenses.map((expense) => (
+                                <Box
+                                    key={expense._id}
+                                    className="glass-card-clean"
+                                    onClick={() => setSelectedExpense(expense)}
+                                    sx={{
+                                        p: 2, // 2.5 -> 2
+                                        borderRadius: '16px', // 20px -> 16px
+                                        cursor: 'pointer',
+                                        transition: 'background 0.2s',
+                                        '&:hover': { background: 'rgba(255,255,255,0.12)' },
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1.5 // 2 -> 1.5
+                                    }}
+                                >
+                                    {/* Icon Container */}
+                                    <Box sx={{
+                                        minWidth: 42, // 48 -> 42
+                                        height: 42,
+                                        borderRadius: '50%',
+                                        background: 'rgba(59, 130, 246, 0.15)', // Blue tint
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '1.1rem', // 1.25 -> 1.1
+                                        color: '#60A5FA' // Blue 400
+                                    }}>
+                                        {getCategoryIcon(expense.category)}
+                                    </Box>
+
+                                    {/* Main Content */}
+                                    <Box sx={{ flex: 1 }}>
+                                        <Typography sx={{ fontWeight: 600, color: 'white', fontSize: '0.9rem', mb: 0.2 }}> {/* Reduced fonts */}
+                                            {expense.description}
+                                        </Typography>
+                                        <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                                            {new Date(expense.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} • Paid by {getPayerName(expense)}
+                                        </Typography>
+                                    </Box>
+
+                                    {/* Amount */}
+                                    <Box sx={{ textAlign: 'right' }}>
+                                        <Typography sx={{ fontWeight: 700, color: 'white', fontSize: '1rem' }}> {/* 1.1 -> 1.0 */}
+                                            {formatCurrency(expense.amount)}
+                                        </Typography>
+                                        <Typography sx={{ fontSize: '0.7rem', color: '#94A3B8' }}>
+                                            total
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            ))
+                        )}
+                    </Stack>
+                </Box>
+            )}
+
+            {/* TAB 2: BALANCES */}
+            {tabValue === 2 && (
+                <Box sx={{ px: { xs: 0, sm: 2 }, pb: 3 }}>
+                    <Stack spacing={1.5}> {/* 2 -> 1.5 */}
                         {Object.entries(balances)
-                            .filter(([_, bal]) => Math.abs(bal) > 0.1) // Hide zero balances
+                            .filter(([_, bal]) => Math.abs(bal) > 0.1)
                             .map(([memberId, bal]) => {
-                                // Find member name using consistent ID logic
                                 const member = group.members.find(m => {
                                     const mId = (m.userId && typeof m.userId === 'object' && m.userId._id)
-                                        ? String(m.userId._id)
-                                        : String(m.userId || m.email || m.name);
+                                        ? String(m.userId._id) : String(m.userId || m.email || m.name);
                                     return mId === memberId;
                                 });
-
-                                const name = member ? member.name : 'Unknown';
+                                const name = member?.name || 'Unknown';
                                 const isMe = member && (
                                     (member.userId && String(member.userId._id || member.userId) === String(user?._id)) ||
                                     (member.email && user?.email && member.email.toLowerCase() === user.email.toLowerCase())
@@ -831,96 +750,83 @@ export default function GroupDetails() {
                                 return (
                                     <Box
                                         key={memberId}
+                                        className="glass-card-clean"
                                         sx={{
-                                            position: 'relative',
-                                            p: 1.75,
-                                            borderRadius: '12px',
-                                            background: 'rgba(255,255,255,0.03)',
-                                            border: '1px solid rgba(255,255,255,0.08)',
-                                            transition: 'all 0.2s ease',
-                                            '&:hover': {
-                                                background: 'rgba(255,255,255,0.05)',
-                                                borderColor: 'rgba(255,255,255,0.15)',
-                                                '& .delete-btn': { opacity: 1, transform: 'scale(1)' }
-                                            }
+                                            p: 2, // 2.5 -> 2
+                                            borderRadius: '16px', // 20 -> 16
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1.5
                                         }}
                                     >
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.75 }}>
-                                            <Avatar
-                                                sx={{
-                                                    width: 40,
-                                                    height: 40,
-                                                    bgcolor: '#f1f5f9',
-                                                    boxShadow: `0 4px 12px ${isMe ? 'rgba(59, 130, 246, 0.3)' : (bal >= 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)')}`
-                                                }}
-                                                src={member?.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${name}`}
-                                                alt={name}
-                                            />
+                                        <Avatar
+                                            src={member?.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${name}`}
+                                            alt={name}
+                                            sx={{
+                                                width: 42, height: 42, // 50 -> 42
+                                                border: '2px solid rgba(255,255,255,0.2)',
+                                                bgcolor: isMe ? '#14B8A6' : '#8B5CF6' // Teal or Purple 
+                                            }}
+                                        >
+                                            {name[0]}
+                                        </Avatar>
 
-                                            <Box sx={{ flex: 1 }}>
-                                                <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: '#FFFFFF' }}>
-                                                    {isMe ? 'You' : name}
-                                                </Typography>
-                                                <Typography
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography sx={{ fontWeight: 600, color: 'white', fontSize: '0.9rem' }}> {/* 1 -> 0.9 */}
+                                                {isMe ? 'You' : name}
+                                            </Typography>
+                                            <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8' }}> {/* 0.8 -> 0.75 */}
+                                                {bal >= 0 ? 'owes you' : 'you owe'}
+                                            </Typography>
+                                        </Box>
+
+                                        <Box sx={{ textAlign: 'right' }}>
+                                            <Typography sx={{
+                                                fontWeight: 700,
+                                                fontSize: '1.1rem', // 1.25 -> 1.1
+                                                color: bal >= 0 ? '#34D399' : '#F87171', // Emerald or Red
+                                                mb: 0.25
+                                            }}>
+                                                {formatCurrency(Math.abs(bal))}
+                                            </Typography>
+                                            {/* Settle Button - Only if balance is significant */}
+                                            {Math.abs(bal) > 1 && (
+                                                <Button
+                                                    size="small"
+                                                    onClick={() => setIsSettleDialogOpen(true)}
                                                     sx={{
-                                                        fontSize: '0.8rem',
-                                                        color: '#94A3B8',
-                                                        mt: 0.2,
-                                                        fontWeight: 500
+                                                        background: '#14B8A6',
+                                                        color: 'white',
+                                                        fontSize: '0.7rem',
+                                                        textTransform: 'none',
+                                                        borderRadius: '8px',
+                                                        px: 1.5,
+                                                        py: 0.5,
+                                                        minWidth: 'auto',
+                                                        '&:hover': { background: '#0D9488' }
                                                     }}
                                                 >
-                                                    {bal >= 0 ? 'Gets back' : 'Owes'} <span style={{ color: bal >= 0 ? '#10B981' : '#F43F5E', fontWeight: 700 }}>{formatCurrency(Math.abs(bal))}</span>
-                                                </Typography>
-                                            </Box>
-
-                                            {!isMe && group?.createdBy === user?._id && (
-                                                <Tooltip title="Remove member" arrow>
-                                                    <IconButton
-                                                        className="delete-btn"
-                                                        size="small"
-                                                        sx={{
-                                                            opacity: 0,
-                                                            transform: 'scale(0.8)',
-                                                            transition: 'all 0.2s ease',
-                                                            color: '#94a3b8',
-                                                            '&:hover': { color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' }
-                                                        }}
-                                                        onClick={() => setMemberToDelete(memberId)}
-                                                    >
-                                                        <DeleteIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
+                                                    Settle Up
+                                                </Button>
                                             )}
                                         </Box>
                                     </Box>
                                 );
                             })}
+
                         {Object.keys(balances).length === 0 && (
-                            <Typography sx={{ p: 2 }}>Everyone is settled up!</Typography>
+                            <Box sx={{ textAlign: 'center', py: 3, color: '#94A3B8' }}>
+                                <Typography sx={{ fontSize: '0.9rem' }}>Everyone is settled up! 🎉</Typography>
+                            </Box>
                         )}
                     </Stack>
-                )}
-            </Box>
+                </Box>
+            )}
 
-
-
-
-
-            <ConfirmDialog
-                open={isDeleteDialogOpen}
-                onClose={() => setIsDeleteDialogOpen(false)}
-                title="Delete Group"
-                content="Are you sure you want to delete this group? All expenses will be permanently removed."
-                onConfirm={handleDeleteGroup}
-            />
-
+            {/* --- Dialogs (Hidden) --- */}
             <AddGroupExpenseDialog
                 open={isExpenseDialogOpen}
-                onClose={() => {
-                    setIsExpenseDialogOpen(false);
-                    setEditingExpense(null);
-                    fetchGroupDetails();
-                }}
+                onClose={handleExpenseDialogClose}
                 group={group}
                 currentUser={user}
                 onAddMemberClick={() => setIsAddMemberDialogOpen(true)}
@@ -933,21 +839,16 @@ export default function GroupDetails() {
                 groupId={group?._id}
                 onMemberAdded={fetchGroupDetails}
             />
-            {/* Expense Details Dialog */}
+
             <ExpenseDetailsDialog
                 open={Boolean(selectedExpense)}
                 onClose={() => setSelectedExpense(null)}
                 expense={selectedExpense}
                 currentUser={user}
                 groupMembers={group?.members}
-                onDelete={(id) => {
-                    handleDeleteExpense(id);
-                }}
-                onEdit={(exp) => {
-                    handleEditExpense(exp);
-                }}
+                onDelete={handleDeleteExpense}
+                onEdit={handleEditExpense}
             />
-
 
             <SettleDebtDialog
                 open={isSettleDialogOpen}
@@ -958,9 +859,7 @@ export default function GroupDetails() {
                 group={group}
                 currentUser={user}
                 balances={balances}
-                onSettled={() => {
-                    fetchGroupDetails();
-                }}
+                onSettled={fetchGroupDetails}
             />
 
             <AddGroupDialog
@@ -996,6 +895,6 @@ export default function GroupDetails() {
                 title={confirmDialog.title}
                 message={confirmDialog.message}
             />
-        </PageContainer >
+        </PageContainer>
     );
 }

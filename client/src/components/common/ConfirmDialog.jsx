@@ -46,8 +46,12 @@ export default function ConfirmDialog({
       maxWidth="xs"
       PaperProps={{
         sx: {
-          backgroundImage: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
-          border: '1px solid rgba(255,255,255,0.15)'
+          background: 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), var(--active-gradient)',
+          backgroundAttachment: 'fixed',
+          border: '1px solid rgba(255,255,255,0.15)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderRadius: 3
         }
       }}
     >

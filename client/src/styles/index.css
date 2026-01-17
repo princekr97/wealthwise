@@ -74,6 +74,11 @@ html {
   @apply focus:bg-slate-900/80 focus:border-emerald-500/60 focus:backdrop-blur-lg;
 }
 
+/* User Requested: Clean White Glass Card */
+.glass-card-clean {
+  @apply bg-white/[0.08] backdrop-blur-xl border border-white/10 shadow-2xl;
+}
+
 /* Clean brand gradient background */
 .brand-hero-bg {
   background-image: theme('backgroundImage.hero-glow'),

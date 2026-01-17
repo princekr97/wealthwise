@@ -28,7 +28,8 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
     '& .MuiDialog-paper': {
         borderRadius: '28px',
         padding: '8px',
-        background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
+        background: 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), var(--active-gradient)',
+        backgroundAttachment: 'fixed',
         border: '1px solid rgba(255, 255, 255, 0.08)',
         boxShadow: '0 24px 48px rgba(0,0,0,0.4)',
         maxWidth: '400px',

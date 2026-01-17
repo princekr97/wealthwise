@@ -119,7 +119,8 @@ const CATEGORY_ICONS = {
 const StyledDialog = styled(Dialog)(({ theme }) => ({
     '& .MuiDialog-paper': {
         borderRadius: '28px',
-        background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)', // Premium Dark Gradient
+        background: 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), var(--active-gradient)',
+        backgroundAttachment: 'fixed',
         boxShadow: '0 25px 80px rgba(0, 0, 0, 0.6)',
         overflow: 'hidden',
         maxWidth: '460px',
@@ -285,10 +286,11 @@ const getMemberId = (member) => {
     return member._id;
 };
 
-export default function AddGroupExpenseDialog({ open, onClose, group, currentUser, onAddMemberClick, initialExpense }) {
+export default function AddGroupExpenseDialog({ open, onClose, group, currentUser, onAddMemberClick, initialExpense, onExpenseAdded }) {
     const [splitType, setSplitType] = useState('equal'); // 'equal' | 'custom'
     const [members, setMembers] = useState([]);
     const [selectedMemberIds, setSelectedMemberIds] = useState([]); // Track selected members for split
+    const [loading, setLoading] = useState(false);
 
     const { control, handleSubmit, watch, setValue, reset, getValues } = useForm({
         defaultValues: {
@@ -408,45 +410,67 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                 }
             }
 
+            setLoading(true);
+
+            // Robustly construct splits by iterating members to ensure IDs match
+            const validSplits = members.map((member, index) => {
+                const splitEntry = data.splits && data.splits[index];
+                const amount = splitEntry ? parseFloat(splitEntry.amount || 0) : 0;
+
+                return {
+                    user: getMemberId(member),
+                    userName: member.name,
+                    amount: amount,
+                    owed: amount
+                };
+            }).filter(s => s.amount > 0);
+
+            // Client-side validation: validSplits sum must equal total amount
+            const totalSplit = validSplits.reduce((sum, s) => sum + s.amount, 0);
+            const expenseAmount = Number(data.amount);
+
+            if (Math.abs(totalSplit - expenseAmount) > 0.1) {
+                if (validSplits.length === 0) {
+                    toast.error("Please select at least one person to split with.");
+                } else {
+                    toast.error(`Total split (₹${totalSplit}) does not match expense amount (₹${expenseAmount})`);
+                }
+                setLoading(false);
+                return;
+            }
+
             const expenseData = {
                 description: data.description,
-                amount: Number(data.amount),
+                amount: expenseAmount,
                 category: data.category || 'Uncategorized',
                 paidBy: data.paidBy,
                 paidByName: members.find(m => String(getMemberId(m)) === String(data.paidBy))?.name || '',
-                splits: data.splits.map(s => ({
-                    user: s.userId,
-                    userName: s.name,
-                    amount: parseFloat(s.amount),
-                    owed: parseFloat(s.amount) // For new expenses, owed is initially amount
-                })),
+                splits: validSplits,
                 splitType
             };
 
-            // ====================================
-            // PERFORMANCE: Optimistic UI Update
-            // ====================================
             const isUpdate = Boolean(initialExpense);
-
-            // Close dialog immediately for instant feel
-            onClose();
-
-            // Show optimistic loading toast
-            toast.success(isUpdate ? 'Updating...' : 'Adding...', { duration: 800 });
 
             try {
                 if (isUpdate) {
-                    await groupService.updateExpense(group._id, initialExpense._id, expenseData);
+                    await groupService.updateExpense(group?._id, initialExpense._id, expenseData);
                     toast.success('Expense updated!');
                 } else {
-                    await groupService.addExpense(group._id, expenseData);
+                    await groupService.addExpense(group?._id, expenseData);
                     toast.success('Expense added!');
                 }
+
+                // Trigger refresh AFTER success
+                if (onExpenseAdded) onExpenseAdded();
+                onClose();
             } catch (err) {
+                console.error(err);
                 toast.error(err.response?.data?.message || `Failed to ${isUpdate ? 'update' : 'add'} expense`);
+            } finally {
+                setLoading(false);
             }
         } catch (err) {
-            // Validation error (before API call)
+            setLoading(false);
             toast.error(err.message || 'Invalid input');
         }
     };
@@ -800,6 +824,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                         </Button>
                         <Button
                             fullWidth
+                            disabled={loading}
                             onClick={handleSubmit(onSubmit)}
                             sx={{
                                 py: 1.25,
@@ -813,12 +838,18 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                     boxShadow: '0 6px 16px rgba(42, 82, 152, 0.4)',
                                     transform: 'translateY(-1px)'
                                 },
+                                '&:disabled': {
+                                    background: '#cbd5e1',
+                                    color: '#94a3b8',
+                                    boxShadow: 'none',
+                                    cursor: 'not-allowed'
+                                },
                                 textTransform: 'none',
                                 transition: 'all 0.2s ease',
                                 fontSize: '12px'
                             }}
                         >
-                            Add Expense
+                            {loading ? (initialExpense ? 'Updating...' : 'Adding...') : (initialExpense ? 'Update Expense' : 'Add Expense')}
                         </Button>
                     </Stack>
                 </Stack>

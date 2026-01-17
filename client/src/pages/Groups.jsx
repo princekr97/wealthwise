@@ -182,20 +182,20 @@ export default function Groups() {
         backgroundColor: 'rgba(255,255,255,0.02)',
         borderRadius: 2,
         border: '1px solid rgba(255,255,255,0.05)',
-        minHeight: 48,
+        minHeight: 36, // Reduced from 45
         '&.Mui-expanded': {
-            minHeight: 48,
+            minHeight: 36,
             borderBottomLeftRadius: 0,
             borderBottomRightRadius: 0,
             borderBottom: 'none'
         },
         '& .MuiAccordionSummary-content': {
-            margin: '12px 0'
+            margin: '6px 0' // Reduced from 10px
         }
     };
 
     const accordionDetailsStyle = {
-        p: { xs: 1, sm: 2 },
+        p: 1.5,
         border: '1px solid rgba(255,255,255,0.05)',
         borderTop: 'none',
         borderBottomLeftRadius: 8,
@@ -223,34 +223,34 @@ export default function Groups() {
                         backgroundImage: 'none',
                         boxShadow: 'none',
                         '&:before': { display: 'none' },
-                        mb: 2.5 // Reduced mb
+                        mb: 2 // Reduced from 2.5
                     }}
                 >
                     <AccordionSummary
-                        expandIcon={<ExpandMoreIcon sx={{ color: '#6B7280', fontSize: '1.2rem' }} />} // Smaller icon
+                        expandIcon={<ExpandMoreIcon sx={{ color: '#6B7280', fontSize: '1.1rem' }} />}
                         sx={{
                             backgroundColor: 'rgba(255,255,255,0.03)',
-                            borderRadius: '10px', // Slightly smaller radius
+                            borderRadius: '10px',
                             border: '1px solid rgba(255,255,255,0.08)',
-                            minHeight: 45, // Reduced from 56
+                            minHeight: 36, // Reduced from 45
                             '&.Mui-expanded': {
-                                minHeight: 45, // Reduced from 56
+                                minHeight: 36,
                                 borderBottomLeftRadius: 0,
                                 borderBottomRightRadius: 0,
                                 borderBottom: 'none'
                             },
                             '& .MuiAccordionSummary-content': {
-                                margin: '10px 0' // Reduced margin
+                                margin: '6px 0' // Reduced from 10px
                             }
                         }}
                     >
-                        <Typography sx={{ fontSize: '0.95rem', fontWeight: 600, color: '#FFFFFF' }}> {/* Reduced font */}
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#FFFFFF' }}> {/* Reduced from 0.95rem */}
                             Financial Overview
                         </Typography>
                     </AccordionSummary>
                     <AccordionDetails
                         sx={{
-                            p: 2, // Reduced from 2.5
+                            p: 1.5, // Reduced from 2
                             border: '1px solid rgba(255,255,255,0.08)',
                             borderTop: 'none',
                             borderBottomLeftRadius: '10px',
@@ -263,7 +263,7 @@ export default function Groups() {
                             sx={{
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(2, 1fr)',
-                                gap: 1.25 // Slightly smaller gap
+                                gap: 1 // Reduced from 1.25
                             }}
                         >
                             {/* Card 1 - You Are Owed */}
@@ -271,9 +271,9 @@ export default function Groups() {
                                 sx={{
                                     backgroundColor: 'rgba(255,255,255,0.05)',
                                     border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '12px', // Smaller radius
-                                    p: 2, // Reduced from 2.5
-                                    height: 110, // Reduced from 140
+                                    borderRadius: '10px', // Reduced radius
+                                    p: 1.5, // Reduced from 2
+                                    height: 90, // Reduced from 110
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
@@ -281,13 +281,13 @@ export default function Groups() {
                                     textAlign: 'center'
                                 }}
                             >
-                                <Typography sx={{ fontSize: '1.6rem', mb: 0.75 }}>📈</Typography> {/* Reduced size/mb */}
+                                <Typography sx={{ fontSize: '1.3rem', mb: 0.5 }}>📈</Typography> {/* Reduced */}
                                 <Typography
                                     sx={{
-                                        fontSize: '1.6rem', // Reduced from 2rem
+                                        fontSize: '1.3rem', // Reduced from 1.6rem
                                         fontWeight: 700,
                                         color: '#10B981',
-                                        mb: 0.25,
+                                        mb: 0.2,
                                         lineHeight: 1
                                     }}
                                 >
@@ -295,7 +295,7 @@ export default function Groups() {
                                 </Typography>
                                 <Typography
                                     sx={{
-                                        fontSize: '0.65rem', // Reduced
+                                        fontSize: '0.55rem', // Reduced
                                         fontWeight: 500,
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.5px',
@@ -311,9 +311,9 @@ export default function Groups() {
                                 sx={{
                                     backgroundColor: 'rgba(255,255,255,0.05)',
                                     border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '12px',
-                                    p: 2,
-                                    height: 110,
+                                    borderRadius: '10px',
+                                    p: 1.5,
+                                    height: 90,
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
@@ -321,13 +321,13 @@ export default function Groups() {
                                     textAlign: 'center'
                                 }}
                             >
-                                <Typography sx={{ fontSize: '1.6rem', mb: 0.75 }}>📉</Typography>
+                                <Typography sx={{ fontSize: '1.3rem', mb: 0.5 }}>📉</Typography>
                                 <Typography
                                     sx={{
-                                        fontSize: '1.6rem',
+                                        fontSize: '1.3rem',
                                         fontWeight: 700,
                                         color: '#FF6B6B',
-                                        mb: 0.25,
+                                        mb: 0.2,
                                         lineHeight: 1
                                     }}
                                 >
@@ -335,7 +335,7 @@ export default function Groups() {
                                 </Typography>
                                 <Typography
                                     sx={{
-                                        fontSize: '0.65rem',
+                                        fontSize: '0.55rem',
                                         fontWeight: 500,
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.5px',
@@ -351,9 +351,9 @@ export default function Groups() {
                                 sx={{
                                     backgroundColor: 'rgba(255,255,255,0.05)',
                                     border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '12px',
-                                    p: 2,
-                                    height: 110,
+                                    borderRadius: '10px',
+                                    p: 1.5,
+                                    height: 90,
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
@@ -361,13 +361,13 @@ export default function Groups() {
                                     textAlign: 'center'
                                 }}
                             >
-                                <Typography sx={{ fontSize: '1.6rem', mb: 0.75 }}>⚖️</Typography>
+                                <Typography sx={{ fontSize: '1.3rem', mb: 0.5 }}>⚖️</Typography>
                                 <Typography
                                     sx={{
-                                        fontSize: '1.6rem',
+                                        fontSize: '1.3rem',
                                         fontWeight: 700,
                                         color: stats.netBalance >= 0 ? '#10B981' : '#FF6B6B',
-                                        mb: 0.25,
+                                        mb: 0.2,
                                         lineHeight: 1
                                     }}
                                 >
@@ -375,7 +375,7 @@ export default function Groups() {
                                 </Typography>
                                 <Typography
                                     sx={{
-                                        fontSize: '0.65rem',
+                                        fontSize: '0.55rem',
                                         fontWeight: 500,
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.5px',
@@ -391,12 +391,12 @@ export default function Groups() {
             )}
 
             {/* Active Groups Section */}
-            <Box sx={{ mt: 2.5 }}> {/* Reduced mt */}
+            <Box sx={{ mt: 2 }}> {/* Reduced mt from 2.5 */}
                 <Typography
                     sx={{
-                        fontSize: '1rem', // Reduced from 1.125rem
+                        fontSize: '0.9rem', // Reduced from 1rem
                         fontWeight: 600,
-                        mb: 1.5,
+                        mb: 1, // Reduced from 1.5
                         color: '#FFFFFF'
                     }}
                 >
@@ -410,17 +410,17 @@ export default function Groups() {
                     <Box
                         sx={{
                             textAlign: 'center',
-                            py: 6, // Reduced from 8
+                            py: 4, // Reduced from 6
                             backgroundColor: 'rgba(255,255,255,0.03)',
-                            borderRadius: '12px',
+                            borderRadius: '10px',
                             border: '1px dashed rgba(255,255,255,0.1)'
                         }}
                     >
-                        <GroupIcon sx={{ fontSize: 40, color: '#6B7280', mb: 1.5, opacity: 0.6 }} /> {/* Reduced size */}
-                        <Typography sx={{ fontSize: '1.1rem', fontWeight: 600, color: '#FFFFFF', mb: 0.5 }}>
+                        <GroupIcon sx={{ fontSize: 32, color: '#6B7280', mb: 1.5, opacity: 0.6 }} /> {/* Reduced size */}
+                        <Typography sx={{ fontSize: '0.95rem', fontWeight: 600, color: '#FFFFFF', mb: 0.5 }}>
                             No groups yet
                         </Typography>
-                        <Typography sx={{ fontSize: '0.85rem', color: '#94A3B8', mb: 2.5 }}>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8', mb: 2 }}>
                             Create a group to start splitting expenses
                         </Typography>
                         <Button
@@ -432,10 +432,10 @@ export default function Groups() {
                                 color: '#FFFFFF',
                                 fontWeight: 600,
                                 textTransform: 'none',
-                                borderRadius: '10px',
-                                px: 2.5,
-                                py: 1.25,
-                                fontSize: '0.9rem',
+                                borderRadius: '8px',
+                                px: 2,
+                                py: 1,
+                                fontSize: '0.85rem',
                                 '&:hover': {
                                     backgroundColor: '#0D9488'
                                 }
@@ -446,14 +446,14 @@ export default function Groups() {
                     </Box>
                 ) : (
                     /* Clean List View (Splitwise Style) */
-                    <Stack spacing={1.25}> {/* Reduced spacing */}
+                    <Stack spacing={1}> {/* Reduced spacing */}
                         {groups.map((group) => (
                             <Card
                                 key={group._id}
                                 sx={{
                                     backgroundColor: 'rgba(255,255,255,0.03)',
                                     border: '1px solid rgba(255,255,255,0.08)',
-                                    borderRadius: '12px', // Reduced radius
+                                    borderRadius: '10px', // Reduced radius
                                     cursor: 'pointer',
                                     transition: 'all 0.15s ease',
                                     '&:hover': {
@@ -466,19 +466,19 @@ export default function Groups() {
                                 }}
                                 onClick={() => navigate(`/app/groups/${group._id}`)}
                             >
-                                <CardContent sx={{ p: 1.75, '&:last-child': { pb: 1.75 } }}> {/* Reduced padding */}
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.75 }}> {/* Reduced gap */}
-                                        {/* Group Icon - 40px circle (Reduced from 48) */}
+                                <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}> {/* Reduced padding */}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}> {/* Reduced gap */}
+                                        {/* Group Icon - 32px circle (Reduced from 40) */}
                                         <Box
                                             sx={{
-                                                width: 40,
-                                                height: 40,
+                                                width: 32,
+                                                height: 32,
                                                 borderRadius: '50%',
                                                 backgroundColor: 'rgba(20, 184, 166, 0.15)',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                fontSize: '1.25rem', // Reduced font
+                                                fontSize: '1rem', // Reduced font
                                                 flexShrink: 0
                                             }}
                                         >
@@ -489,7 +489,7 @@ export default function Groups() {
                                         <Box sx={{ flex: 1, minWidth: 0 }}>
                                             <Typography
                                                 sx={{
-                                                    fontSize: '0.95rem', // Reduced from 1.125
+                                                    fontSize: '0.8rem', // Reduced from 0.95
                                                     fontWeight: 600,
                                                     color: '#FFFFFF',
                                                     mb: 0,
@@ -500,7 +500,7 @@ export default function Groups() {
                                             </Typography>
                                             <Typography
                                                 sx={{
-                                                    fontSize: '0.75rem', // Reduced
+                                                    fontSize: '0.65rem', // Reduced from 0.75
                                                     color: '#94A3B8',
                                                     fontWeight: 400
                                                 }}
@@ -512,12 +512,12 @@ export default function Groups() {
                                             <AvatarGroup
                                                 max={4}
                                                 sx={{
-                                                    mt: 1, // Reduced margin
+                                                    mt: 0.75, // Reduced margin
                                                     justifyContent: 'flex-start',
                                                     '& .MuiAvatar-root': {
-                                                        width: 26, // Reduced from 32
-                                                        height: 26,
-                                                        fontSize: '0.7rem',
+                                                        width: 20, // Reduced from 26
+                                                        height: 20,
+                                                        fontSize: '0.6rem', // Reduced from 0.7
                                                         border: '2px solid rgba(15, 23, 42, 1)',
                                                         backgroundColor: '#14B8A6',
                                                         color: '#FFFFFF',
@@ -550,7 +550,7 @@ export default function Groups() {
                                         <ArrowForwardIcon
                                             sx={{
                                                 color: '#6B7280',
-                                                fontSize: '1.1rem', // Reduced
+                                                fontSize: '1rem', // Reduced
                                                 flexShrink: 0
                                             }}
                                         />

@@ -618,12 +618,12 @@ export default function Expenses() {
         PaperProps={{
           sx: {
             borderRadius: '24px 24px 16px 16px',
-            background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)',
+            background: 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), var(--active-gradient)',
+            backgroundAttachment: 'fixed',
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid',
-            borderImage: 'linear-gradient(135deg, rgba(6, 182, 212, 0.4), rgba(16, 185, 129, 0.4)) 1',
-            boxShadow: '0px 24px 48px rgba(0, 0, 0, 0.6), 0 0 20px rgba(6, 182, 212, 0.15)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: '0px 24px 48px rgba(0, 0, 0, 0.6)',
             overflow: 'hidden'
           }
         }}

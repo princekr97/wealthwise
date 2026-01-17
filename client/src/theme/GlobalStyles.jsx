@@ -4,14 +4,23 @@
  */
 
 import { GlobalStyles as MuiGlobalStyles } from '@mui/material';
+import { useThemeContext } from '../context/ThemeContext';
+import { gradients } from './gradients';
 
 export default function GlobalStyles() {
+  const { currentGradient } = useThemeContext();
+  const activeGradient = gradients[currentGradient]?.gradient || gradients.sophisticatedNavy.gradient;
+
   return (
     <MuiGlobalStyles
       styles={{
         // =====================================================
-        // BASE STYLES & ANIMATIONS
+        // ROOT VARIABLES & BASE STYLES
         // =====================================================
+
+        ':root': {
+          '--active-gradient': activeGradient,
+        },
 
         '*': {
           boxSizing: 'border-box',
@@ -19,10 +28,25 @@ export default function GlobalStyles() {
           padding: 0
         },
 
-        'html, body, #root': {
+        'html': {
+          height: '100%',
+          backgroundColor: 'transparent',
+        },
+
+        'body': {
           minHeight: '100vh',
-          backgroundColor: 'transparent', // Changed from solid color to allow page gradients
-          color: '#F9FAFB'
+          background: 'var(--active-gradient)',
+          backgroundAttachment: 'fixed',
+          backgroundColor: '#0F172A', // Fallback
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover',
+          color: '#F9FAFB',
+          transition: 'background 0.5s ease-in-out' // Smooth transition
+        },
+
+        '#root': {
+          minHeight: '100vh',
+          backgroundColor: 'transparent',
         },
 
         // Smooth scrolling

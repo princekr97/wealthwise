@@ -86,9 +86,9 @@ const gradients = {
   // Savings/Neutral - Slate
   neutral: 'linear-gradient(135deg, #64748B 0%, #475569 100%)',
   
-  // Card Backgrounds - Frosted Glass
-  card: 'linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%)',
-  cardHover: 'linear-gradient(145deg, rgba(51, 65, 85, 0.6) 0%, rgba(30, 41, 59, 0.8) 100%)',
+  // Card Backgrounds - Frosted Glass (More transparent to show root theme)
+  card: 'linear-gradient(145deg, rgba(30, 41, 59, 0.1) 0%, rgba(15, 23, 42, 0.2) 100%)',
+  cardHover: 'linear-gradient(145deg, rgba(51, 65, 85, 0.15) 0%, rgba(30, 41, 59, 0.25) 100%)',
   
   // Page Background Glow
   glow: 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.15), transparent 50%)',
@@ -131,8 +131,9 @@ export const muiTheme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          background: `${colors.bgPrimary} ${gradients.glow}`,
-          backgroundAttachment: 'fixed',
+          // background and backgroundAttachment moved to GlobalStyles.jsx for dynamic switching
+          margin: 0,
+          padding: 0,
           // Add keyframe animations
           '@keyframes pulse': {
             '0%': { opacity: 1 },
@@ -441,17 +442,18 @@ export const muiTheme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiBackdrop-root': {
-            backgroundColor: 'rgba(0, 0, 0, 0.65)',  // Dark blur overlay
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)'
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)'
           }
         },
         paper: {
-          background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
-          backdropFilter: 'blur(40px)',
-          WebkitBackdropFilter: 'blur(40px)',
-          border: `1px solid ${colors.glassBorder}`,
-          borderRadius: 20,  // More rounded for premium feel
+          background: 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), var(--active-gradient)',
+          backgroundAttachment: 'fixed',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: 20,
           boxShadow: '0 24px 80px rgba(0, 0, 0, 0.6)',
           overflow: 'hidden'
         }
