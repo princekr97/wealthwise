@@ -52,6 +52,7 @@ import {
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
   FilterList as FilterListIcon,
   Refresh as RefreshIcon,
   Close as CloseIcon,
@@ -73,15 +74,27 @@ const CATEGORIES = Object.keys(CATEGORY_ICONS);
 const PAYMENT_METHODS = ['UPI', 'Card', 'Cash', 'Net Banking', 'Wallet'];
 const PRIORITIES = ['low', 'medium', 'high'];
 
-const COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#EC4899'];
+// Vibrant Premium Color Palette - Category-Coded
+const COLORS = [
+  '#10B981', // Emerald - Investments
+  '#3B82F6', // Blue - Rent
+  '#F97316', // Orange - Shopping  
+  '#EF4444', // Red - Food & Dining
+  '#8B5CF6', // Purple - Bills
+  '#06B6D4', // Cyan - Transportation
+  '#EC4899', // Pink - Groceries
+  '#84CC16'  // Lime - Personal Care
+];
 
 export default function Expenses() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
-  const { expenses, byCategory, loading, addExpense, removeExpense } = useExpenses();
+  const { expenses, byCategory, loading, addExpense, updateExpense, removeExpense } = useExpenses();
   const [open, setOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [page, setPage] = useState(0);
@@ -110,18 +123,45 @@ export default function Expenses() {
 
   const onSubmit = async (values) => {
     try {
-      await addExpense({
-        ...values,
-        amount: Number(values.amount),
-        isRecurring: Boolean(values.isRecurring)
-      });
-      toast.success('Expense added successfully');
+      if (editMode && editingId) {
+        await updateExpense(editingId, {
+          ...values,
+          amount: Number(values.amount),
+          isRecurring: Boolean(values.isRecurring)
+        });
+        toast.success('Expense updated successfully');
+      } else {
+        await addExpense({
+          ...values,
+          amount: Number(values.amount),
+          isRecurring: Boolean(values.isRecurring)
+        });
+        toast.success('Expense added successfully');
+      }
       reset();
       setOpen(false);
+      setEditMode(false);
+      setEditingId(null);
     } catch (error) {
-      toast.error('Failed to add expense');
+      toast.error(editMode ? 'Failed to update expense' : 'Failed to add expense');
       console.error(error);
     }
+  };
+
+  const handleEdit = (expense) => {
+    setEditMode(true);
+    setEditingId(expense._id);
+    reset({
+      amount: expense.amount.toString(),
+      category: expense.category,
+      date: new Date(expense.date).toISOString().split('T')[0],
+      description: expense.description || '',
+      priority: expense.priority || 'medium',
+      paymentMethod: expense.paymentMethod || 'UPI',
+      bankName: expense.bankName || '',
+      isRecurring: expense.isRecurring || false
+    });
+    setOpen(true);
   };
 
   const handleDelete = async (id) => {
@@ -261,26 +301,57 @@ export default function Expenses() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  innerRadius={isMobile ? 40 : (isTablet ? 55 : 65)}
-                  outerRadius={isMobile ? 70 : (isTablet ? 90 : 110)}
+                  innerRadius={isMobile ? 50 : (isTablet ? 70 : 100)}  // Larger inner radius
+                  outerRadius={isMobile ? 80 : (isTablet ? 110 : 140)} // Larger outer radius (28-40px stroke)
                   paddingAngle={2}
                   stroke="transparent"
                   dataKey="value"
                 >
                   {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip
                   formatter={(value) => formatCurrency(value)}
                   contentStyle={{
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: 6,
-                    fontSize: 12,
-                    padding: '8px 12px'
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    padding: '10px 14px'
                   }}
                 />
+                {/* Center Label */}
+                <text
+                  x="50%"
+                  y="48%"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  style={{
+                    fontSize: isMobile ? '18px' : '24px',
+                    fontWeight: 700,
+                    fill: '#FFFFFF'
+                  }}
+                >
+                  {formatCurrency(totalExpenses)}
+                </text>
+                <text
+                  x="50%"
+                  y="56%"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    fill: '#94A3B8'
+                  }}
+                >
+                  Total Spent
+                </text>
               </PieChart>
             </ResponsiveContainer>
           )}
@@ -316,16 +387,23 @@ export default function Expenses() {
                     backgroundColor: 'rgba(0, 0, 0, 0.9)',
                     border: '1px solid rgba(255, 255, 255, 0.3)',
                     borderRadius: 8,
-                    fontSize: 12,
-                    padding: '8px 12px'
+                    fontSize: 13,
+                    fontWeight: 600,
+                    padding: '10px 14px'
                   }}
                   formatter={(value) => formatCurrency(value)}
                 />
+                <defs>
+                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3B82F6" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#06B6D4" stopOpacity={1} />
+                  </linearGradient>
+                </defs>
                 <Bar
                   dataKey="value"
-                  fill="#3B82F6"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={50}
+                  fill="url(#barGradient)"
+                  radius={[8, 8, 0, 0]}  // Larger radius for premium feel
+                  maxBarSize={60}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -333,156 +411,190 @@ export default function Expenses() {
         </ChartCard>
       </ChartGrid>
 
-      {/* Expenses Table */}
-      <Card>
-        <CardContent>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontSize: { xs: '0.95rem', sm: '1rem', md: '1.1rem' } }}>
-            📋 Recent Expenses
-          </Typography>
+      {/* Clean Expenses List - Minimalist Design */}
+      <Card sx={{ overflow: 'hidden' }}>
+        <CardContent sx={{ p: 0 }}>
+          {/* Header */}
+          <Box sx={{ px: 2.5, py: 2, borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.25rem' }}>
+              📋 Recent Expenses
+            </Typography>
+          </Box>
 
-          {/* Desktop Table */}
-          {!isMobile && (
-            <TableContainer sx={{ overflowX: 'auto' }}>
-              <Table size="medium">
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-                    <TableCell sx={{ fontSize: '0.8rem' }}>Date</TableCell>
-                    <TableCell sx={{ fontSize: '0.8rem' }}>Category</TableCell>
-                    <TableCell align="right" sx={{ fontSize: '0.8rem' }}>Amount</TableCell>
-                    <TableCell sx={{ fontSize: '0.8rem' }}>Payment</TableCell>
-                    <TableCell sx={{ fontSize: '0.8rem' }}>Priority</TableCell>
-                    <TableCell align="center" sx={{ fontSize: '0.8rem' }}>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {paginatedExpenses.length > 0 ? (
-                    paginatedExpenses.map((expense) => (
-                      <TableRow key={expense._id} hover>
-                        <TableCell sx={{ fontSize: '0.85rem' }}>{formatDate(expense.date)}</TableCell>
-                        <TableCell sx={{ fontSize: '0.85rem' }}>
-                          <Chip
-                            label={`${CATEGORY_ICONS[expense.category] || '📌'} ${expense.category}`}
-                            size="small"
-                            variant="outlined"
-                          />
-                        </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                          {formatCurrency(expense.amount)}
-                        </TableCell>
-                        <TableCell sx={{ fontSize: '0.85rem' }}>{expense.paymentMethod}</TableCell>
-                        <TableCell sx={{ fontSize: '0.85rem' }}>
-                          <Chip
-                            label={expense.priority ? expense.priority.charAt(0).toUpperCase() + expense.priority.slice(1) : 'Medium'}
-                            size="small"
-                            sx={{
-                              backgroundColor: alpha(PRIORITY_COLORS[expense.priority?.toLowerCase()]?.bg || '#94a3b8', 0.15),
-                              color: PRIORITY_COLORS[expense.priority?.toLowerCase()]?.bg || '#94a3b8',
-                              fontWeight: 700,
-                              fontSize: '0.7rem',
-                              textTransform: 'uppercase'
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleDelete(expense._id)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                        <Typography color="textSecondary" sx={{ fontSize: '0.9rem' }}>
-                          No expenses yet. Add one to get started!
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
+          {/* Expense List */}
+          {paginatedExpenses.length > 0 ? (
+            <Box>
+              {paginatedExpenses.map((expense, index) => {
+                const categoryColor = COLORS[CATEGORIES.indexOf(expense.category) % COLORS.length];
+                const priorityColor = expense.priority === 'high' ? '#EF4444' : expense.priority === 'medium' ? '#F59E0B' : '#10B981';
 
-          {/* Mobile Card View */}
-          {isMobile && (
-            <Stack spacing={2} sx={{ mt: 2 }}>
-              {paginatedExpenses.length > 0 ? (
-                paginatedExpenses.map((expense) => (
+                return (
                   <Box
                     key={expense._id}
                     sx={{
-                      p: 2,
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: 1.5,
-                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      px: 2.5,
+                      py: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      borderBottom: index < paginatedExpenses.length - 1 ? '1px solid rgba(255, 255, 255, 0.06)' : 'none',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.15s ease',
                       '&:hover': {
-                        backgroundColor: 'rgba(255,255,255,0.04)',
-                        borderColor: 'rgba(255,255,255,0.2)'
+                        backgroundColor: 'rgba(255, 255, 255, 0.03)'
                       },
-                      transition: 'all 0.2s ease'
+                      '&:active': {
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                      }
                     }}
                   >
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.9rem' }}>
-                          {`${CATEGORY_ICONS[expense.category] || '📌'} ${expense.category}`}
+                    {/* Category Icon - 40px circle with 15% opacity background */}
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        backgroundColor: `${categoryColor}26`, // 15% opacity
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        fontSize: '1.5rem'
+                      }}
+                    >
+                      {CATEGORY_ICONS[expense.category] || '📌'}
+                    </Box>
+
+                    {/* Left Section - Category & Details */}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: '1rem',
+                          color: '#FFFFFF',
+                          mb: 0.25,
+                          lineHeight: 1.3
+                        }}
+                      >
+                        {expense.category}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: '0.8125rem',
+                          color: '#94A3B8',
+                          fontWeight: 400,
+                          lineHeight: 1.3,
+                          mb: expense.description ? 0.25 : 0
+                        }}
+                      >
+                        {formatDate(expense.date)} · {expense.paymentMethod || 'Cash'}
+                      </Typography>
+                      {/* Description - Truncated to 40 chars */}
+                      {expense.description && (
+                        <Typography
+                          sx={{
+                            fontSize: '0.75rem',
+                            color: '#6B7280',
+                            fontWeight: 400,
+                            lineHeight: 1.2,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {expense.description.length > 40
+                            ? `${expense.description.substring(0, 40)}...`
+                            : expense.description}
                         </Typography>
-                        <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.75rem' }}>
-                          {formatDate(expense.date)}
-                        </Typography>
-                      </Box>
+                      )}
+                    </Box>
+
+                    {/* Right Section - Amount & Priority */}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5, position: 'relative' }}>
+                      {/* Priority Dot - Minimal 8px circle */}
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          backgroundColor: priorityColor,
+                          position: 'absolute',
+                          top: -2,
+                          right: -2
+                        }}
+                      />
+
+                      {/* Amount */}
+                      <Typography
+                        sx={{
+                          fontWeight: 700,
+                          fontSize: '1.125rem',
+                          color: '#FF6B6B',
+                          letterSpacing: '-0.01em'
+                        }}
+                      >
+                        -{formatCurrency(expense.amount)}
+                      </Typography>
+                    </Box>
+
+                    {/* Action Buttons - Edit & Delete */}
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      {/* Edit Button - Ghost style */}
                       <IconButton
                         size="small"
-                        color="error"
-                        onClick={() => handleDelete(expense._id)}
-                        sx={{ mt: -1, mr: -1 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(expense);
+                        }}
+                        sx={{
+                          color: 'rgba(59, 130, 246, 0.7)',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            color: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)'
+                          }
+                        }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+
+                      {/* Delete Button - Ghost style */}
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(expense._id);
+                        }}
+                        sx={{
+                          color: 'rgba(239, 68, 68, 0.7)',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            color: '#EF4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)'
+                          }
+                        }}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>
-
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 700, color: 'error.main', fontSize: '1rem' }}>
-                        {formatCurrency(expense.amount)}
-                      </Typography>
-                      <Chip
-                        label={expense.priority ? expense.priority.charAt(0).toUpperCase() + expense.priority.slice(1) : 'Medium'}
-                        size="small"
-                        sx={{
-                          backgroundColor: alpha(PRIORITY_COLORS[expense.priority?.toLowerCase()]?.bg || '#94a3b8', 0.15),
-                          color: PRIORITY_COLORS[expense.priority?.toLowerCase()]?.bg || '#94a3b8',
-                          fontWeight: 700,
-                          fontSize: '0.7rem',
-                          textTransform: 'uppercase'
-                        }}
-                      />
-                    </Box>
-
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, pt: 1, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                      <Box>
-                        <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem', display: 'block' }}>
-                          Payment
-                        </Typography>
-                        <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
-                          {expense.paymentMethod}
-                        </Typography>
-                      </Box>
-                    </Box>
                   </Box>
-                ))
-              ) : (
-                <Typography color="textSecondary" sx={{ textAlign: 'center', py: 3, fontSize: '0.9rem' }}>
-                  No expenses yet. Add one to get started!
-                </Typography>
-              )}
-            </Stack>
+                );
+              })}
+            </Box>
+          ) : (
+            /* Empty State */
+            <Box sx={{ py: 8, textAlign: 'center' }}>
+              <Typography sx={{ fontSize: '3rem', mb: 2, opacity: 0.5 }}>💸</Typography>
+              <Typography sx={{ fontSize: '1.25rem', fontWeight: 600, color: '#FFFFFF', mb: 1 }}>
+                No expenses this month
+              </Typography>
+              <Typography sx={{ fontSize: '0.9375rem', color: '#94A3B8' }}>
+                Start tracking by adding an expense
+              </Typography>
+            </Box>
           )}
 
+          {/* Pagination */}
           {filteredExpenses && filteredExpenses.length > rowsPerPage && (
             <TablePagination
               rowsPerPageOptions={[5, 10, 25]}
@@ -497,7 +609,7 @@ export default function Expenses() {
         </CardContent>
       </Card>
 
-      {/* Add Expense Dialog */}
+      {/* Premium Add Expense Dialog - Frosted Glass */}
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
@@ -505,141 +617,393 @@ export default function Expenses() {
         maxWidth="sm"
         PaperProps={{
           sx: {
-            backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)'
+            borderRadius: '24px 24px 16px 16px',
+            background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid',
+            borderImage: 'linear-gradient(135deg, rgba(6, 182, 212, 0.4), rgba(16, 185, 129, 0.4)) 1',
+            boxShadow: '0px 24px 48px rgba(0, 0, 0, 0.6), 0 0 20px rgba(6, 182, 212, 0.15)',
+            overflow: 'hidden'
+          }
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              backgroundColor: 'rgba(0, 0, 0, 0.75)'
+            }
           }
         }}
       >
-        <DialogTitle sx={{
-          fontWeight: 700,
-          pb: 1,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1
-        }}>
+        {/* Header with Close Button */}
+        <DialogTitle
+          sx={{
+            background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.6) 0%, rgba(30, 41, 59, 0) 100%)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            fontWeight: 700,
+            fontSize: '1.5rem',
+            pb: 2,
+            pt: 2.5,
+            px: 2.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            color: '#FFFFFF'
+          }}
+        >
           <IconButton
-            edge="start"
-            color="inherit"
             onClick={() => setOpen(false)}
-            aria-label="close"
-            size="small"
-            sx={{ mr: 1 }}
+            size="medium"
+            sx={{
+              color: 'rgba(255, 255, 255, 0.7)',
+              width: 40,
+              height: 40,
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                color: '#FFFFFF',
+                transform: 'scale(1.1)'
+              },
+              '&:active': {
+                transform: 'scale(0.95)'
+              }
+            }}
           >
-            <CloseIcon fontSize="small" />
+            <CloseIcon />
           </IconButton>
-          Add New Expense
+          <Box component="span" sx={{ fontSize: '1.25rem' }}>💸</Box>
+          {editMode ? 'Edit Expense' : 'Add New Expense'}
         </DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <Stack spacing={2}>
+
+        {/* Form Content */}
+        <DialogContent sx={{ px: 2.5, pt: 3, pb: 2 }}>
+          <Stack spacing={2}>  {/* 16px vertical gaps */}
+
+            {/* Amount Field - Primary Focus (56px height) */}
             <Controller
               name="amount"
               control={control}
               rules={{ required: 'Amount is required' }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Amount"
-                  type="number"
-                  inputProps={{ step: '0.01' }}
-                  fullWidth
-                  size="small"
-                />
+              render={({ field, fieldState: { error } }) => (
+                <Box>
+                  <Typography
+                    component="label"
+                    sx={{
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      color: '#94A3B8',
+                      mb: 1,
+                      display: 'block'
+                    }}
+                  >
+                    Amount *
+                  </Typography>
+                  <TextField
+                    {...field}
+                    type="number"
+                    placeholder="₹0.00"
+                    inputProps={{ step: '0.01' }}
+                    fullWidth
+                    error={!!error}
+                    helperText={error?.message}
+                    sx={{
+                      '& .MuiInputBase-root': {
+                        height: '56px',  // Larger for primary field
+                        fontSize: '1.25rem',
+                        fontWeight: 600
+                      }
+                    }}
+                  />
+                </Box>
               )}
             />
 
+            {/* Category Dropdown (52px height) */}
             <Controller
               name="category"
               control={control}
               render={({ field }) => (
-                <FormControl fullWidth size="small">
-                  <InputLabel>Category</InputLabel>
-                  <Select {...field} label="Category">
-                    {CATEGORIES.map((cat) => (
-                      <MenuItem key={cat} value={cat}>
-                        {CATEGORY_ICONS[cat]} {cat}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Box>
+                  <Typography
+                    component="label"
+                    sx={{
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      color: '#94A3B8',
+                      mb: 1,
+                      display: 'block'
+                    }}
+                  >
+                    Category
+                  </Typography>
+                  <FormControl fullWidth>
+                    <Select
+                      {...field}
+                      sx={{
+                        '& .MuiSelect-select': {
+                          height: '52px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          fontSize: '1rem',
+                          fontWeight: 500,
+                          py: 0
+                        }
+                      }}
+                    >
+                      {CATEGORIES.map((cat) => (
+                        <MenuItem key={cat} value={cat} sx={{ fontSize: '1rem' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Box sx={{ fontSize: '1.5rem' }}>{CATEGORY_ICONS[cat]}</Box>
+                            {cat}
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
               )}
             />
 
+            {/* Date Picker (52px height) */}
             <Controller
               name="date"
               control={control}
               render={({ field }) => (
-                <TextField {...field} label="Date" type="date" fullWidth size="small" InputLabelProps={{ shrink: true }} />
+                <Box>
+                  <Typography
+                    component="label"
+                    sx={{
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      color: '#94A3B8',
+                      mb: 1,
+                      display: 'block'
+                    }}
+                  >
+                    Date
+                  </Typography>
+                  <TextField
+                    {...field}
+                    type="date"
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    sx={{
+                      '& .MuiInputBase-root': {
+                        height: '52px',
+                        fontSize: '1rem',
+                        fontWeight: 500
+                      }
+                    }}
+                  />
+                </Box>
               )}
             />
 
+            {/* Description (96px height - 3 lines) */}
             <Controller
               name="description"
               control={control}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Description"
-                  fullWidth
-                  multiline
-                  rows={2}
-                  size="small"
-                />
+                <Box>
+                  <Typography
+                    component="label"
+                    sx={{
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      color: '#94A3B8',
+                      mb: 1,
+                      display: 'block'
+                    }}
+                  >
+                    Description <Box component="span" sx={{ color: '#6B7280', textTransform: 'none' }}>(optional)</Box>
+                  </Typography>
+                  <TextField
+                    {...field}
+                    placeholder="Add details..."
+                    fullWidth
+                    multiline
+                    rows={3}
+                    sx={{
+                      '& .MuiInputBase-root': {
+                        fontSize: '0.9375rem',
+                        fontWeight: 400,
+                        py: 1.5
+                      }
+                    }}
+                  />
+                </Box>
               )}
             />
 
+            {/* Priority with Color-Coded Dots (52px height) */}
             <Controller
               name="priority"
               control={control}
               render={({ field }) => (
-                <FormControl fullWidth size="small">
-                  <InputLabel>Priority</InputLabel>
-                  <Select {...field} label="Priority">
-                    {PRIORITIES.map((p) => (
-                      <MenuItem key={p} value={p}>
-                        {p.charAt(0).toUpperCase() + p.slice(1)}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Box>
+                  <Typography
+                    component="label"
+                    sx={{
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      color: '#94A3B8',
+                      mb: 1,
+                      display: 'block'
+                    }}
+                  >
+                    Priority
+                  </Typography>
+                  <FormControl fullWidth>
+                    <Select
+                      {...field}
+                      sx={{
+                        '& .MuiSelect-select': {
+                          height: '52px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          fontSize: '1rem',
+                          fontWeight: 500,
+                          py: 0
+                        }
+                      }}
+                    >
+                      {PRIORITIES.map((p) => (
+                        <MenuItem key={p} value={p} sx={{ fontSize: '1rem' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Box
+                              sx={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: '50%',
+                                backgroundColor: p === 'high' ? '#EF4444' : p === 'medium' ? '#F59E0B' : '#10B981'
+                              }}
+                            />
+                            {p.charAt(0).toUpperCase() + p.slice(1)}
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
               )}
             />
 
+            {/* Payment Method (52px height) */}
             <Controller
               name="paymentMethod"
               control={control}
               render={({ field }) => (
-                <FormControl fullWidth size="small">
-                  <InputLabel>Payment Method</InputLabel>
-                  <Select {...field} label="Payment Method">
-                    {PAYMENT_METHODS.map((method) => (
-                      <MenuItem key={method} value={method}>
-                        {method}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Box>
+                  <Typography
+                    component="label"
+                    sx={{
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      color: '#94A3B8',
+                      mb: 1,
+                      display: 'block'
+                    }}
+                  >
+                    Payment Method
+                  </Typography>
+                  <FormControl fullWidth>
+                    <Select
+                      {...field}
+                      sx={{
+                        '& .MuiSelect-select': {
+                          height: '52px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          fontSize: '1rem',
+                          fontWeight: 500,
+                          py: 0
+                        }
+                      }}
+                    >
+                      {PAYMENT_METHODS.map((method) => (
+                        <MenuItem key={method} value={method} sx={{ fontSize: '1rem' }}>
+                          {method}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
               )}
             />
 
+            {/* Recurring Expense - Custom Checkbox */}
             <Controller
               name="isRecurring"
               control={control}
               render={({ field }) => (
                 <FormControlLabel
-                  control={<Checkbox {...field} checked={field.value} />}
-                  label="Recurring Expense"
+                  control={
+                    <Checkbox
+                      {...field}
+                      checked={field.value}
+                      sx={{
+                        color: 'rgba(255, 255, 255, 0.3)',
+                        '&.Mui-checked': {
+                          color: '#06B6D4'
+                        }
+                      }}
+                    />
+                  }
+                  label={
+                    <Typography sx={{ fontSize: '0.9375rem', fontWeight: 500, color: '#E2E8F0' }}>
+                      Recurring Expense
+                    </Typography>
+                  }
+                  sx={{ ml: 0 }}
                 />
               )}
             />
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
 
+        {/* CTA Button - Vibrant Gradient (56px height) */}
+        <DialogActions sx={{ px: 2.5, pb: 3, pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <Button
             onClick={handleSubmit(onSubmit)}
             variant="contained"
-            color="primary"
+            fullWidth
+            size="large"
+            sx={{
+              height: '56px',
+              background: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)',
+              color: '#FFFFFF',
+              fontSize: '1.0625rem',
+              fontWeight: 700,
+              letterSpacing: '0.5px',
+              borderRadius: '16px',
+              boxShadow: '0px 8px 20px rgba(6, 182, 212, 0.4)',
+              textTransform: 'uppercase',
+              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)',
+                boxShadow: '0px 12px 28px rgba(6, 182, 212, 0.5)',
+                transform: 'translateY(-2px)'
+              },
+              '&:active': {
+                transform: 'translateY(0) scale(0.97)'
+              }
+            }}
           >
-            Add Expense
+            {editMode ? 'Update Expense' : 'Add Expense'}
           </Button>
         </DialogActions>
       </Dialog>

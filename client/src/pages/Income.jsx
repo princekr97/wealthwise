@@ -319,97 +319,186 @@ export default function Income() {
         </CardContent>
       </Card>
 
-      {/* Add Income Dialog */}
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+      {/* Premium Add Income Dialog - Frosted Glass */}
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            borderRadius: '24px 24px 16px 16px',
+            background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid',
+            borderImage: 'linear-gradient(135deg, rgba(6, 182, 212, 0.4), rgba(16, 185, 129, 0.4)) 1',
+            boxShadow: '0px 24px 48px rgba(0, 0, 0, 0.6), 0 0 20px rgba(16, 185, 129, 0.15)',
+            overflow: 'hidden'
+          }
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              backgroundColor: 'rgba(0, 0, 0, 0.75)'
+            }
+          }
+        }}
+      >
         <DialogTitle sx={{
+          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.6) 0%, rgba(30, 41, 59, 0) 100%)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           fontWeight: 700,
-          pb: 1,
+          fontSize: '1.5rem',
+          pb: 2,
+          pt: 2.5,
+          px: 2.5,
           display: 'flex',
           alignItems: 'center',
-          gap: 1
+          gap: 1.5,
+          color: '#FFFFFF'
         }}>
           <IconButton
-            edge="start"
-            color="inherit"
             onClick={() => setOpen(false)}
-            aria-label="close"
-            size="small"
-            sx={{ mr: 1 }}
+            size="medium"
+            sx={{
+              color: 'rgba(255, 255, 255, 0.7)',
+              width: 40,
+              height: 40,
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                color: '#FFFFFF',
+                transform: 'scale(1.1)'
+              },
+              '&:active': {
+                transform: 'scale(0.95)'
+              }
+            }}
           >
-            <CloseIcon fontSize="small" />
+            <CloseIcon />
           </IconButton>
+          <Box component="span" sx={{ fontSize: '1.25rem' }}>💼</Box>
           Add Income
         </DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
+        <DialogContent sx={{ px: 2.5, pt: 3, pb: 2 }}>
           <Stack spacing={2}>
             <Controller
               name="sourceType"
               control={control}
               render={({ field }) => (
-                <FormControl fullWidth size="small">
-                  <InputLabel>Source Type</InputLabel>
-                  <Select {...field} label="Source Type">
-                    {SOURCES.map((src) => (
-                      <MenuItem key={src} value={src}>
-                        {src}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Box>
+                  <Typography component="label" sx={{ fontSize: '0.8125rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#94A3B8', mb: 1, display: 'block' }}>
+                    Source Type
+                  </Typography>
+                  <FormControl fullWidth>
+                    <Select {...field} sx={{ '& .MuiSelect-select': { height: '52px', display: 'flex', alignItems: 'center', fontSize: '1rem', fontWeight: 500, py: 0 } }}>
+                      {SOURCES.map((src) => (
+                        <MenuItem key={src} value={src}>{src}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
               )}
             />
             <Controller
               name="amount"
               control={control}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Amount"
-                  type="number"
-                  size="small"
-                  fullWidth
-                  inputProps={{ step: '0.01' }}
-                />
+                <Box>
+                  <Typography component="label" sx={{ fontSize: '0.8125rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#94A3B8', mb: 1, display: 'block' }}>
+                    Amount *
+                  </Typography>
+                  <TextField
+                    {...field}
+                    type="number"
+                    placeholder="₹0.00"
+                    fullWidth
+                    inputProps={{ step: '0.01' }}
+                    sx={{ '& .MuiInputBase-root': { height: '56px', fontSize: '1.25rem', fontWeight: 600 } }}
+                  />
+                </Box>
               )}
             />
             <Controller
               name="date"
               control={control}
               render={({ field }) => (
-                <TextField {...field} label="Date" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
+                <Box>
+                  <Typography component="label" sx={{ fontSize: '0.8125rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#94A3B8', mb: 1, display: 'block' }}>
+                    Date
+                  </Typography>
+                  <TextField {...field} type="date" fullWidth InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-root': { height: '52px', fontSize: '1rem', fontWeight: 500 } }} />
+                </Box>
               )}
             />
             <Controller
               name="description"
               control={control}
               render={({ field }) => (
-                <TextField {...field} label="Description" size="small" fullWidth multiline rows={2} />
+                <Box>
+                  <Typography component="label" sx={{ fontSize: '0.8125rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#94A3B8', mb: 1, display: 'block' }}>
+                    Description <Box component="span" sx={{ color: '#6B7280', textTransform: 'none' }}>(optional)</Box>
+                  </Typography>
+                  <TextField {...field} placeholder="Add details..." fullWidth multiline rows={3} sx={{ '& .MuiInputBase-root': { fontSize: '0.9375rem', fontWeight: 400, py: 1.5 } }} />
+                </Box>
               )}
             />
             <Controller
               name="creditTo"
               control={control}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Credit To (e.g., Bank Account, Wallet)"
-                  size="small"
-                  fullWidth
-                />
+                <Box>
+                  <Typography component="label" sx={{ fontSize: '0.8125rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#94A3B8', mb: 1, display: 'block' }}>
+                    Credit To
+                  </Typography>
+                  <TextField {...field} placeholder="e.g., Bank Account, Wallet" fullWidth sx={{ '& .MuiInputBase-root': { height: '52px', fontSize: '1rem', fontWeight: 500 } }} />
+                </Box>
               )}
             />
             <Controller
               name="isRecurring"
               control={control}
               render={({ field }) => (
-                <FormControlLabel control={<Checkbox {...field} />} label="Recurring Income" />
+                <FormControlLabel
+                  control={<Checkbox {...field} sx={{ color: 'rgba(255, 255, 255, 0.3)', '&.Mui-checked': { color: '#10B981' } }} />}
+                  label={<Typography sx={{ fontSize: '0.9375rem', fontWeight: 500, color: '#E2E8F0' }}>Recurring Income</Typography>}
+                  sx={{ ml: 0 }}
+                />
               )}
             />
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleSubmit(onSubmit)} variant="contained" color="primary">
-            Add
+        <DialogActions sx={{ px: 2.5, pb: 3, pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <Button
+            onClick={handleSubmit(onSubmit)}
+            variant="contained"
+            fullWidth
+            size="large"
+            sx={{
+              height: '56px',
+              background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+              color: '#FFFFFF',
+              fontSize: '1.0625rem',
+              fontWeight: 700,
+              letterSpacing: '0.5px',
+              borderRadius: '16px',
+              boxShadow: '0px 8px 20px rgba(16, 185, 129, 0.4)',
+              textTransform: 'uppercase',
+              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+                boxShadow: '0px 12px 28px rgba(16, 185, 129, 0.5)',
+                transform: 'translateY(-2px)'
+              },
+              '&:active': {
+                transform: 'translateY(0) scale(0.97)'
+              }
+            }}
+          >
+            Add Income
           </Button>
         </DialogActions>
       </Dialog>

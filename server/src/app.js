@@ -19,15 +19,24 @@ import { connectDB } from './config/db.js';
 
 const app = express();
 
-app.use(helmet());
-
+// CORS configuration - must be before helmet
 const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(
   cors({
     origin: allowedOrigin,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+  })
+);
+
+// Helmet security headers - configured to work with CORS
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
   })
 );
 

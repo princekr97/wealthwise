@@ -12,59 +12,87 @@
 import { createTheme, alpha } from '@mui/material/styles';
 
 // =====================================================
-// COLOR PALETTE - Vibrant & Modern
+// COLOR PALETTE - Premium Fintech Aesthetic
 // =====================================================
 const colors = {
-  // Primary - Emerald Green
-  primary: '#10B981',
-  primaryLight: '#34D399',
+  // Primary - Emerald to Cyan (Income/Positive)
+  primary: '#10B981',      // Emerald
+  primaryLight: '#06B6D4',  // Cyan
   primaryDark: '#059669',
-
-  // Accent - Electric Blue
+  
+  // Accent - Electric Blue (CTAs & Interactive)
   accent: '#3B82F6',
   accentLight: '#60A5FA',
+  accentDark: '#2563EB',
 
   // Secondary - Purple
   secondary: '#8B5CF6',
   secondaryLight: '#A78BFA',
 
-  // Semantic
-  success: '#10B981',
-  error: '#EF4444',
-  warning: '#F59E0B',
+  // Semantic Colors
+  success: '#10B981',      // Emerald
+  successLight: '#34D399',
+  error: '#EF4444',        // Red
+  errorLight: '#FF6B6B',   // Coral
+  warning: '#F59E0B',      // Amber
+  warningLight: '#FCD34D',
   info: '#3B82F6',
+  infoLight: '#60A5FA',
 
-  // Backgrounds - Deep Space
-  bgPrimary: '#0A0F1E',
-  bgSecondary: '#111827',
-  bgCard: '#1F2937',
-  bgCardHover: '#374151',
+  // Backgrounds - Rich Dark Charcoal
+  bgPrimary: '#0F172A',    // Rich charcoal (not pure black)
+  bgSecondary: '#1E293B',  // Slate
+  bgCard: 'rgba(30, 41, 59, 0.95)',  // Glass effect
+  bgCardHover: 'rgba(51, 65, 85, 0.95)',
 
-  // Glass effect colors
-  glass: 'rgba(255, 255, 255, 0.03)',
-  glassBorder: 'rgba(255, 255, 255, 0.08)',
-  glassHover: 'rgba(255, 255, 255, 0.06)',
+  // Glass Effect - Frosted
+  glass: 'rgba(255, 255, 255, 0.05)',
+  glassBorder: 'rgba(255, 255, 255, 0.1)',
+  glassHover: 'rgba(255, 255, 255, 0.08)',
+  glassFrosted: 'rgba(255, 255, 255, 0.03)',
 
-  // Text
-  textPrimary: '#F9FAFB',
-  textSecondary: '#9CA3AF',
-  textMuted: '#6B7280',
+  // Text - Better Contrast
+  textPrimary: '#FFFFFF',
+  textSecondary: '#94A3B8',  // Cool gray
+  textMuted: '#64748B',      // Slate
 
-  // Form inputs
-  inputBg: '#FFFFFF',
-  inputText: '#111827',
-  inputBorder: '#D1D5DB',
+  // Form Inputs - Light Mode
+  inputBg: '#F9FAFB',
+  inputText: '#0A0A0A',
+  inputBorder: '#E5E7EB',
+  inputBorderFocus: '#10B981',
   inputLabel: '#6B7280'
 };
 
 // =====================================================
-// GRADIENTS
+// GRADIENTS - Vibrant & Purposeful
 // =====================================================
 const gradients = {
-  primary: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
+  // Primary CTAs - Emerald to Cyan
+  primary: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+  primarySubtle: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%)',
+  
+  // Secondary - Purple to Pink
   secondary: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)',
-  card: 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)',
-  glow: 'radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 50%)'
+  
+  // Income - Emerald Glow
+  income: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+  incomeSubtle: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%)',
+  
+  // Expense - Coral to Rose
+  expense: 'linear-gradient(135deg, #FF6B6B 0%, #FB7185 100%)',
+  expenseSubtle: 'linear-gradient(135deg, rgba(255, 107, 107, 0.05) 0%, rgba(251, 113, 133, 0.05) 100%)',
+  
+  // Savings/Neutral - Slate
+  neutral: 'linear-gradient(135deg, #64748B 0%, #475569 100%)',
+  
+  // Card Backgrounds - Frosted Glass
+  card: 'linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%)',
+  cardHover: 'linear-gradient(145deg, rgba(51, 65, 85, 0.6) 0%, rgba(30, 41, 59, 0.8) 100%)',
+  
+  // Page Background Glow
+  glow: 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.15), transparent 50%)',
+  glowBlue: 'radial-gradient(ellipse 60% 50% at 50% -20%, rgba(59, 130, 246, 0.1), transparent 50%)'
 };
 
 // =====================================================
@@ -104,24 +132,43 @@ export const muiTheme = createTheme({
       styleOverrides: {
         body: {
           background: `${colors.bgPrimary} ${gradients.glow}`,
-          backgroundAttachment: 'fixed'
+          backgroundAttachment: 'fixed',
+          // Add keyframe animations
+          '@keyframes pulse': {
+            '0%': { opacity: 1 },
+            '50%': { opacity: 0.6 },
+            '100%': { opacity: 1 }
+          },
+          '@keyframes checkPulse': {
+            '0%': { transform: 'scale(1)' },
+            '50%': { transform: 'scale(1.1)' },
+            '100%': { transform: 'scale(1)' }
+          },
+          '@keyframes shimmer': {
+            '0%': { backgroundPosition: '-200% 0' },
+            '100%': { backgroundPosition: '200% 0' }
+          }
         }
       }
     },
 
     // =====================================================
-    // BUTTONS - Gradient & Animated
+    // BUTTONS - Vibrant Gradient with Micro-interactions
     // =====================================================
     MuiButton: {
       styleOverrides: {
         root: {
           borderRadius: 12,
-          padding: '12px 24px',
+          padding: '12px 28px',
           fontWeight: 600,
           fontSize: '0.9375rem',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          letterSpacing: '0.01em',
+          textTransform: 'none',
+          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
           position: 'relative',
           overflow: 'hidden',
+          minHeight: '44px',  // Touch-friendly
+          // Shimmer effect on hover
           '&::before': {
             content: '""',
             position: 'absolute',
@@ -129,48 +176,69 @@ export const muiTheme = createTheme({
             left: '-100%',
             width: '100%',
             height: '100%',
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-            transition: 'left 0.5s'
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+            transition: 'left 0.6s ease'
           },
           '&:hover::before': {
             left: '100%'
           }
         },
         contained: {
-          background: gradients.primary,
-          boxShadow: '0 4px 20px rgba(16, 185, 129, 0.3)',
+          background: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)',  // Cyan to Blue
+          color: '#FFFFFF',
+          fontWeight: 700,  // Bold white text
+          boxShadow: '0 4px 14px rgba(6, 182, 212, 0.35)',
           '&:hover': {
-            background: gradients.primary,
-            boxShadow: '0 6px 30px rgba(16, 185, 129, 0.4)',
+            background: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)',
+            boxShadow: '0 6px 24px rgba(6, 182, 212, 0.45)',  // Soft glow
             transform: 'translateY(-2px)'
+          },
+          '&:active': {
+            transform: 'translateY(0) scale(0.98)'
           }
+        },
+        sizeLarge: {
+          minHeight: '48px',  // Primary CTA height
+          padding: '14px 32px',
+          fontSize: '1rem'
         },
         outlined: {
           borderColor: colors.primary,
+          color: colors.primary,
           borderWidth: 2,
           '&:hover': {
             borderWidth: 2,
-            background: alpha(colors.primary, 0.1),
-            borderColor: colors.primaryLight
+            background: alpha(colors.primary, 0.08),
+            borderColor: colors.primaryLight,
+            transform: 'translateY(-2px)'
+          }
+        },
+        text: {
+          color: colors.primary,
+          '&:hover': {
+            background: alpha(colors.primary, 0.08)
           }
         }
       }
     },
 
-    // =====================================================
-    // CARDS - Glassmorphism with Glow
+    // ================================================================================
+    // CARDS - Premium Frosted Glass with Ambient Occlusion Shadows
     // =====================================================
     MuiCard: {
       styleOverrides: {
         root: {
           background: gradients.card,
-          backdropFilter: 'blur(20px)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
           border: `1px solid ${colors.glassBorder}`,
-          borderRadius: 12,  // Reduced from 20 for rectangular look
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          borderRadius: 18,  // Premium rounded corners
+          // Soft, diffused ambient occlusion shadow
+          boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.12), 0px 2px 6px rgba(0, 0, 0, 0.08)',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           position: 'relative',
           overflow: 'hidden',
+          // Subtle top highlight (breathing glow)
           '&::before': {
             content: '""',
             position: 'absolute',
@@ -178,12 +246,14 @@ export const muiTheme = createTheme({
             left: 0,
             right: 0,
             height: '1px',
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)'
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)'
           },
+          // Hover state - lift and shadow enhancement
           '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: '0 16px 48px rgba(0, 0, 0, 0.4)',
-            borderColor: 'rgba(255, 255, 255, 0.12)'
+            transform: 'translateY(-4px) scale(1.01)',
+            boxShadow: '0px 16px 48px rgba(0, 0, 0, 0.16), 0px 4px 12px rgba(0, 0, 0, 0.12)',
+            borderColor: 'rgba(255, 255, 255, 0.15)',
+            background: gradients.cardHover
           }
         }
       }
@@ -192,7 +262,7 @@ export const muiTheme = createTheme({
     MuiCardContent: {
       styleOverrides: {
         root: {
-          padding: '24px',
+          padding: '24px',  // Generous padding
           '&:last-child': { paddingBottom: '24px' }
         }
       }
@@ -365,16 +435,25 @@ export const muiTheme = createTheme({
     },
 
     // =====================================================
-    // DIALOGS - Premium Modal
+    // DIALOGS - Premium Modal with Dark Blur
     // =====================================================
     MuiDialog: {
       styleOverrides: {
+        root: {
+          '& .MuiBackdrop-root': {
+            backgroundColor: 'rgba(0, 0, 0, 0.65)',  // Dark blur overlay
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)'
+          }
+        },
         paper: {
           background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
           backdropFilter: 'blur(40px)',
+          WebkitBackdropFilter: 'blur(40px)',
           border: `1px solid ${colors.glassBorder}`,
-          borderRadius: 16,
-          boxShadow: '0 24px 80px rgba(0, 0, 0, 0.5)'
+          borderRadius: 20,  // More rounded for premium feel
+          boxShadow: '0 24px 80px rgba(0, 0, 0, 0.6)',
+          overflow: 'hidden'
         }
       }
     },
@@ -382,11 +461,12 @@ export const muiTheme = createTheme({
     MuiDialogTitle: {
       styleOverrides: {
         root: {
-          fontSize: '1.25rem',
+          fontSize: '1.35rem',
           fontWeight: 700,
           color: colors.textPrimary,
-          padding: '20px 24px 16px',
-          borderBottom: `1px solid ${colors.glassBorder}`
+          padding: '24px 28px 20px',
+          borderBottom: `1px solid ${colors.glassBorder}`,
+          letterSpacing: '-0.01em'
         }
       }
     },
@@ -394,9 +474,12 @@ export const muiTheme = createTheme({
     MuiDialogContent: {
       styleOverrides: {
         root: {
-          padding: '24px 24px 16px',
-          paddingTop: '24px !important', // Ensure top padding for labels
-          '&.MuiDialogContent-dividers': { borderColor: colors.glassBorder }
+          padding: '28px',  // Extra padding for breathing room
+          paddingTop: '28px !important',
+          '&.MuiDialogContent-dividers': { 
+            borderColor: colors.glassBorder,
+            borderTop: 'none'
+          }
         }
       }
     },
@@ -404,36 +487,61 @@ export const muiTheme = createTheme({
     MuiDialogActions: {
       styleOverrides: {
         root: {
-          padding: '16px',
-          gap: 8,
+          padding: '20px 28px 28px',
+          gap: 12,
           flexWrap: 'wrap',
           justifyContent: 'flex-end',
+          borderTop: `1px solid ${colors.glassBorder}`,
           '& .MuiButton-root': {
-            minWidth: 'auto',
-            flex: '0 0 auto'
+            minWidth: '120px'
           }
         }
       }
     },
 
     // =====================================================
-    // CHIPS - Pill Design
+    // CHIPS - Color-Coded Priority Badges
     // =====================================================
     MuiChip: {
       styleOverrides: {
         root: {
-          borderRadius: 20,
+          borderRadius: 24,  // Full pill shape
           fontWeight: 600,
           fontSize: '0.75rem',
-          height: 28
+          height: 30,
+          letterSpacing: '0.02em',
+          transition: 'all 0.2s ease'
         },
         outlined: {
-          borderWidth: 2,
-          backgroundColor: 'transparent'
+          borderWidth: 1.5,
+          backgroundColor: 'transparent',
+          '&:hover': {
+            backgroundColor: alpha(colors.primary, 0.05)
+          }
         },
         filled: {
           background: alpha(colors.primary, 0.15),
-          color: colors.primary
+          color: colors.primary,
+          border: 'none',
+          '&:hover': {
+            background: alpha(colors.primary, 0.25)
+          }
+        },
+        // Color variants
+        colorSuccess: {
+          backgroundColor: alpha('#22C55E', 0.15),
+          color: '#22C55E',
+          fontWeight: 700
+        },
+        colorError: {
+          backgroundColor: alpha('#EF4444', 0.15),
+          color: '#EF4444',
+          fontWeight: 700
+        },
+        colorWarning: {
+          backgroundColor: alpha('#F59E0B', 0.15),
+          color: '#F59E0B',
+          fontWeight: 700
         }
       }
     },
@@ -546,6 +654,43 @@ export const muiTheme = createTheme({
         },
         arrow: {
           color: colors.bgCard
+        }
+      }
+    },
+
+    // =====================================================
+    // CHECKBOXES - Smooth Animation
+    // =====================================================
+    MuiCheckbox: {
+      styleOverrides: {
+        root: {
+          color: colors.textSecondary,
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            backgroundColor: alpha(colors.primary, 0.08)
+          },
+          '&.Mui-checked': {
+            color: colors.primary,
+            animation: 'checkPulse 0.3s ease-out'
+          }
+        }
+      }
+    },
+
+    MuiCheckbox: {
+      styleOverrides: {
+        root: {
+          color: alpha(colors.textSecondary, 0.5),
+          '&.Mui-checked': {
+            color: colors.primary
+          },
+          '&:hover': {
+            backgroundColor: alpha(colors.primary, 0.08)
+          },
+          '& .MuiSvgIcon-root': {
+            fontSize: '1.5rem',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+          }
         }
       }
     },

@@ -49,7 +49,9 @@ import { groupService } from '../services/groupService';
 import PageContainer from '../components/layout/PageContainer';
 import AddGroupExpenseDialog from '../components/groups/AddGroupExpenseDialog';
 import SettleDebtDialog from '../components/groups/SettleDebtDialog';
+import ExpenseDetailsDialog from '../components/groups/ExpenseDetailsDialog';
 import AddGroupDialog from '../components/groups/AddGroupDialog';
+import AddMemberDialog from '../components/groups/AddMemberDialog'; // Step 595
 import GroupAnalytics from '../components/groups/GroupAnalytics';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
@@ -87,6 +89,8 @@ export default function GroupDetails() {
 
     const [group, setGroup] = useState(null);
     const [expenses, setExpenses] = useState([]);
+    const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null });
+    const [selectedExpense, setSelectedExpense] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [tabValue, setTabValue] = useState(0);
@@ -94,6 +98,8 @@ export default function GroupDetails() {
     const [isSettleDialogOpen, setIsSettleDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
+    const [editingExpense, setEditingExpense] = useState(null);
     const [exportAnchorEl, setExportAnchorEl] = useState(null);
 
     useEffect(() => {
@@ -131,16 +137,32 @@ export default function GroupDetails() {
         }
     };
 
-    const handleDeleteExpense = async (expenseId) => {
-        if (!confirm('Are you sure you want to delete this expense?')) return;
-        try {
-            await groupService.deleteExpense(id, expenseId);
-            toast.success('Expense deleted');
-            fetchGroupDetails();
-        } catch (err) {
-            toast.error('Failed to delete expense');
-        }
+    const handleDeleteExpense = (expenseId) => {
+        setConfirmDialog({
+            open: true,
+            title: 'Delete Expense',
+            message: 'Are you sure you want to delete this expense? This will permanently remove it from the group records.',
+            onConfirm: async () => {
+                try {
+                    await groupService.deleteExpense(id, expenseId);
+                    toast.success('Expense deleted');
+                    fetchGroupDetails();
+                    setSelectedExpense(null);
+                    setConfirmDialog(prev => ({ ...prev, open: false }));
+                } catch (err) {
+                    toast.error('Failed to delete expense');
+                }
+            }
+        });
     };
+
+    const handleEditExpense = (expense) => {
+        setEditingExpense(expense);
+        setSelectedExpense(null);
+        setIsExpenseDialogOpen(true);
+    };
+
+    const [memberToDelete, setMemberToDelete] = useState(null);
 
     const handleDeleteGroup = async () => {
         try {
@@ -152,56 +174,110 @@ export default function GroupDetails() {
         }
     };
 
-    // Calculate Balances Logic (Complex!)
+    const handleRemoveMember = async () => {
+        if (!memberToDelete) return;
+        try {
+            await groupService.removeMember(id, memberToDelete);
+            toast.success('Member removed');
+            setMemberToDelete(null);
+            fetchGroupDetails();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to remove member');
+        }
+    };
+
+    // Helper to get consistent string ID
+    const getMemberId = React.useCallback((m) => {
+        if (!m) return 'unknown';
+        if (m.userId && typeof m.userId === 'object' && m.userId._id) return String(m.userId._id);
+        if (m.userId) return String(m.userId);
+        return String(m.email || m.name); // Fallback
+    }, []);
+
+    // Calculate Balances Logic
     const balances = useMemo(() => {
         if (!group || !user) return {};
 
-        // Map memberId -> Balance (Positive = Owed, Negative = Owes)
+        // Map memberId -> Balance
         const balanceMap = {};
+
+
+
+        // Create Lookups for faster & robust matching
+        const memberLookup = {}; // Map ID -> RealMemberID
+        const nameLookup = {};   // Map Name -> RealMemberID
+
         group.members.forEach(m => {
-            // For registered users: userId._id (populated) or userId (string)
-            // For shadow users: userId is already the hash string
-            const key = m.userId?._id || m.userId || m.email;
-            balanceMap[key] = 0;
+            const realId = getMemberId(m);
+            balanceMap[realId] = 0;
+
+            memberLookup[realId] = realId;
+            if (m.name) nameLookup[m.name.toLowerCase().trim()] = realId;
         });
 
+        const resolveId = (participant) => {
+            if (!participant) return null;
+
+            // 1. Try ID
+            const id = participant._id || participant.id || (typeof participant === 'string' ? participant : null);
+            if (id && memberLookup[String(id)]) return memberLookup[String(id)];
+
+            // 2. Try Name (if ID failed or is null)
+            if (participant.name) {
+                const name = participant.name.toLowerCase().trim();
+                if (nameLookup[name]) return nameLookup[name];
+            }
+
+            // 3. Fallback: Return the ID anyway if it exists (for ex-members)
+            return id ? String(id) : null;
+        };
+
         expenses.forEach(exp => {
-            // Add null safety for old data
             if (!exp.paidBy) return;
 
-            const payerId = exp.paidBy._id || exp.paidBy;
+            const payerId = resolveId(exp.paidBy);
             const amount = exp.amount;
 
-            // Payer "paid" effectively.
-            // Wait, net balance logic:
-            // Payer Paid X. 
-            // Splitters "Consumed" Y.
-            // Balance = Paid - Consumed.
-
-            if (balanceMap[payerId] === undefined) balanceMap[payerId] = 0;
-            balanceMap[payerId] += amount;
+            if (payerId) {
+                if (balanceMap[payerId] === undefined) balanceMap[payerId] = 0;
+                balanceMap[payerId] += amount;
+            }
 
             exp.splits.forEach(split => {
-                const userId = split.user?._id || split.user;
-                if (!userId) return; // Skip if no user linked
+                const userId = resolveId(split.user);
+                if (!userId) return;
                 if (balanceMap[userId] === undefined) balanceMap[userId] = 0;
-                balanceMap[userId] -= split.amount; // They consumed this much
+                balanceMap[userId] -= split.amount;
             });
         });
 
         return balanceMap;
-    }, [group, expenses, user]);
+    }, [group, expenses, user, getMemberId]);
 
-    const myBalance = group && user ? balances[user._id] || 0 : 0;
+    const myBalance = useMemo(() => {
+        if (!group || !user || !balances) return 0;
+
+        // Find me in the group members to ensure we use the same key logic
+        const me = group.members.find(m => {
+            const mUserId = m.userId && (m.userId._id || m.userId);
+            if (mUserId && String(mUserId) === String(user._id)) return true;
+            if (m.email && user.email && m.email.toLowerCase() === user.email.toLowerCase()) return true;
+            return false;
+        });
+
+        const myKey = me ? getMemberId(me) : user._id;
+        return balances[myKey] || 0;
+    }, [group, user, balances, getMemberId]);
 
     const getCategoryIcon = (category) => {
         switch (category) {
+            case 'General': return <MoneyIcon />;
             case 'Food and Drink': return <FoodIcon />;
             case 'Transportation': return <TransportIcon />;
             case 'Home': return <HomeIcon />;
             case 'Utilities': return <UtilitiesIcon />;
             case 'Entertainment': return <EntertainmentIcon />;
-            case 'Life': return <HealthIcon />; // Mapping Life to Health/Heart
+            case 'Life': return <HealthIcon />;
             case 'Settlement': return <MoneyIcon />;
             default: return <BillIcon />;
         }
@@ -223,42 +299,78 @@ export default function GroupDetails() {
                     Back to Groups
                 </Button>
 
-                {/* Group Info + Balance - Collapsible Section */}
+                {/* Group Info + Balance - Premium Frosted Glass */}
                 <Accordion
                     sx={{
                         mb: 3,
-                        borderRadius: '12px !important',
+                        borderRadius: '20px !important',
                         background: myBalance >= 0
-                            ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%)'
-                            : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
+                            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 182, 212, 0.08) 100%)'
+                            : 'linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(251, 113, 133, 0.08) 100%)',
+                        backdropFilter: 'blur(16px)',
+                        WebkitBackdropFilter: 'blur(16px)',
+                        border: myBalance >= 0
+                            ? '1px solid rgba(16, 185, 129, 0.2)'
+                            : '1px solid rgba(255, 107, 107, 0.2)',
                         '&:before': { display: 'none' },
-                        boxShadow: 'none'
+                        boxShadow: myBalance >= 0
+                            ? '0 8px 24px rgba(16, 185, 129, 0.12)'
+                            : '0 8px 24px rgba(255, 107, 107, 0.12)',
+                        transition: 'all 0.3s ease'
                     }}
                 >
                     <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
+                        expandIcon={<ExpandMoreIcon sx={{
+                            color: myBalance >= 0 ? 'success.main' : 'error.main',
+                            transition: 'transform 0.3s ease'
+                        }} />}
                         sx={{
-                            px: 3,
+                            px: { xs: 2.5, sm: 3 },
                             py: 1.5,
-                            '& .MuiAccordionSummary-content': { my: 1 }
+                            '& .MuiAccordionSummary-content': { my: 1.5 },
+                            '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': {
+                                transform: 'rotate(180deg)' // Smooth rotate animation
+                            }
                         }}
                     >
                         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: '100%', pr: 2 }}>
                             <Box>
-                                <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
+                                <Typography
+                                    variant="h5"
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontSize: { xs: '1.5rem', sm: '1.75rem' }, // 24-28pt
+                                        letterSpacing: '-0.01em',
+                                        mb: 0.5
+                                    }}
+                                >
                                     {group.name}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.7 }}>
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        display: 'inline-block',
+                                        px: 1.5,
+                                        py: 0.5,
+                                        borderRadius: '12px',
+                                        background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(20, 184, 166, 0.15) 100%)',
+                                        border: '1px solid rgba(6, 182, 212, 0.3)',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 600,
+                                        color: '#06B6D4'
+                                    }}
+                                >
                                     {group.members.length} members
-                                </Typography>
+                                </Box>
                             </Box>
                             <Stack direction="row" spacing={1} alignItems="baseline">
                                 <Typography
                                     variant="body2"
                                     sx={{
                                         color: myBalance >= 0 ? 'success.main' : 'error.main',
-                                        opacity: 0.8,
-                                        fontWeight: 500
+                                        opacity: 0.85,
+                                        fontWeight: 600,
+                                        fontSize: '0.75rem'
                                     }}
                                 >
                                     {myBalance >= 0 ? 'Owed' : 'Owe'}
@@ -267,7 +379,9 @@ export default function GroupDetails() {
                                     variant="h6"
                                     sx={{
                                         fontWeight: 800,
-                                        color: myBalance >= 0 ? 'success.main' : 'error.main'
+                                        fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                                        color: myBalance >= 0 ? '#10B981' : '#FF6B6B',
+                                        letterSpacing: '-0.01em'
                                     }}
                                 >
                                     {formatCurrency(Math.abs(myBalance))}
@@ -275,22 +389,22 @@ export default function GroupDetails() {
                             </Stack>
                         </Stack>
                     </AccordionSummary>
-                    <AccordionDetails sx={{ px: 3, pb: 3 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ opacity: 0.7, mb: 2 }}>
+                    <AccordionDetails sx={{ px: { xs: 2.5, sm: 3 }, pb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ opacity: 0.7, mb: 2, fontSize: '0.8rem' }}>
                             Created {new Date(group.createdAt).toLocaleDateString()}
                         </Typography>
 
-                        <Divider sx={{ my: 2, opacity: 0.3 }} />
+                        <Divider sx={{ my: 2, opacity: 0.2 }} />
 
-                        {/* Full Balance with Button */}
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        {/* Full Balance with Settle Button */}
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
                             <Stack direction="row" spacing={1.5} alignItems="baseline">
                                 <Typography
                                     variant="body1"
                                     sx={{
                                         color: myBalance >= 0 ? 'success.main' : 'error.main',
-                                        opacity: 0.8,
-                                        fontWeight: 500
+                                        opacity: 0.85,
+                                        fontWeight: 600
                                     }}
                                 >
                                     {myBalance >= 0 ? 'You are owed' : 'You owe'}
@@ -299,7 +413,8 @@ export default function GroupDetails() {
                                     variant="h3"
                                     sx={{
                                         fontWeight: 900,
-                                        color: myBalance >= 0 ? 'success.main' : 'error.main',
+                                        fontSize: { xs: '2rem', sm: '2.5rem' },
+                                        color: myBalance >= 0 ? '#10B981' : '#FF6B6B',
                                         letterSpacing: '-0.02em'
                                     }}
                                 >
@@ -310,16 +425,31 @@ export default function GroupDetails() {
                                 <Button
                                     variant="contained"
                                     size="large"
-                                    color={myBalance > 0 ? 'success' : 'error'}
-                                    onClick={() => setIsSettleDialogOpen(true)}
                                     sx={{
-                                        minWidth: 130,
-                                        fontWeight: 600,
-                                        textTransform: 'none',
+                                        minWidth: 140,
+                                        background: myBalance > 0
+                                            ? 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)'
+                                            : 'linear-gradient(135deg, #FF6B6B 0%, #FB7185 100%)',
+                                        color: 'white',
+                                        fontWeight: 700,
                                         fontSize: '1rem',
-                                        borderRadius: 2,
-                                        px: 3
+                                        borderRadius: '12px',
+                                        px: 3,
+                                        py: 1.5,
+                                        boxShadow: myBalance > 0
+                                            ? '0 4px 16px rgba(16, 185, 129, 0.3)'
+                                            : '0 4px 16px rgba(255, 107, 107, 0.3)',
+                                        '&:hover': {
+                                            background: myBalance > 0
+                                                ? 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)'
+                                                : 'linear-gradient(135deg, #FF6B6B 0%, #FB7185 100%)',
+                                            boxShadow: myBalance > 0
+                                                ? '0 6px 24px rgba(16, 185, 129, 0.4)'
+                                                : '0 6px 24px rgba(255, 107, 107, 0.4)',
+                                            transform: 'translateY(-2px)'
+                                        }
                                     }}
+                                    onClick={() => setIsSettleDialogOpen(true)}
                                 >
                                     Settle Up
                                 </Button>
@@ -328,49 +458,98 @@ export default function GroupDetails() {
                     </AccordionDetails>
                 </Accordion>
 
-                {/* Action Buttons Section */}
-                <Stack direction="row" spacing={1.5} sx={{ mb: 3, justifyContent: 'flex-end' }}>
+                {/* Premium Action Buttons - Floating with Clear Hierarchy */}
+                <Stack direction="row" spacing={2} sx={{ mb: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {/* Primary CTA - Add Expense (Larger, Gradient) */}
                     <Tooltip title="Add Expense" arrow>
                         <IconButton
                             size="large"
                             sx={{
-                                bgcolor: 'primary.main',
+                                width: { xs: 56, sm: 64 },
+                                height: { xs: 56, sm: 64 },
+                                background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
                                 color: 'white',
-                                '&:hover': { bgcolor: 'primary.dark' }
+                                boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)',
+                                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                                '&:hover': {
+                                    background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+                                    boxShadow: '0 6px 24px rgba(16, 185, 129, 0.5)',
+                                    transform: 'translateY(-2px) scale(1.05)'
+                                },
+                                '&:active': {
+                                    transform: 'translateY(0) scale(0.95)'
+                                }
                             }}
                             onClick={() => setIsExpenseDialogOpen(true)}
                         >
-                            <AddIcon />
+                            <AddIcon sx={{ fontSize: { xs: 28, sm: 32 } }} />
                         </IconButton>
                     </Tooltip>
 
-                    <Divider orientation="vertical" flexItem />
-
-                    <Tooltip title="Export" arrow>
+                    {/* Secondary Actions - Ghost Style */}
+                    <Tooltip title="Download Report" arrow>
                         <IconButton
                             size="large"
+                            sx={{
+                                width: 48,
+                                height: 48,
+                                border: '1.5px solid rgba(255, 255, 255, 0.2)',
+                                borderRadius: '12px',
+                                color: 'text.primary',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                    borderColor: 'rgba(255, 255, 255, 0.4)',
+                                    transform: 'translateY(-2px)'
+                                }
+                            }}
                             onClick={(e) => setExportAnchorEl(e.currentTarget)}
                         >
-                            <DownloadIcon />
+                            <DownloadIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
 
-                    <Tooltip title="Edit" arrow>
+                    <Tooltip title="Edit Group" arrow>
                         <IconButton
                             size="large"
+                            sx={{
+                                width: 48,
+                                height: 48,
+                                border: '1.5px solid rgba(255, 255, 255, 0.2)',
+                                borderRadius: '12px',
+                                color: 'text.primary',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                    borderColor: 'rgba(255, 255, 255, 0.4)',
+                                    transform: 'translateY(-2px)'
+                                }
+                            }}
                             onClick={() => setIsEditDialogOpen(true)}
                         >
-                            <EditIcon />
+                            <EditIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
 
-                    <Tooltip title="Delete" arrow>
+                    <Tooltip title="Delete Group" arrow>
                         <IconButton
                             size="large"
-                            color="error"
+                            sx={{
+                                width: 48,
+                                height: 48,
+                                border: '1.5px solid rgba(239, 68, 68, 0.3)',
+                                borderRadius: '12px',
+                                color: 'error.main',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                    borderColor: 'rgba(239, 68, 68, 0.6)',
+                                    transform: 'translateY(-2px)'
+                                }
+                            }}
                             onClick={() => setIsDeleteDialogOpen(true)}
                         >
-                            <DeleteIcon />
+                            <DeleteIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
 
@@ -386,35 +565,141 @@ export default function GroupDetails() {
 
             </Box>
 
-            {/* Tabs */}
-            <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            {/* Premium Tabs - Bold Gradient Underline */}
+            <Tabs
+                value={tabValue}
+                onChange={(e, v) => setTabValue(v)}
+                sx={{
+                    borderBottom: 1,
+                    borderColor: 'divider',
+                    mb: 3,
+                    '& .MuiTabs-indicator': {
+                        height: 3,
+                        background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+                        borderRadius: '2px 2px 0 0'
+                    },
+                    '& .MuiTab-root': {
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        color: 'text.secondary',
+                        transition: 'all 0.2s ease',
+                        minHeight: 48,
+                        '&.Mui-selected': {
+                            color: 'primary.main',
+                            fontWeight: 700
+                        },
+                        '&:hover': {
+                            color: 'text.primary'
+                        }
+                    }
+                }}
+            >
                 <Tab label="Dashboard" />
                 <Tab label="Expenses" />
                 <Tab label="Balances" />
             </Tabs>
 
-            {/* Expenses List */}
+            {/* Expenses List (Index 1) */}
             <Box role="tabpanel" hidden={tabValue !== 1}>
                 {tabValue === 1 && (
                     <List>
                         {expenses.length === 0 ? (
-                            <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                                No expenses yet.
-                            </Typography>
+                            <Stack alignItems="center" spacing={2.5} sx={{ py: 4.5, px: 2 }}>
+                                <Box sx={{
+                                    width: 160, // Reduced from 200
+                                    height: 128, // Reduced from 160
+                                    mb: 1.5,
+                                    borderRadius: 3,
+                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: '1px dashed rgba(255,255,255,0.1)'
+                                }}>
+                                    <Typography variant="h1" sx={{ fontSize: '3.2rem', opacity: 0.5 }}> {/* Reduced from 4rem */}
+                                        {group.type === 'Trip' ? '✈️' : group.type === 'Home' ? '🏠' : '📝'}
+                                    </Typography>
+                                </Box>
+
+                                <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '1.1rem' }}>
+                                    No expenses yet
+                                </Typography>
+
+                                <Stack spacing={1.5} sx={{ width: '100%', maxWidth: 280 }}> {/* Reduced maxWidth */}
+                                    <Button
+                                        variant="contained"
+                                        size="large"
+                                        fullWidth
+                                        onClick={() => setIsExpenseDialogOpen(true)}
+                                        sx={{
+                                            py: 1.2, // Reduced from 1.5
+                                            borderRadius: '10px',
+                                            background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
+                                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                                            textTransform: 'none',
+                                            fontSize: '0.9rem', // Reduced
+                                            fontWeight: 600
+                                        }}
+                                    >
+                                        Add Your First Expense
+                                        <Typography component="span" sx={{ display: 'block', fontSize: '0.65rem', opacity: 0.8, mt: 0.4, width: '100%' }}>
+                                            (Friends will be added automatically)
+                                        </Typography>
+                                    </Button>
+
+                                    <Typography variant="caption" sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}>
+                                        OR
+                                    </Typography>
+
+                                    <Button
+                                        variant="outlined"
+                                        size="large"
+                                        fullWidth
+                                        onClick={() => setIsAddMemberDialogOpen(true)}
+                                        sx={{
+                                            py: 1.2, // Reduced
+                                            borderRadius: '24px', // Reduced pill
+                                            borderColor: 'rgba(255,255,255,0.2)',
+                                            color: 'text.primary',
+                                            textTransform: 'none',
+                                            fontWeight: 600,
+                                            fontSize: '0.9rem',
+                                            '&:hover': {
+                                                borderColor: 'rgba(255,255,255,0.4)',
+                                                bgcolor: 'rgba(255,255,255,0.02)'
+                                            }
+                                        }}
+                                        endIcon={<AddIcon sx={{ bgcolor: '#4f46e5', color: 'white', borderRadius: '50%', p: 0.4, width: 20, height: 20 }} />}
+                                    >
+                                        Add Your Friends First
+                                    </Button>
+                                </Stack>
+                            </Stack>
                         ) : (
                             expenses.map((expense) => (
-                                <Paper key={expense._id} sx={{ mb: 1.5, bgcolor: 'rgba(255,255,255,0.02)' }}>
+                                <Paper
+                                    key={expense._id}
+                                    onClick={() => setSelectedExpense(expense)}
+                                    sx={{
+                                        mb: 1.2,
+                                        bgcolor: 'rgba(255,255,255,0.02)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' }
+                                    }}
+                                > {/* Reduced mb */}
                                     <ListItem>
                                         <ListItemAvatar>
-                                            <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }}>
+                                            <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white', width: 36, height: 36, fontSize: '1rem' }}> {/* Smaller avatar */}
                                                 {getCategoryIcon(expense.category)}
                                             </Avatar>
                                         </ListItemAvatar>
                                         <ListItemText
-                                            primary={expense.description}
+                                            primary={<Typography variant="body1" sx={{ fontSize: '0.95rem' }}>{expense.description}</Typography>}
                                             secondary={
-                                                <Typography variant="caption" color="text.secondary">
-                                                    {expense.paidBy?.name === user?.name ? 'You' : expense.paidBy?.name || 'Unknown'} paid {formatCurrency(expense.amount)} • {new Date(expense.date).toLocaleString()}
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                                                    {(expense.paidBy && (String(expense.paidBy._id || expense.paidBy) === String(user?._id)) || expense.paidByName === user?.name) ? 'You' : (expense.paidBy?.name || expense.paidByName || 'Unknown')} paid {formatCurrency(expense.amount)} • {new Date(expense.date).toLocaleString()}
                                                 </Typography>
                                             }
                                         />
@@ -423,12 +708,12 @@ export default function GroupDetails() {
                                                 variant="subtitle2"
                                                 sx={{
                                                     fontWeight: 600,
-                                                    color: expense.category === 'Settlement' ? 'info.main' :
-                                                        (expense.paidBy?._id === user?._id ? 'success.main' : 'error.main')
+                                                    fontSize: '0.85rem', // Reduced
+                                                    color: expense.category === 'Settlement' ? 'info.main' : 'success.main'
                                                 }}
                                             >
                                                 {expense.category === 'Settlement' ? 'Settlement' :
-                                                    (expense.paidBy?._id === user?._id ? `+${formatCurrency(expense.amount)}` : `-${formatCurrency(expense.amount)}`)
+                                                    formatCurrency(expense.amount)
                                                 }
                                             </Typography>
                                             {(expense.paidBy?._id === user?._id || group.createdBy === user?._id) && (
@@ -449,47 +734,9 @@ export default function GroupDetails() {
                 )}
             </Box>
 
-            {/* Balances Tab */}
-            <Box role="tabpanel" hidden={tabValue !== 2}>
-                {tabValue === 2 && (
-                    <Grid container spacing={2}>
-                        {Object.entries(balances)
-                            .filter(([_, bal]) => Math.abs(bal) > 0.1) // Hide zero balances
-                            .map(([memberId, bal]) => {
-                                // Find member name
-                                const member = group.members.find(m => (m.userId?._id === memberId || m.userId === memberId));
-                                const name = member ? member.name : 'Unknown';
-                                const isMe = memberId === user?._id;
 
-                                return (
-                                    <Grid item xs={12} sm={6} key={memberId}>
-                                        <Card variant="outlined">
-                                            <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                <Avatar>{name?.[0] || '?'}</Avatar>
-                                                <Box>
-                                                    <Typography variant="subtitle1" fontWeight={600}>
-                                                        {isMe ? 'You' : name}
-                                                    </Typography>
-                                                    <Typography
-                                                        variant="body2"
-                                                        sx={{ color: bal >= 0 ? 'success.main' : 'error.main', fontWeight: 500 }}
-                                                    >
-                                                        {bal >= 0 ? 'Gets back' : 'Owes'} {formatCurrency(Math.abs(bal))}
-                                                    </Typography>
-                                                </Box>
-                                            </CardContent>
-                                        </Card>
-                                    </Grid>
-                                );
-                            })}
-                        {Object.keys(balances).length === 0 && (
-                            <Typography sx={{ p: 2 }}>Everyone is settled up!</Typography>
-                        )}
-                    </Grid>
-                )}
-            </Box>
 
-            {/* Dashboard Tab (Now First) */}
+            {/* Dashboard Tab (Index 0) */}
             <Box role="tabpanel" hidden={tabValue !== 0}>
                 {tabValue === 0 && (
                     <GroupAnalytics
@@ -500,6 +747,103 @@ export default function GroupDetails() {
                     />
                 )}
             </Box>
+
+            {/* Balances Tab */}
+            <Box role="tabpanel" hidden={tabValue !== 2}>
+                {tabValue === 2 && (
+                    <Stack spacing={1.5}> {/* Use Stack instead of Grid for consistent width */}
+                        {Object.entries(balances)
+                            .filter(([_, bal]) => Math.abs(bal) > 0.1) // Hide zero balances
+                            .map(([memberId, bal]) => {
+                                // Find member name using consistent ID logic
+                                const member = group.members.find(m => {
+                                    const mId = (m.userId && typeof m.userId === 'object' && m.userId._id)
+                                        ? String(m.userId._id)
+                                        : String(m.userId || m.email || m.name);
+                                    return mId === memberId;
+                                });
+
+                                const name = member ? member.name : 'Unknown';
+                                const isMe = member && (
+                                    (member.userId && String(member.userId._id || member.userId) === String(user?._id)) ||
+                                    (member.email && user?.email && member.email.toLowerCase() === user.email.toLowerCase())
+                                );
+
+                                return (
+                                    <Box
+                                        key={memberId}
+                                        sx={{
+                                            position: 'relative',
+                                            p: 1.75,
+                                            borderRadius: '12px',
+                                            background: 'rgba(255,255,255,0.03)',
+                                            border: '1px solid rgba(255,255,255,0.08)',
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                background: 'rgba(255,255,255,0.05)',
+                                                borderColor: 'rgba(255,255,255,0.15)',
+                                                '& .delete-btn': { opacity: 1, transform: 'scale(1)' }
+                                            }
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.75 }}>
+                                            <Avatar
+                                                sx={{
+                                                    width: 40,
+                                                    height: 40,
+                                                    bgcolor: '#f1f5f9',
+                                                    boxShadow: `0 4px 12px ${isMe ? 'rgba(59, 130, 246, 0.3)' : (bal >= 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)')}`
+                                                }}
+                                                src={member?.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${name}`}
+                                                alt={name}
+                                            />
+
+                                            <Box sx={{ flex: 1 }}>
+                                                <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: '#FFFFFF' }}>
+                                                    {isMe ? 'You' : name}
+                                                </Typography>
+                                                <Typography
+                                                    sx={{
+                                                        fontSize: '0.8rem',
+                                                        color: '#94A3B8',
+                                                        mt: 0.2,
+                                                        fontWeight: 500
+                                                    }}
+                                                >
+                                                    {bal >= 0 ? 'Gets back' : 'Owes'} <span style={{ color: bal >= 0 ? '#10B981' : '#F43F5E', fontWeight: 700 }}>{formatCurrency(Math.abs(bal))}</span>
+                                                </Typography>
+                                            </Box>
+
+                                            {!isMe && group?.createdBy === user?._id && (
+                                                <Tooltip title="Remove member" arrow>
+                                                    <IconButton
+                                                        className="delete-btn"
+                                                        size="small"
+                                                        sx={{
+                                                            opacity: 0,
+                                                            transform: 'scale(0.8)',
+                                                            transition: 'all 0.2s ease',
+                                                            color: '#94a3b8',
+                                                            '&:hover': { color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' }
+                                                        }}
+                                                        onClick={() => setMemberToDelete(memberId)}
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
+                                        </Box>
+                                    </Box>
+                                );
+                            })}
+                        {Object.keys(balances).length === 0 && (
+                            <Typography sx={{ p: 2 }}>Everyone is settled up!</Typography>
+                        )}
+                    </Stack>
+                )}
+            </Box>
+
+
 
 
 
@@ -515,11 +859,36 @@ export default function GroupDetails() {
                 open={isExpenseDialogOpen}
                 onClose={() => {
                     setIsExpenseDialogOpen(false);
+                    setEditingExpense(null);
                     fetchGroupDetails();
                 }}
                 group={group}
                 currentUser={user}
+                onAddMemberClick={() => setIsAddMemberDialogOpen(true)}
+                initialExpense={editingExpense}
             />
+
+            <AddMemberDialog
+                open={isAddMemberDialogOpen}
+                onClose={() => setIsAddMemberDialogOpen(false)}
+                groupId={group?._id}
+                onMemberAdded={fetchGroupDetails}
+            />
+            {/* Expense Details Dialog */}
+            <ExpenseDetailsDialog
+                open={Boolean(selectedExpense)}
+                onClose={() => setSelectedExpense(null)}
+                expense={selectedExpense}
+                currentUser={user}
+                groupMembers={group?.members}
+                onDelete={(id) => {
+                    handleDeleteExpense(id);
+                }}
+                onEdit={(exp) => {
+                    handleEditExpense(exp);
+                }}
+            />
+
 
             <SettleDebtDialog
                 open={isSettleDialogOpen}
@@ -552,6 +921,22 @@ export default function GroupDetails() {
                 title="Delete Group"
                 message="Are you sure you want to delete this group? All expenses and data will be permanently removed."
             />
-        </PageContainer>
+
+            <ConfirmDialog
+                open={!!memberToDelete}
+                onClose={() => setMemberToDelete(null)}
+                onConfirm={handleRemoveMember}
+                title="Remove Member"
+                message="Are you sure you want to remove this member? ALL expenses paid by them or involving them will be PERMANENTLY DELETED."
+            />
+
+            <ConfirmDialog
+                open={confirmDialog.open}
+                onClose={() => setConfirmDialog(prev => ({ ...prev, open: false }))}
+                onConfirm={confirmDialog.onConfirm}
+                title={confirmDialog.title}
+                message={confirmDialog.message}
+            />
+        </PageContainer >
     );
 }

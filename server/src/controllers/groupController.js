@@ -24,14 +24,21 @@ const createGroup = async (req, res) => {
 
         if (members && members.length > 0) {
             for (const member of members) {
-                // Find if user exists
-                const user = await User.findOne({ email: member.email });
+                // Find if user exists by email or phone
+                let user;
+                if (member.email) {
+                    user = await User.findOne({ email: member.email });
+                }
+                if (!user && member.phone) {
+                    user = await User.findOne({ phoneNumber: member.phone });
+                }
 
                 if (user) {
                     processedMembers.push({
                         userId: user._id,
                         name: user.name,
-                        email: member.email
+                        email: user.email || member.email,
+                        phone: user.phoneNumber || member.phone // Save phone too
                     });
                 } else {
                     // Shadow member - create a unique identifier based on email/phone
@@ -227,4 +234,154 @@ const deleteGroup = async (req, res) => {
     }
 };
 
-export { createGroup, getGroups, getGroupDetails, updateGroup, deleteGroup };
+// @desc    Add member to group
+// @route   POST /api/groups/:id/members
+// @access  Private
+const addMemberToGroup = async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id);
+
+        if (!group) {
+            res.status(404);
+            throw new Error('Group not found');
+        }
+
+        const { name, email, phone } = req.body;
+
+        if (!name || !phone) {
+             res.status(400);
+             throw new Error('Name and Phone are required');
+        }
+
+        // Check if user exists
+        let user;
+        if (email) {
+            user = await User.findOne({ email });
+        }
+        if (!user && phone) {
+            user = await User.findOne({ phoneNumber: phone });
+        }
+
+        let newMember;
+        if (user) {
+            newMember = {
+                userId: user._id,
+                name: user.name,
+                email: user.email || email,
+                phone: user.phoneNumber || phone
+            };
+        } else {
+            // Shadow member
+             const identifier = email || phone;
+             const shadowUserId = crypto.createHash('sha256')
+                        .update(identifier)
+                        .digest('hex')
+                        .substring(0, 24);
+
+            newMember = {
+                userId: shadowUserId,
+                name: name,
+                email: email,
+                phone: phone,
+                isShadowUser: true
+            };
+        }
+
+        // Check duplicates
+        const exists = group.members.some(m => 
+            (m.userId && m.userId.toString() === newMember.userId.toString()) ||
+            (m.phone === phone)
+        );
+
+        if (exists) {
+            res.status(400);
+            throw new Error('Member already in group');
+        }
+
+        group.members.push(newMember);
+        await group.save();
+
+        res.json(group);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// @desc    Remove member from group
+// @route   DELETE /api/groups/:id/members/:memberId
+// @access  Private
+const removeMember = async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id);
+
+        if (!group) {
+            res.status(404);
+            throw new Error('Group not found');
+        }
+
+        // Only creator can remove members
+        if (group.createdBy.toString() !== req.user._id.toString()) {
+            res.status(403);
+            throw new Error('Not authorized to remove members');
+        }
+
+        const memberIdToRemove = req.params.memberId;
+
+        // Check if member exists
+        const memberIndex = group.members.findIndex(m => 
+            (m.userId && m.userId.toString() === memberIdToRemove) || 
+            (m._id && m._id.toString() === memberIdToRemove) ||
+            (m.userId === memberIdToRemove) // For shadow users
+        );
+
+        if (memberIndex === -1) {
+            res.status(404);
+            throw new Error('Member not found in group');
+        }
+
+        const memberToRemove = group.members[memberIndex];
+        const targetUserId = memberToRemove.userId?._id?.toString() || memberToRemove.userId || memberToRemove._id?.toString();
+
+        // Remove member from array
+        group.members.splice(memberIndex, 1);
+        await group.save();
+
+        // Cascade delete expenses involving this member
+        // 1. Expenses paid by this member
+        // 2. Expenses where this member is in splits
+        // We need to be careful with ID matching again
+        
+        // Strategy: Find all expenses, filter in JS (safer for shadow IDs), then delete
+        const allExpenses = await GroupExpense.find({ group: group._id });
+        const expensesToDelete = [];
+
+        for (const exp of allExpenses) {
+            // Check payer
+            const payerId = String(exp.paidBy?._id || exp.paidBy);
+            if (payerId === String(targetUserId)) {
+                expensesToDelete.push(exp._id);
+                continue;
+            }
+
+            // Check splits
+            if (exp.splits) {
+                const isInSplits = exp.splits.some(split => 
+                    String(split.user?._id || split.user) === String(targetUserId)
+                );
+                if (isInSplits) {
+                    expensesToDelete.push(exp._id);
+                }
+            }
+        }
+
+        if (expensesToDelete.length > 0) {
+            await GroupExpense.deleteMany({ _id: { $in: expensesToDelete } });
+        }
+
+        res.json({ message: 'Member and associated expenses removed', removedMemberId: targetUserId });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+export { createGroup, getGroups, getGroupDetails, updateGroup, deleteGroup, addMemberToGroup, removeMember };

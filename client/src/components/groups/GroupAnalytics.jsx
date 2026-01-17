@@ -5,8 +5,6 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts';
 import { formatCurrency } from '../../utils/formatters';
-import SummaryCardGrid from '../layout/SummaryCardGrid';
-import SummaryCard from '../layout/SummaryCard';
 import ChartCard, { ChartGrid, CategoryLegend } from '../layout/ChartCard';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
@@ -30,20 +28,44 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
             // Total Spend
             totalGroupSpend += exp.amount;
 
-            // My Spend (Paid By Me)
-            const payerId = String(exp.paidBy?._id || exp.paidBy);
-            if (payerId === currentUserId) {
+            // My Spend (Paid By Me) - STRICT CHECK + NAME FALLBACK
+            let payerIdNormalized;
+            let payerName;
+
+            if (exp.paidBy && typeof exp.paidBy === 'object') {
+                payerIdNormalized = String(exp.paidBy._id || exp.paidBy.id);
+                payerName = exp.paidBy.name;
+            } else {
+                payerIdNormalized = String(exp.paidBy);
+            }
+
+            const isIdMatch = payerIdNormalized === currentUserId && payerIdNormalized !== 'null' && payerIdNormalized !== 'undefined';
+            // Only try name match if ID match fails AND we have valid names to compare
+            const isNameMatch = !isIdMatch && payerName && currentUser.name && payerName.trim().toLowerCase() === currentUser.name.trim().toLowerCase();
+
+            if (isIdMatch || isNameMatch) {
                 myTotalSpend += exp.amount;
                 myNetBalance += exp.amount;
             }
 
             // My consumption (Split)
-            exp.splits.forEach(split => {
-                const splitUserId = String(split.user?._id || split.user);
-                if (splitUserId === currentUserId) {
-                    myNetBalance -= split.amount;
-                }
-            });
+            if (exp.splits) {
+                exp.splits.forEach(split => {
+                    const splitUserId = String(split.user?._id || split.user);
+                    const splitUserName = split.user?.name || split.userName; // Handle fallback name in split
+
+                    const isSplitIdMatch = splitUserId === currentUserId;
+                    const isSplitNameMatch = !isSplitIdMatch && splitUserName && currentUser.name && splitUserName.trim().toLowerCase() === currentUser.name.trim().toLowerCase();
+
+                    if (isSplitIdMatch || isSplitNameMatch) {
+                        // Correct logic: if I am in the split, I "consumed" this amount.
+                        // If I paid, it was added above (+Paid).
+                        // Consumed is always subtracted (-Consumed).
+                        // Net = Paid - Consumed.
+                        myNetBalance -= split.amount;
+                    }
+                });
+            }
         });
 
         return { totalGroupSpend, myTotalSpend, myNetBalance };
@@ -95,29 +117,222 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
 
     return (
         <Box sx={{ mt: 1 }}>
-            {/* Summary Cards */}
-            <SummaryCardGrid columns={4}>
-                <SummaryCard
-                    label="Total Group Spending"
-                    value={formatCurrency(stats.totalGroupSpend)}
-                    icon="💰"
-                    valueColor="info"
-                />
-                <SummaryCard
-                    label="You Paid"
-                    value={formatCurrency(stats.myTotalSpend)}
-                    icon="💸"
-                    valueColor="success"
-                    subtitle="Total amount you paid upfront"
-                />
-                <SummaryCard
-                    label="Your Net Balance"
-                    value={formatCurrency(Math.abs(stats.myNetBalance))}
-                    icon={stats.myNetBalance >= 0 ? "📈" : "📉"}
-                    valueColor={stats.myNetBalance >= 0 ? "success" : "error"}
-                    subtitle={stats.myNetBalance >= 0 ? "You are owed" : "You owe"}
-                />
-            </SummaryCardGrid>
+            {/* Premium Metric Cards - Redesigned */}
+            <Box
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+                    gridTemplateRows: 'auto auto',
+                    gap: { xs: 2, sm: 2.5 },  // 16-20px gaps
+                    mb: 4
+                }}
+            >
+                {/* Card 1 - Total Group Spending */}
+                <Box
+                    sx={{
+                        gridColumn: { xs: '1', sm: '1' },
+                        gridRow: { xs: 'auto', sm: '1' },
+                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.08) 100%)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(59, 130, 246, 0.2)',
+                        borderRadius: '20px',
+                        padding: { xs: 3, sm: 4 },
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '1px',
+                            background: 'linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent)'
+                        },
+                        '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: '0 12px 32px rgba(59, 130, 246, 0.2)'
+                        }
+                    }}
+                >
+                    <Box sx={{ fontSize: '2.5rem', mb: 1.5, lineHeight: 1 }}>💰</Box>
+                    <Typography
+                        sx={{
+                            fontSize: { xs: '2rem', sm: '2.25rem' },  // 32-36pt
+                            fontWeight: 700,
+                            color: '#3B82F6',
+                            letterSpacing: '-0.02em',
+                            lineHeight: 1.1,
+                            mb: 0.5
+                        }}
+                    >
+                        {formatCurrency(stats.totalGroupSpend)}
+                    </Typography>
+                    <Typography
+                        sx={{
+                            fontSize: '0.75rem',  // 12pt
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            letterSpacing: '1px',
+                            color: '#94A3B8',
+                            opacity: 0.9
+                        }}
+                    >
+                        TOTAL GROUP SPENDING
+                    </Typography>
+                </Box>
+
+                {/* Card 2 - You Paid */}
+                <Box
+                    sx={{
+                        gridColumn: { xs: '1', sm: '2' },
+                        gridRow: { xs: 'auto', sm: '1' },
+                        background: 'linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(20, 184, 166, 0.08) 100%)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(20, 184, 166, 0.2)',
+                        borderRadius: '20px',
+                        padding: { xs: 3, sm: 4 },
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '1px',
+                            background: 'linear-gradient(90deg, transparent, rgba(20, 184, 166, 0.3), transparent)'
+                        },
+                        '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: '0 12px 32px rgba(20, 184, 166, 0.2)'
+                        }
+                    }}
+                >
+                    <Box sx={{ fontSize: '2.5rem', mb: 1.5, lineHeight: 1 }}>💸</Box>
+                    <Typography
+                        sx={{
+                            fontSize: { xs: '2rem', sm: '2.25rem' },  // 32-36pt
+                            fontWeight: 700,
+                            color: '#10B981',
+                            letterSpacing: '-0.02em',
+                            lineHeight: 1.1,
+                            mb: 0.5
+                        }}
+                    >
+                        {formatCurrency(stats.myTotalSpend)}
+                    </Typography>
+                    <Typography
+                        sx={{
+                            fontSize: '0.75rem',  // 12pt
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            letterSpacing: '1px',
+                            color: '#94A3B8',
+                            opacity: 0.9
+                        }}
+                    >
+                        YOU PAID
+                    </Typography>
+                </Box>
+
+                {/* Card 3 - Your Net Balance */}
+                <Box
+                    sx={{
+                        gridColumn: { xs: '1', sm: '1 / 3' },
+                        gridRow: { xs: 'auto', sm: '2' },
+                        background: stats.myNetBalance >= 0
+                            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%)'
+                            : 'linear-gradient(135deg, rgba(255, 107, 107, 0.05) 0%, rgba(251, 113, 133, 0.05) 100%)',
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                        border: `1px solid ${stats.myNetBalance >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 107, 107, 0.2)'}`,
+                        borderRadius: '20px',
+                        padding: { xs: 3, sm: 4 },
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: 2,
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '1px',
+                            background: stats.myNetBalance >= 0
+                                ? 'linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.3), transparent)'
+                                : 'linear-gradient(90deg, transparent, rgba(255, 107, 107, 0.3), transparent)'
+                        },
+                        '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: stats.myNetBalance >= 0
+                                ? '0 12px 32px rgba(16, 185, 129, 0.15)'
+                                : '0 12px 32px rgba(255, 107, 107, 0.15)'
+                        }
+                    }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ fontSize: '2.5rem', lineHeight: 1 }}>
+                            {stats.myNetBalance >= 0 ? '📈' : '📉'}
+                        </Box>
+                        <Box>
+                            <Typography
+                                sx={{
+                                    fontSize: { xs: '1.75rem', sm: '2rem' },  // 28-32pt
+                                    fontWeight: 700,
+                                    color: stats.myNetBalance >= 0 ? '#10B981' : '#FF6B6B',
+                                    letterSpacing: '-0.02em',
+                                    lineHeight: 1.1,
+                                    mb: 0.5
+                                }}
+                            >
+                                {formatCurrency(Math.abs(stats.myNetBalance))}
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    fontSize: '0.75rem',  // 12pt
+                                    fontWeight: 600,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '1px',
+                                    color: '#94A3B8',
+                                    opacity: 0.9
+                                }}
+                            >
+                                YOUR NET BALANCE
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    fontSize: '0.7rem',
+                                    color: stats.myNetBalance >= 0 ? '#10B981' : '#FF6B6B',
+                                    fontWeight: 500,
+                                    mt: 0.5
+                                }}
+                            >
+                                {stats.myNetBalance >= 0 ? 'You are owed' : 'You owe'}
+                            </Typography>
+                        </Box>
+                    </Box>
+                    {/* Optional: Animated sparkle for positive balance */}
+                    {stats.myNetBalance >= 0 && Math.abs(stats.myNetBalance) > 0.1 && (
+                        <Box
+                            sx={{
+                                fontSize: '1.5rem',
+                                animation: 'pulse 2s ease-in-out infinite'
+                            }}
+                        >
+                            ✨
+                        </Box>
+                    )}
+                </Box>
+            </Box>
 
             {/* Charts Grid */}
             <ChartGrid>

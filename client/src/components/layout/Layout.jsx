@@ -178,14 +178,34 @@ export function Layout({ children }) {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: colors.bgPrimary }}>
+    <Box sx={{
+      display: 'flex',
+      minHeight: '100vh',
+      // Midnight Ocean gradient applied to root container
+      background: 'linear-gradient(120deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%)',
+      position: 'relative',
+      // Add subtle overlay for readability
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.05) 0%, rgba(15, 23, 42, 0.6) 100%)',
+        pointerEvents: 'none',
+        zIndex: 0
+      }
+    }}>
       {/* Desktop Sidebar */}
       <Box
         component="aside"
         sx={{
           display: { xs: 'none', lg: 'block' },
           width: SIDEBAR_WIDTH,
-          flexShrink: 0
+          flexShrink: 0,
+          position: 'relative',
+          zIndex: 1
         }}
       >
         <Box sx={{ position: 'fixed', width: SIDEBAR_WIDTH, height: '100vh' }}>
@@ -212,7 +232,7 @@ export function Layout({ children }) {
       </Drawer>
 
       {/* Main Content */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative', zIndex: 1 }}>
         {/* Header */}
         <Box
           component="header"
@@ -223,7 +243,8 @@ export function Layout({ children }) {
             alignItems: 'center',
             justifyContent: 'space-between',
             borderBottom: `1px solid ${colors.border}`,
-            bgcolor: colors.bgPrimary,
+            bgcolor: 'rgba(15, 23, 42, 0.5)', // Semi-transparent to show gradient
+            backdropFilter: 'blur(10px)',
             position: 'sticky',
             top: 0,
             zIndex: 100
@@ -286,7 +307,7 @@ export function Layout({ children }) {
           sx={{
             flex: 1,
             overflow: 'auto',
-            bgcolor: colors.bgPrimary
+            bgcolor: 'transparent'
           }}
         >
           {children}

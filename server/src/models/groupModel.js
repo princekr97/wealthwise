@@ -37,6 +37,13 @@ const groupSchema = new mongoose.Schema(
                     type: String,
                     trim: true,
                     lowercase: true
+                },
+                phone: {
+                    type: String,
+                    trim: true,
+                    // Making it strictly required might break existing docs if not handled carefully, 
+                    // but user insisted "mobile no is madatory".
+                    // We'll trust the controller to enforce this for new groups.
                 }
             }
         ],

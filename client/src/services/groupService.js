@@ -25,6 +25,18 @@ export const groupService = {
         return response.data;
     },
 
+    // Add member to group
+    addMemberToGroup: async (groupId, memberData) => {
+        const response = await api.post(`/groups/${groupId}/members`, memberData);
+        return response.data;
+    },
+
+    // Remove member from group
+    removeMember: async (groupId, memberId) => {
+        const response = await api.delete(`/groups/${groupId}/members/${memberId}`);
+        return response.data;
+    },
+
     // Add expense to group
     addExpense: async (groupId, expenseData) => {
         const response = await api.post(`/groups/${groupId}/expenses`, expenseData);

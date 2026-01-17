@@ -25,7 +25,9 @@ export const getLastMonthsRange = (months) => {
   const end = new Date();
   const start = new Date();
   start.setMonth(start.getMonth() - (months - 1));
+  start.setDate(1); // Start from the 1st day of that month
   start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999); // End at the last moment of today
 
   return { start, end };
 };

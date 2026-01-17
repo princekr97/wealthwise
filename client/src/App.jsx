@@ -24,6 +24,8 @@ import Settings from './pages/Settings.jsx';
 import { ResetPassword } from './pages/ResetPassword.jsx';
 import Groups from './pages/Groups.jsx';
 import GroupDetails from './pages/GroupDetails.jsx';
+import GradientShowcase from './components/GradientShowcase.jsx';
+
 
 export default function App() {
   return (
@@ -52,6 +54,7 @@ export default function App() {
                   <Route path="lending" element={<Lending />} />
                   <Route path="budget" element={<Budget />} />
                   <Route path="settings" element={<Settings />} />
+                  <Route path="gradients" element={<GradientShowcase />} />
                   <Route path="*" element={<Navigate to="dashboard" replace />} />
                 </Routes>
               </Layout>

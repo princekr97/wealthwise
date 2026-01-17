@@ -32,9 +32,10 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
 
     const { control, handleSubmit, reset } = useForm({
         defaultValues: {
+            // 1. Update defaultValues
             name: '',
             type: 'Other',
-            members: [{ name: '', email: '' }]
+            members: [{ name: '', email: '', phone: '' }]
         }
     });
 
@@ -56,7 +57,7 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
                 reset({
                     name: '',
                     type: 'Other',
-                    members: [{ name: '', email: '' }]
+                    members: [{ name: '', email: '', phone: '' }]
                 });
             }
         }
@@ -71,7 +72,7 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
                 });
                 toast.success('Group updated successfully');
             } else {
-                const validMembers = data.members.filter(m => m.name.trim() !== '' || m.email.trim() !== '');
+                const validMembers = data.members.filter(m => m.name.trim() !== '' && (m.phone?.trim() !== '' || m.email?.trim() !== ''));
                 await groupService.createGroup({
                     ...data,
                     members: validMembers
@@ -117,76 +118,52 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
                         name="type"
                         control={control}
                         render={({ field }) => (
-                            <FormControl fullWidth>
-                                <InputLabel>Group Type</InputLabel>
-                                <Select {...field} label="Group Type">
-                                    {GROUP_TYPES.map((type) => (
-                                        <MenuItem key={type} value={type}>{type}</MenuItem>
+                            <Box>
+                                <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
+                                    Group Category
+                                </Typography>
+                                <Stack direction="row" spacing={2} sx={{ overflowX: 'auto', pb: 1, px: 0.5 }}>
+                                    {[
+                                        { type: 'Home', icon: '🏠', label: 'Home' },
+                                        { type: 'Trip', icon: '✈️', label: 'Trip' },
+                                        { type: 'Personal', icon: '👤', label: 'Personal' }, // Changed 'Couple' to 'Personal' based on user image, or keep logic. Image implies 'Personal' is an option? Let's stick to standard types mapped to UI. 
+                                        { type: 'Other', icon: '📄', label: 'Business' }
+                                    ].map((item) => (
+                                        <Box
+                                            key={item.type}
+                                            onClick={() => field.onChange(item.type)}
+                                            sx={{
+                                                minWidth: 80,
+                                                height: 80,
+                                                borderRadius: 3,
+                                                border: '2px solid',
+                                                borderColor: field.value === item.type ? 'primary.main' : 'transparent',
+                                                bgcolor: field.value === item.type ? 'primary.lighter' : '#f8fafc',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                boxShadow: field.value === item.type ? '0 4px 12px rgba(37, 99, 235, 0.2)' : 'none',
+                                                '&:hover': {
+                                                    bgcolor: field.value === item.type ? 'primary.lighter' : '#f1f5f9',
+                                                    transform: 'translateY(-2px)'
+                                                }
+                                            }}
+                                        >
+                                            <Typography sx={{ fontSize: '1.5rem', mb: 0.5 }}>{item.icon}</Typography>
+                                            <Typography variant="caption" fontWeight={600} color={field.value === item.type ? 'primary.main' : 'text.secondary'}>
+                                                {item.type}
+                                            </Typography>
+                                        </Box>
                                     ))}
-                                </Select>
-                            </FormControl>
+                                </Stack>
+                            </Box>
                         )}
                     />
 
-                    {!isEditMode && (
-                        <Box>
-                            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                                Add Members
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                                Add members by name and mobile/email. If they're on WealthWise, they'll be linked automatically.
-                            </Typography>
 
-                            <Stack spacing={2}>
-                                {fields.map((field, index) => (
-                                    <Stack key={field.id} direction="row" spacing={1} alignItems="flex-start">
-                                        <Controller
-                                            name={`members.${index}.name`}
-                                            control={control}
-                                            rules={{ required: 'Name is required' }}
-                                            render={({ field: inputField, fieldState: { error } }) => (
-                                                <TextField
-                                                    {...inputField}
-                                                    label="Name"
-                                                    size="small"
-                                                    sx={{ flex: 1 }}
-                                                    error={!!error}
-                                                    helperText={error?.message}
-                                                />
-                                            )}
-                                        />
-                                        <Controller
-                                            name={`members.${index}.email`}
-                                            control={control}
-                                            render={({ field: inputField }) => (
-                                                <TextField
-                                                    {...inputField}
-                                                    label="Mobile/Email (Optional)"
-                                                    size="small"
-                                                    sx={{ flex: 1.5 }}
-                                                    placeholder="9876543210 or email@example.com"
-                                                />
-                                            )}
-                                        />
-                                        {index > 0 && (
-                                            <IconButton size="small" onClick={() => remove(index)} color="error" sx={{ mt: 0.5 }}>
-                                                <CloseIcon fontSize="small" />
-                                            </IconButton>
-                                        )}
-                                    </Stack>
-                                ))}
-
-                                <Button
-                                    startIcon={<AddIcon />}
-                                    size="small"
-                                    onClick={() => append({ name: '', email: '' })}
-                                    sx={{ alignSelf: 'flex-start' }}
-                                >
-                                    Add Member
-                                </Button>
-                            </Stack>
-                        </Box>
-                    )}
                 </Stack>
             </DialogContent>
 

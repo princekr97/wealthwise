@@ -6,196 +6,128 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BarChart3, PiggyBank, ShieldCheck } from 'lucide-react';
+import { Box, Typography } from '@mui/material';
+import {
+  TrendingUp as ArrowRight,
+  BarChart as BarChart3,
+  AccountBalanceWallet as PiggyBank,
+  Shield as ShieldCheck
+} from '@mui/icons-material';
 
 export function Landing() {
   return (
     <div className="min-h-screen brand-hero-bg text-slate-100 flex flex-col">
-      <header className="flex items-center justify-between px-6 lg:px-10 py-4">
-        <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-brand to-brandBlue shadow-brand-soft flex items-center justify-center">
-            <span className="font-black text-slate-950 text-lg">W</span>
-          </div>
-          <div>
-            <div className="font-semibold tracking-tight">WealthWise</div>
-            <div className="text-xs text-slate-400 -mt-1">
-              Master Your Money, Shape Your Future
-            </div>
-          </div>
-        </div>
-
-        <nav className="hidden md:flex items-center gap-6 text-sm text-slate-300">
-          <a href="#features" className="hover:text-white transition-base">
-            Features
-          </a>
-          <a href="#security" className="hover:text-white transition-base">
-            Security
-          </a>
-          <a href="#insights" className="hover:text-white transition-base">
-            Insights
-          </a>
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <Link
-            to="/login"
-            className="text-sm text-slate-300 hover:text-white transition-base"
-          >
-            Log in
-          </Link>
-          <Link
-            to="/register"
-            className="text-sm px-4 py-2 rounded-full bg-gradient-to-r from-brand to-brandBlue shadow-brand-soft text-slate-950 font-semibold hover:shadow-brand-blue transition-base flex items-center gap-2"
-          >
-            Get Started
-            <ArrowRight size={18} />
-          </Link>
-        </div>
-      </header>
-
+      <Header />
       <main className="flex-1 flex flex-col lg:flex-row items-center gap-8 lg:gap-14 px-6 lg:px-12 pb-10 pt-4">
-        {/* Hero text */}
-        <section className="w-full lg:w-1/2 space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-slate-900/60 px-3 py-1 text-xs text-emerald-300">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            Live overview of your financial health
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-tight">
-            Take control of your{' '}
-            <span className="bg-gradient-to-r from-brand to-brandBlue bg-clip-text text-transparent">
-              money
-            </span>
-            , one smart insight at a time.
-          </h1>
-
-          <p className="text-sm sm:text-base text-slate-300 max-w-xl">
-            Track expenses, income, loans, EMIs, investments, and personal lending in a single
-            interactive dashboard. Visual analytics help you make better money decisions every day.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Link
-              to="/register"
-              className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 bg-gradient-to-r from-brand to-brandBlue text-slate-950 font-semibold shadow-brand-soft hover:shadow-brand-blue transition-base"
-            >
-              Start Free Today
-              <ArrowRight size={18} />
-            </Link>
-            <a
-              href="#insights"
-              className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 bg-slate-900/60 border border-slate-700 text-slate-100 text-sm hover:bg-slate-900 transition-base"
-            >
-              View Live Insights
-            </a>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 pt-4 max-w-md text-xs sm:text-sm">
-            <StatPill label="Savings Rate" value="38%" status="up" />
-            <StatPill label="Debt Ratio" value="25%" status="ok" />
-            <StatPill label="Emergency Fund" value="4 months" status="warn" />
-          </div>
-        </section>
-
-        {/* Hero visual - faux dashboard */}
-        <section
-          id="insights"
-          className="w-full lg:w-1/2 mt-4 lg:mt-0 flex justify-center"
-        >
-          <div className="relative max-w-xl w-full">
-            <div className="absolute -top-10 -left-8 h-40 w-40 rounded-full bg-emerald-500/20 blur-3xl" />
-            <div className="absolute -bottom-10 -right-8 h-40 w-40 rounded-full bg-sky-500/25 blur-3xl" />
-
-            <div className="glass-card rounded-3xl shadow-brand-blue overflow-hidden border border-slate-700/70">
-              <div className="flex items-center justify-between px-5 py-3 border-b border-slate-700/70 bg-slate-900/70">
-                <div className="text-xs text-slate-400">Financial Overview</div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="inline-flex items-center gap-1 text-emerald-400">
-                    <BarChart3 size={14} /> Live
-                  </span>
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                </div>
-              </div>
-
-              <div className="p-5 space-y-4">
-                {/* Summary cards mock */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <MiniCard title="Income" amount="₹85,000" change="+5%" accent="emerald" />
-                  <MiniCard title="Expenses" amount="₹52,000" change="-3%" accent="rose" />
-                  <MiniCard title="Savings" amount="₹33,000" change="+12%" accent="sky" />
-                  <MiniCard title="EMI Due" amount="₹15,000" change="3 loans" accent="amber" />
-                </div>
-
-                {/* Faux charts using gradients and shapes (later replaced by real Recharts in app) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-slate-900/70 rounded-2xl p-4 border border-slate-700/60">
-                    <div className="flex items-center justify-between text-xs mb-2">
-                      <span className="text-slate-300">Expense Breakdown</span>
-                      <span className="text-emerald-400">This Month</span>
-                    </div>
-                    <div className="relative h-28 flex items-center justify-center">
-                      <div className="h-20 w-20 rounded-full border-[10px] border-emerald-400/80 border-t-transparent border-r-sky-400/80 border-b-rose-400/80 rotate-45 shadow-brand-soft" />
-                      <div className="absolute text-center">
-                        <div className="text-[10px] text-slate-400">Total Spend</div>
-                        <div className="text-sm font-semibold">₹52K</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-900/70 rounded-2xl p-4 border border-slate-700/60">
-                    <div className="flex items-center justify-between text-xs mb-2">
-                      <span className="text-slate-300">Income vs Expense</span>
-                      <span className="text-slate-400">Last 6 months</span>
-                    </div>
-                    <div className="h-28 flex items-end gap-1 overflow-hidden">
-                      {[60, 75, 70, 85, 90, 80].map((h, idx) => (
-                        <div
-                          // eslint-disable-next-line react/no-array-index-key
-                          key={idx}
-                          className="flex-1 flex flex-col justify-end gap-1"
-                        >
-                          <div
-                            className="rounded-t-full bg-gradient-to-t from-sky-500 to-emerald-400"
-                            style={{ height: `${h}%` }}
-                          />
-                          <div className="h-1 rounded-full bg-slate-700" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Security highlight */}
-                <div
-                  id="security"
-                  className="mt-2 flex items-center gap-3 text-xs bg-slate-900/70 border border-emerald-500/40 rounded-2xl px-3 py-2"
-                >
-                  <div className="h-7 w-7 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-400">
-                    <ShieldCheck size={16} />
-                  </div>
-                  <div>
-                    <div className="font-medium text-slate-100">Bank‑grade security</div>
-                    <div className="text-[11px] text-slate-400">
-                      Your data is encrypted in transit and at rest. Only you control your money
-                      story.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating PiggyBank badge */}
-            <div className="absolute -bottom-4 left-6 hidden sm:flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 rounded-2xl px-3 py-2 text-xs shadow-lg">
-              <PiggyBank size={16} className="text-emerald-400" />
-              <div>
-                <div className="font-medium">Goal: House Down Payment</div>
-                <div className="text-[11px] text-slate-400">₹6.5L / ₹10L • 65% complete</div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <HeroSection />
+        <DashboardMock />
       </main>
     </div>
+  );
+}
+
+function Header() {
+  return (
+    <header className="flex items-center justify-between px-6 lg:px-10 py-6">
+      <div className="flex items-center gap-3">
+        <Box sx={{
+          height: 44, width: 44, borderRadius: '14px',
+          background: 'linear-gradient(135deg, #10B981 0%, #3b82f6 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 8px 16px rgba(16, 185, 129, 0.2)'
+        }}>
+          <span className="font-black text-white text-xl">W</span>
+        </Box>
+        <div>
+          <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1, color: 'white' }}>WealthWise</Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>Smart Money Management</Typography>
+        </div>
+      </div>
+
+      <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
+        <a href="#features" className="hover:text-white transition-all duration-300">Features</a>
+        <a href="#security" className="hover:text-white transition-all duration-300">Security</a>
+        <a href="#insights" className="hover:text-white transition-all duration-300">Insights</a>
+      </nav>
+
+      <div className="flex items-center gap-5">
+        <Link to="/login" className="text-sm font-semibold text-slate-400 hover:text-white transition-all">Log in</Link>
+        <Link to="/register" className="group relative text-sm px-6 py-2.5 rounded-full bg-white text-slate-900 font-bold overflow-hidden transition-all hover:scale-105 active:scale-95">
+          Get Started
+        </Link>
+      </div>
+    </header>
+  );
+}
+
+function HeroSection() {
+  return (
+    <section className="w-full lg:w-1/2 space-y-8">
+      <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-4 py-1.5 text-xs font-semibold text-emerald-400 backdrop-blur-md">
+        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+        Live Financial Insights
+      </div>
+
+      <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight text-white">
+        Take control of your{' '}
+        <span className="bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
+          money
+        </span>.
+      </h1>
+
+      <p className="text-lg text-slate-400 max-w-xl leading-relaxed">
+        Track expenses, investments, and group bills in one place. WealthWise transforms your transaction history into actionable financial intelligence.
+      </p>
+
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Link to="/register" className="inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-600 text-white font-bold shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 transform transition hover:-translate-y-0.5">
+          Start for free
+        </Link>
+        <a href="#insights" className="inline-flex items-center justify-center rounded-2xl px-8 py-4 bg-white/5 border border-white/10 text-white font-semibold backdrop-blur-sm hover:bg-white/10 transition-all">
+          Explore Insights
+        </a>
+      </div>
+
+      <div className="grid grid-cols-3 gap-6 pt-6 max-w-lg">
+        <StatPill label="Savings" value="38%" status="up" />
+        <StatPill label="Debt" value="25%" status="ok" />
+        <StatPill label="Score" value="780" status="up" />
+      </div>
+    </section>
+  );
+}
+
+function DashboardMock() {
+  return (
+    <section id="insights" className="w-full lg:w-1/2 flex justify-center relative">
+      <div className="absolute inset-0 bg-blue-500/10 blur-[120px] rounded-full translate-x-1/4" />
+      <div className="absolute inset-0 bg-emerald-500/10 blur-[120px] rounded-full -translate-x-1/4" />
+
+      <div className="relative w-full max-w-lg glass-card rounded-[32px] border border-white/10 shadow-2xl overflow-hidden backdrop-blur-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5">
+          <div className="text-xs font-bold uppercase tracking-widest text-slate-400">Real-time Dashboard</div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <MiniCard title="Total Balance" amount="₹2,45,000" change="+12.5%" accent="emerald" />
+            <MiniCard title="Expenses" amount="₹48,200" change="-4.2%" accent="rose" />
+          </div>
+
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-bold text-slate-300">Monthly Spending</span>
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            </div>
+            <div className="h-32 flex items-end gap-2">
+              {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
+                <div key={i} className="flex-1 rounded-t-lg bg-gradient-to-t from-blue-600/20 to-emerald-400/80" style={{ height: `${h}%` }} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -235,9 +167,8 @@ function MiniCard({ title, amount, change, accent }) {
       <div className="text-[11px] text-slate-400">{title}</div>
       <div className="text-sm font-semibold text-slate-50">{amount}</div>
       <div
-        className={`mt-1 inline-flex items-center text-[10px] px-2 py-1 rounded-full bg-gradient-to-r ${
-          accentMap[accent]
-        }`}
+        className={`mt-1 inline-flex items-center text-[10px] px-2 py-1 rounded-full bg-gradient-to-r ${accentMap[accent]
+          }`}
       >
         {change}
       </div>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WealthWise API Tester</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        h1 {
+            color: #3b82f6;
+        }
+        .section {
+            background: #1e293b;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        pre {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border: 1px solid #475569;
+        }
+        input {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: #e2e8f0;
+            margin: 5px;
+            min-width: 200px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #065f46; color: #a7f3d0; }
+        .error { background: #7f1d1d; color: #fecaca; }
+        .warning { background: #78350f; color: #fed7aa; }
+    </style>
+</head>
+<body>
+    <h1>🔍 WealthWise API Diagnostics</h1>
+    
+    <div class="section">
+        <h2>📊 Server Status</h2>
+        <button onclick="checkHealth()">Check Health</button>
+        <div id="health-result"></div>
+    </div>
+
+    <div class="section">
+        <h2>🔐 Authentication</h2>
+        <div>
+            <input type="email" id="email" placeholder="Email" value="test@example.com">
+            <input type="password" id="password" placeholder="Password" value="password123">
+        </div>
+        <button onclick="register()">Register</button>
+        <button onclick="login()">Login</button>
+        <button onclick="checkToken()">Check Token</button>
+        <button onclick="clearToken()">Clear Token</button>
+        <div id="auth-result"></div>
+    </div>
+
+    <div class="section">
+        <h2>💸 Expenses</h2>
+        <button onclick="getExpenses()">Get All Expenses</button>
+        <button onclick="getExpenseSummary()">Get Summary</button>
+        <button onclick="getExpensesByCategory()">Get By Category</button>
+        <button onclick="addSampleExpense()">Add Sample Expense</button>
+        <div id="expense-result"></div>
+    </div>
+
+    <div class="section">
+        <h2>📈 Dashboard</h2>
+        <button onclick="getDashboard()">Get Dashboard Data</button>
+        <div id="dashboard-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001/api';
+        
+        function getToken() {
+            return localStorage.getItem('wealthwise-token');
+        }
+
+        function setToken(token) {
+            localStorage.setItem('wealthwise-token', token);
+        }
+
+        async function apiCall(endpoint, options = {}) {
+            const token = getToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            
+            if (token && !endpoint.includes('/auth/')) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    ...options,
+                    headers
+                });
+                
+                const data = await response.json();
+                return {
+                    ok: response.ok,
+                    status: response.status,
+                    data
+                };
+            } catch (error) {
+                return {
+                    ok: false,
+                    error: error.message
+                };
+            }
+        }
+
+        function display(elementId, result) {
+            const el = document.getElementById(elementId);
+            const status = result.ok ? 'success' : 'error';
+            el.innerHTML = `
+                <div class="status ${status}">
+                    Status: ${result.status || 'Error'} ${result.ok ? '✅' : '❌'}
+                </div>
+                <pre>${JSON.stringify(result.data || result.error, null, 2)}</pre>
+            `;
+        }
+
+        async function checkHealth() {
+            const result = await apiCall('/health');
+            display('health-result', result);
+        }
+
+        async function register() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const result = await apiCall('/auth/register', {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    name: 'Test User',
+                    email, 
+                    password 
+                })
+            });
+            if (result.ok && result.data.token) {
+                setToken(result.data.token);
+            }
+            display('auth-result', result);
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const result = await apiCall('/auth/login', {
+                method: 'POST',
+                body: JSON.stringify({ email, password })
+            });
+            if (result.ok && result.data.token) {
+                setToken(result.data.token);
+            }
+            display('auth-result', result);
+        }
+
+        function checkToken() {
+            const token = getToken();
+            display('auth-result', {
+                ok: !!token,
+                status: token ? 200 : 404,
+                data: { token: token ? `${token.substring(0, 20)}...` : 'No token found' }
+            });
+        }
+
+        function clearToken() {
+            localStorage.removeItem('wealthwise-token');
+            display('auth-result', {
+                ok: true,
+                status: 200,
+                data: { message: 'Token cleared' }
+            });
+        }
+
+        async function getExpenses() {
+            const result = await apiCall('/expenses');
+            display('expense-result', result);
+        }
+
+        async function getExpenseSummary() {
+            const result = await apiCall('/expenses/summary');
+            display('expense-result', result);
+        }
+
+        async function getExpensesByCategory() {
+            const result = await apiCall('/expenses/by-category');
+            display('expense-result', result);
+        }
+
+        async function addSampleExpense() {
+            const result = await apiCall('/expenses', {
+                method: 'POST',
+                body: JSON.stringify({
+                    amount: 1500,
+                    category: 'Food',
+                    date: new Date().toISOString(),
+                    description: 'Sample expense from tester',
+                    priority: 'medium',
+                    paymentMethod: 'UPI',
+                    isRecurring: false
+                })
+            });
+            display('expense-result', result);
+        }
+
+        async function getDashboard() {
+            const summaryResult = await apiCall('/dashboard/summary');
+            const chartsResult = await apiCall('/dashboard/charts');
+            display('dashboard-result', {
+                ok: summaryResult.ok && chartsResult.ok,
+                status: summaryResult.status,
+                data: {
+                    summary: summaryResult.data,
+                    charts: chartsResult.data
+                }
+            });
+        }
+
+        // Auto-check health on load
+        window.onload = () => {
+            checkHealth();
+            checkToken();
+        };
+    </script>
+</body>
+</html>

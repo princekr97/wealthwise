@@ -5,7 +5,9 @@ import {
     getGroups,
     getGroupDetails,
     updateGroup,
-    deleteGroup
+    deleteGroup,
+    addMemberToGroup,
+    removeMember
 } from '../controllers/groupController.js';
 import {
     addExpense,
@@ -26,6 +28,12 @@ router.route('/:id')
     .get(getGroupDetails)
     .put(updateGroup)
     .delete(deleteGroup);
+
+router.route('/:id/members')
+    .post(addMemberToGroup);
+
+router.route('/:id/members/:memberId')
+    .delete(removeMember);
 
 router.route('/:groupId/expenses')
     .post(addExpense);

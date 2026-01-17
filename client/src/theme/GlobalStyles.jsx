@@ -21,7 +21,7 @@ export default function GlobalStyles() {
 
         'html, body, #root': {
           minHeight: '100vh',
-          backgroundColor: '#0A0F1E',
+          backgroundColor: 'transparent', // Changed from solid color to allow page gradients
           color: '#F9FAFB'
         },
 
