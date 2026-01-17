@@ -29,32 +29,8 @@ const groupExpenseSchema = new mongoose.Schema(
         },
         category: {
             type: String,
-            enum: [
-                // Expanded categories (matches personal expense module)
-                'Food & Dining',
-                'Transportation',
-                'Shopping',
-                'Entertainment',
-                'Bills & Utilities',
-                'Healthcare',
-                'Education',
-                'Travel',
-                'Personal Care',
-                'Groceries',
-                'Rent',
-                'Insurance',
-                'Savings',
-                'Investments',
-                'Gifts',
-                'Settlement', // Special type for debt payments
-                'Other',
-                // Legacy categories for backward compatibility
-                'Food and Drink',
-                'Home',
-                'Life',
-                'Utilities',
-                'Uncategorized'
-            ],
+            required: [true, 'Category is required'],
+            trim: true,
             default: 'Other'
         },
         // Which member paid?
