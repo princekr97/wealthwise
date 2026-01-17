@@ -6,8 +6,9 @@
  */
 
 import React from 'react';
-import { Box, Typography, Button, Stack, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Typography, Stack, useTheme, useMediaQuery } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
+import PremiumButton from '../common/PremiumButton';
 
 export default function PageHeader({
     title,
@@ -66,19 +67,16 @@ export default function PageHeader({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 {rightContent}
                 {actionLabel && onAction && (
-                    <Button
-                        variant="contained"
-                        color="primary"
+                    <PremiumButton
                         startIcon={actionIcon}
                         onClick={onAction}
-                        size={isMobile ? 'small' : 'medium'}
                         sx={{
-                            whiteSpace: 'nowrap',
-                            px: { xs: 2, sm: 3 }
+                            minWidth: isMobile ? '10rem' : '13rem',
+                            fontSize: isMobile ? '0.75rem' : '0.875rem',
                         }}
                     >
                         {actionLabel}
-                    </Button>
+                    </PremiumButton>
                 )}
             </Box>
         </Box>

@@ -1,7 +1,24 @@
+/**
+ * @file AddGroupExpenseDialog.jsx
+ * @description Dialog component for adding or editing group expenses with split management.
+ * 
+ * Features:
+ * - Add/Edit expenses with custom or equal splits
+ * - Category selection with icons
+ * - Payer selection from group members
+ * - Custom amount distribution validation
+ * - Optimistic UI updates for instant feedback
+ * 
+ * @module components/groups/AddGroupExpenseDialog
+ * @requires react
+ * @requires @mui/material
+ * @requires react-hook-form
+ * @requires sonner
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
     Dialog,
-    DialogTitle,
     DialogContent,
     DialogActions,
     TextField,
@@ -15,46 +32,87 @@ import {
     Typography,
     Box,
     InputAdornment,
-    Switch,
     Avatar,
     Fade,
-    Paper,
     Divider,
-    FormControlLabel
+    FormControlLabel,
+    Switch
 } from '@mui/material';
 import {
     Close as CloseIcon,
-    PersonAdd as PersonAddIcon,
-    Add as AddIcon,
     Check as CheckIcon,
     Restaurant as FoodIcon,
     Flight as TravelIcon,
     Home as HomeIcon,
-    LocalHospital as HealthIcon,
     Commute as TransportIcon,
     Bolt as UtilitiesIcon,
     SportsEsports as EntertainmentIcon,
     Receipt as BillIcon,
     AttachMoney as MoneyIcon,
-    Category as CategoryIcon
+    Category as CategoryIcon,
+    ShoppingBag as ShoppingIcon,
+    LocalHospital as HealthcareIcon,
+    School as EducationIcon,
+    Spa as PersonalCareIcon,
+    ShoppingCart as GroceriesIcon,
+    Shield as InsuranceIcon,
+    TrendingUp as InvestmentsIcon,
+    CardGiftcard as GiftsIcon,
+    Savings as SavingsIcon,
+    Hotel as StaysIcon,
+    LocalCafe as DrinksIcon,
+    LocalGasStation as FuelIcon,
+    PersonAdd as PersonAddIcon  // For Add Member button
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 import { groupService } from '../../services/groupService';
 import { styled } from '@mui/material/styles';
 
+// ============================================
+// CONSTANTS
+// ============================================
+
+/**
+ * Available expense categories (matches reference design)
+ * @constant {string[]}
+ */
 const CATEGORIES = [
-    'Food and Drink', 'Transportation', 'Home', 'Utilities', 'Entertainment', 'Life', 'Uncategorized'
+    'Food',
+    'Groceries',
+    'Travel',
+    'Stays',
+    'Bills',
+    'Subscription',
+    'Shopping',
+    'Gifts',
+    'Drinks',
+    'Fuel',
+    'Health',
+    'Entertainment',
+    'Settlement',
+    'Misc.'
 ];
 
+/**
+ * Icon mapping for expense categories
+ * @constant {Object<string, JSX.Element>}
+ */
 const CATEGORY_ICONS = {
+    'Food': FoodIcon,
+    'Groceries': GroceriesIcon,
+    'Travel': TravelIcon,
+    'Stays': StaysIcon,
+    'Bills': BillIcon,
+    'Subscription': BillIcon,
+    'Shopping': ShoppingIcon,
+    'Gifts': GiftsIcon,
+    'Drinks': DrinksIcon,
+    'Fuel': FuelIcon,
+    'Health': HealthcareIcon,
     'Entertainment': EntertainmentIcon,
-    'Food and Drink': FoodIcon,
-    'Home': HomeIcon,
-    'Life': HealthIcon,
-    'Transportation': TransportIcon,
-    'Utilities': UtilitiesIcon,
-    'Uncategorized': BillIcon
+    'Settlement': MoneyIcon,
+    'Misc.': CategoryIcon
 };
 
 // Styled Components to match User's HTML/CSS
@@ -165,7 +223,7 @@ const FormLabel = styled(Typography)({
     display: 'block',
     fontSize: '0.75rem',
     fontWeight: 800,
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255,255,255,0.6)', // Improved visibility (was 0.4)
     marginBottom: '0.5rem',
     textTransform: 'uppercase',
     letterSpacing: '1.5px'
@@ -365,17 +423,31 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                 splitType
             };
 
-            if (initialExpense) {
-                await groupService.updateExpense(group._id, initialExpense._id, expenseData);
-                toast.success('Expense updated');
-            } else {
-                await groupService.addExpense(group._id, expenseData);
-                toast.success('Expense added');
-            }
+            // ====================================
+            // PERFORMANCE: Optimistic UI Update
+            // ====================================
+            const isUpdate = Boolean(initialExpense);
 
+            // Close dialog immediately for instant feel
             onClose();
+
+            // Show optimistic loading toast
+            toast.success(isUpdate ? 'Updating...' : 'Adding...', { duration: 800 });
+
+            try {
+                if (isUpdate) {
+                    await groupService.updateExpense(group._id, initialExpense._id, expenseData);
+                    toast.success('Expense updated!');
+                } else {
+                    await groupService.addExpense(group._id, expenseData);
+                    toast.success('Expense added!');
+                }
+            } catch (err) {
+                toast.error(err.response?.data?.message || `Failed to ${isUpdate ? 'update' : 'add'} expense`);
+            }
         } catch (err) {
-            toast.error(err.response?.data?.message || `Failed to ${initialExpense ? 'update' : 'add'} expense`);
+            // Validation error (before API call)
+            toast.error(err.message || 'Invalid input');
         }
     };
 

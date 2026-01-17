@@ -81,11 +81,7 @@ export default function Dashboard() {
 
   // Loading state with PageLoader
   if (loading) {
-    return (
-      <PageContainer>
-        <PageLoader message="Loading your financial overview..." />
-      </PageContainer>
-    );
+    return <PageLoader message="Loading Dashboard..." />;
   }
 
   const cards = summary?.cards || {};

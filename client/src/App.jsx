@@ -5,26 +5,33 @@
  * Uses standardized layout components for consistency.
  */
 
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
+import { CircularProgress, Box } from '@mui/material';
 import { Layout, AuthLayout } from './components/layout';
 import { Landing } from './pages/Landing.jsx';
 import { Login } from './pages/Login.jsx';
 import { Register } from './pages/Register.jsx';
 import { ProtectedRoute } from './components/common/ProtectedRoute.jsx';
-import Dashboard from './pages/Dashboard.jsx';
-import Expenses from './pages/Expenses.jsx';
-import Income from './pages/Income.jsx';
-import Loans from './pages/Loans.jsx';
-import Investments from './pages/Investments.jsx';
-import Lending from './pages/Lending.jsx';
-import Budget from './pages/Budget.jsx';
-import Settings from './pages/Settings.jsx';
-import { ResetPassword } from './pages/ResetPassword.jsx';
-import Groups from './pages/Groups.jsx';
-import GroupDetails from './pages/GroupDetails.jsx';
-import GradientShowcase from './components/GradientShowcase.jsx';
+import PageLoader from './components/common/PageLoader.jsx';
+
+// Lazy load heavy pages (code splitting for performance)
+// Pages still fetch fresh data when mounted - no caching here
+const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
+const Expenses = lazy(() => import('./pages/Expenses.jsx'));
+const Income = lazy(() => import('./pages/Income.jsx'));
+const Loans = lazy(() => import('./pages/Loans.jsx'));
+const Investments = lazy(() => import('./pages/Investments.jsx'));
+const Lending = lazy(() => import('./pages/Lending.jsx'));
+const Budget = lazy(() => import('./pages/Budget.jsx'));
+const Settings = lazy(() => import('./pages/Settings.jsx'));
+const Groups = lazy(() => import('./pages/Groups.jsx'));
+const GroupDetails = lazy(() => import('./pages/GroupDetails.jsx'));
+const GradientShowcase = lazy(() => import('./components/GradientShowcase.jsx'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx').then(m => ({ default: m.ResetPassword })));
+
+// Premium loader now imported from PageLoader component
 
 
 export default function App() {
@@ -43,20 +50,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Layout>
-                <Routes>
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="groups" element={<Groups />} />
-                  <Route path="groups/:id" element={<GroupDetails />} />
-                  <Route path="expenses" element={<Expenses />} />
-                  <Route path="income" element={<Income />} />
-                  <Route path="loans" element={<Loans />} />
-                  <Route path="investments" element={<Investments />} />
-                  <Route path="lending" element={<Lending />} />
-                  <Route path="budget" element={<Budget />} />
-                  <Route path="settings" element={<Settings />} />
-                  <Route path="gradients" element={<GradientShowcase />} />
-                  <Route path="*" element={<Navigate to="dashboard" replace />} />
-                </Routes>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="groups" element={<Groups />} />
+                    <Route path="groups/:id" element={<GroupDetails />} />
+                    <Route path="expenses" element={<Expenses />} />
+                    <Route path="income" element={<Income />} />
+                    <Route path="loans" element={<Loans />} />
+                    <Route path="investments" element={<Investments />} />
+                    <Route path="lending" element={<Lending />} />
+                    <Route path="budget" element={<Budget />} />
+                    <Route path="settings" element={<Settings />} />
+                    <Route path="gradients" element={<GradientShowcase />} />
+                    <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  </Routes>
+                </Suspense>
               </Layout>
             </ProtectedRoute>
           }

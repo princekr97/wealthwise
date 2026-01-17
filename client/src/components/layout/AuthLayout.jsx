@@ -45,6 +45,8 @@ export default function AuthLayout({ children }) {
                     borderRadius: { xs: 2, sm: 3 },
                     border: '1px solid rgba(148, 163, 184, 0.15)',
                     boxShadow: '0 24px 48px rgba(0, 0, 0, 0.5)',
+                    position: 'relative',
+                    zIndex: 1
                 }}
             >
                 <CardContent
@@ -57,6 +59,15 @@ export default function AuthLayout({ children }) {
                     {children}
                 </CardContent>
             </Card>
+
+            <Box component="footer" sx={{ position: 'absolute', bottom: 16, textAlign: 'center', opacity: 0.7, zIndex: 0 }}>
+                <div className="text-slate-500 text-xs font-medium mb-1">
+                    &copy; {new Date().getFullYear()} WealthWise. All rights reserved.
+                </div>
+                <div className="text-slate-600 text-[10px]">
+                    🎨 Designed & 💻 Developed by <span className="text-emerald-500 font-semibold cursor-default">Prince Gupta</span>
+                </div>
+            </Box>
         </Box>
     );
 }

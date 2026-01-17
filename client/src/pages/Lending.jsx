@@ -25,6 +25,7 @@ import PageHeader from '../components/layout/PageHeader';
 import SummaryCard from '../components/layout/SummaryCard';
 import SummaryCardGrid from '../components/layout/SummaryCardGrid';
 import ChartCard, { ChartGrid, EmptyChartState, CategoryLegend } from '../components/layout/ChartCard';
+import PageLoader from '../components/common/PageLoader';
 
 const STATUS_COLORS = {
   pending: { color: 'warning', label: '⏳ Pending' },
@@ -162,11 +163,7 @@ export default function Lending() {
   }, [displayRecords, page, rowsPerPage]);
 
   if (loading) {
-    return (
-      <Box sx={{ py: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <PageLoader message="Loading Lending Records..." />;
   }
 
   return (

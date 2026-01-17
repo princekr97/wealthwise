@@ -306,11 +306,27 @@ export function Layout({ children }) {
           component="main"
           sx={{
             flex: 1,
-            overflow: 'auto',
-            bgcolor: 'transparent'
+            // Removed overflow: 'auto' to fix scrolling lag/double scrollbars. 
+            // Now relies on native body scroll.
+            bgcolor: 'transparent',
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
           {children}
+
+          {/* Global App Footer */}
+          <Box component="footer" sx={{ py: 3, textAlign: 'center', mt: 'auto', opacity: 0.7 }}>
+            <Typography variant="caption" display="block" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+              &copy; {new Date().getFullYear()} WealthWise. All rights reserved.
+            </Typography>
+            <Typography variant="caption" sx={{ color: colors.textSecondary }}>
+              🎨 Designed & 💻 Developed by{' '}
+              <Box component="span" sx={{ color: colors.primary, fontWeight: 600, cursor: 'default' }}>
+                Prince Gupta
+              </Box>
+            </Typography>
+          </Box>
         </Box>
       </Box>
     </Box>

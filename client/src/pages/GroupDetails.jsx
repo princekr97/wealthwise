@@ -43,10 +43,20 @@ import {
     AttachMoney as MoneyIcon,
     MoreVert as MoreVertIcon,
     Edit as EditIcon,
-    ExpandMore as ExpandMoreIcon
+    ExpandMore as ExpandMoreIcon,
+    ShoppingBag as ShoppingIcon,
+    School as EducationIcon,
+    Spa as PersonalCareIcon,
+    ShoppingCart as GroceriesIcon,
+    Shield as InsuranceIcon,
+    TrendingUp as InvestmentsIcon,
+    CardGiftcard as GiftsIcon,
+    Savings as SavingsIcon,
+    Category as CategoryIcon
 } from '@mui/icons-material';
 import { groupService } from '../services/groupService';
 import PageContainer from '../components/layout/PageContainer';
+import PageLoader from '../components/common/PageLoader';
 import AddGroupExpenseDialog from '../components/groups/AddGroupExpenseDialog';
 import SettleDebtDialog from '../components/groups/SettleDebtDialog';
 import ExpenseDetailsDialog from '../components/groups/ExpenseDetailsDialog';
@@ -194,6 +204,43 @@ export default function GroupDetails() {
         return String(m.email || m.name); // Fallback
     }, []);
 
+    /**
+     * Get payer name for an expense with multiple fallbacks
+     * @param {Object} expense - The expense object
+     * @returns {string} Payer name or 'You' if current user
+     */
+    const getPayerName = React.useCallback((expense) => {
+        if (!expense) return 'Unknown';
+
+        const payerId = expense.paidBy?._id || expense.paidBy;
+
+        // Check if it's the current user
+        if (payerId && user && String(payerId) === String(user._id)) {
+            return 'You';
+        }
+
+        // Check paidBy.name (if populated)
+        if (expense.paidBy?.name) {
+            return expense.paidBy.name;
+        }
+
+        // Check stored paidByName
+        if (expense.paidByName) {
+            return expense.paidByName;
+        }
+
+        // Fallback to group members
+        if (payerId && group?.members) {
+            const payer = group.members.find(m => {
+                const mId = m.userId?._id || m.userId || m._id;
+                return String(mId) === String(payerId);
+            });
+            if (payer) return payer.name;
+        }
+
+        return 'Unknown';
+    }, [user, group]);
+
     // Calculate Balances Logic
     const balances = useMemo(() => {
         if (!group || !user) return {};
@@ -232,17 +279,29 @@ export default function GroupDetails() {
             return id ? String(id) : null;
         };
 
+        // ====================================
+        // BALANCE CALCULATION WITH SETTLEMENT SUPPORT
+        // ====================================
         expenses.forEach(exp => {
             if (!exp.paidBy) return;
 
             const payerId = resolveId(exp.paidBy);
             const amount = exp.amount;
 
+            // Calculate Balance Impact
+            // Rule: Payer gets credit (+), Split users get debit (-)
+
+            // 1. Payer Logic
+            // If I PAID, I am Owed money (or reduce my debt).
+            // Example: Paid 500. Balance += 500.
             if (payerId) {
                 if (balanceMap[payerId] === undefined) balanceMap[payerId] = 0;
                 balanceMap[payerId] += amount;
             }
 
+            // 2. Split/Receiver Logic
+            // If I AM IN SPLIT, I Owe money (or reduce my credit).
+            // Example: Split 500. Balance -= 500.
             exp.splits.forEach(split => {
                 const userId = resolveId(split.user);
                 if (!userId) return;
@@ -283,7 +342,7 @@ export default function GroupDetails() {
         }
     };
 
-    if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>;
+    if (loading) return <PageLoader message="Loading Group Details..." />;
     if (error) return <Alert severity="error">{error}</Alert>;
     if (!group) return <Alert severity="warning">Group not found</Alert>;
 
@@ -699,7 +758,7 @@ export default function GroupDetails() {
                                             primary={<Typography variant="body1" sx={{ fontSize: '0.95rem' }}>{expense.description}</Typography>}
                                             secondary={
                                                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                                                    {(expense.paidBy && (String(expense.paidBy._id || expense.paidBy) === String(user?._id)) || expense.paidByName === user?.name) ? 'You' : (expense.paidBy?.name || expense.paidByName || 'Unknown')} paid {formatCurrency(expense.amount)} • {new Date(expense.date).toLocaleString()}
+                                                    {getPayerName(expense)} paid {formatCurrency(expense.amount)} • {new Date(expense.date).toLocaleString()}
                                                 </Typography>
                                             }
                                         />

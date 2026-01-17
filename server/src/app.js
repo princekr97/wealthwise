@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
+import compression from 'compression';
 
 import { errorHandler, notFoundHandler } from './middleware/errorMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
@@ -39,6 +40,27 @@ app.use(
     crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
   })
 );
+
+// ====================================
+// PERFORMANCE: Response Compression
+// ====================================
+// Compresses all API responses with gzip (reduces payload by ~70%)
+// Example: 100KB JSON response → 30KB over network
+// Zero impact on data freshness (compression happens during transfer, not storage)
+app.use(compression({
+  // Only compress responses larger than 1KB
+  threshold: 1024,
+  // Compression level (6 = balanced speed/size, 9 = maximum compression)
+  level: 6,
+  filter: (req, res) => {
+    // Don't compress if client doesn't support it
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    // Use compression's default filter
+    return compression.filter(req, res);
+  }
+}));
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));

@@ -31,6 +31,7 @@ import AddGroupDialog from '../components/groups/AddGroupDialog';
 import { formatCurrency } from '../utils/formatters';
 import SummaryCardGrid from '../components/layout/SummaryCardGrid';
 import SummaryCard from '../components/layout/SummaryCard';
+import PageLoader from '../components/common/PageLoader';
 import { useAuthStore } from '../store/authStore';
 
 
@@ -403,9 +404,7 @@ export default function Groups() {
                 </Typography>
 
                 {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                        <CircularProgress sx={{ color: '#14B8A6' }} />
-                    </Box>
+                    <PageLoader message="Loading Groups..." />
                 ) : groups.length === 0 ? (
                     /* Clean Empty State */
                     <Box

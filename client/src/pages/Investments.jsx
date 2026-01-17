@@ -34,6 +34,7 @@ import PageHeader from '../components/layout/PageHeader';
 import SummaryCard from '../components/layout/SummaryCard';
 import SummaryCardGrid from '../components/layout/SummaryCardGrid';
 import ChartCard, { ChartGrid, EmptyChartState, CategoryLegend } from '../components/layout/ChartCard';
+import PageLoader from '../components/common/PageLoader';
 
 const INVESTMENT_TYPES = ['Stocks', 'Mutual Funds', 'FD', 'PPF', 'NPS', 'Gold', 'Crypto', 'Real Estate', 'Bonds', 'Other'];
 const COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#EC4899', '#6B7280'];
@@ -166,11 +167,7 @@ export default function Investments() {
   }, [filteredInvestments, page, rowsPerPage]);
 
   if (loading) {
-    return (
-      <Box sx={{ py: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <PageLoader message="Loading Investments..." />;
   }
 
   return (

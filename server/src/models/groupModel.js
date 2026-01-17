@@ -64,6 +64,19 @@ const groupSchema = new mongoose.Schema(
     }
 );
 
+// ============================================
+// PERFORMANCE OPTIMIZATION: Database Indexes
+// ============================================
+
+// 1. Index for fetching groups by creator (dashboard "My Groups" query)
+groupSchema.index({ createdBy: 1 });
+
+// 2. Index for finding groups by member UserId (important for permission checks)
+groupSchema.index({ 'members.userId': 1 });
+
+// 3. Compound index for type filtering (e.g., show only "Trip" groups)
+groupSchema.index({ createdBy: 1, type: 1 });
+
 // We might want to virtual-populate expenses later
 groupSchema.virtual('expenses', {
     ref: 'GroupExpense',

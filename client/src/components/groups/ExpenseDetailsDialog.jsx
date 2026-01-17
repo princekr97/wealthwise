@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -46,7 +46,12 @@ const getCategoryIcon = (category) => {
     }
 };
 
-const ExpenseDetailsDialog = ({ open, onClose, expense, currentUser, onDelete, onEdit, groupMembers }) => {
+// ====================================
+// PERFORMANCE: React.memo
+// ====================================
+// Prevents re-renders when props haven't changed
+// Safe because this component is pure (same props = same output)
+const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDelete, onEdit, groupMembers }) => {
     if (!expense) return null;
 
     const formatName = (name) => {
@@ -59,8 +64,10 @@ const ExpenseDetailsDialog = ({ open, onClose, expense, currentUser, onDelete, o
         day: 'numeric', month: 'short', year: 'numeric'
     });
 
-    // Payer Resolution
-    let rawPayerName = expense.paidByName || (typeof expense.paidBy === 'object' ? expense.paidBy.name : null) || 'Unknown';
+    // Payer Resolution with null safety
+    let rawPayerName = expense.paidByName ||
+        (expense.paidBy && typeof expense.paidBy === 'object' ? expense.paidBy?.name : null) ||
+        'Unknown';
     let payerAvatar = '';
 
     const payerId = expense.paidBy && typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy;
@@ -227,7 +234,10 @@ const ExpenseDetailsDialog = ({ open, onClose, expense, currentUser, onDelete, o
                     </Typography>
                     <Stack spacing={1.5}>
                         {splits.map((split, index) => {
-                            let rawSplitName = split.name || split.userName || (typeof split.user === 'object' ? split.user.name : null) || 'Unknown';
+                            let rawSplitName = split.name ||
+                                split.userName ||
+                                (split.user && typeof split.user === 'object' ? split.user?.name : null) ||
+                                'Unknown';
                             let splitAvatar = '';
 
                             const splitId = split.user && typeof split.user === 'object' ? split.user._id : split.user;
@@ -285,6 +295,6 @@ const ExpenseDetailsDialog = ({ open, onClose, expense, currentUser, onDelete, o
             </DialogContent>
         </Dialog >
     );
-};
+});
 
 export default ExpenseDetailsDialog;
