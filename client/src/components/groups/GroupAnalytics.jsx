@@ -263,6 +263,7 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
                     title="Expenses by Category"
                     subtitle={`${categoryData.length} categories`}
                     collapsible={true}
+                    height={322} // Increased by 15% (280 * 1.15)
                     footer={
                         <CategoryLegend
                             data={categoryData}
@@ -278,8 +279,8 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
                                 cx="50%"
                                 cy="50%"
                                 labelLine={false}
-                                innerRadius={isMobile ? 35 : 55} // Reduced
-                                outerRadius={isMobile ? 65 : 85} // Reduced
+                                innerRadius={isMobile ? 40 : 63} // Increased by 15%
+                                outerRadius={isMobile ? 75 : 98} // Increased by 15%
                                 paddingAngle={2}
                                 fill="#8884d8"
                                 dataKey="value"
@@ -298,6 +299,7 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
                     title="Spending by Member"
                     subtitle="Who spent the most?"
                     collapsible={true}
+                    height={322} // Increased by 15%
                     defaultExpanded={false}
                 >
                     <ResponsiveContainer width="100%" height="100%">

@@ -38,7 +38,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
 }));
 
 const HeaderBox = styled(Box)({
-    padding: '24px',
+    padding: '20px 24px',
     background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0) 100%)',
     display: 'flex',
     alignItems: 'center',
@@ -65,7 +65,10 @@ const ModernTextField = styled(TextField)({
             boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.2)'
         },
         '& fieldset': { border: 'none' },
-        '& input::placeholder': { color: '#64748b' }
+        '& input': {
+            color: '#f8fafc',
+            '&::placeholder': { color: '#64748b', opacity: 1 }
+        }
     }
 });
 
@@ -101,9 +104,9 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded 
             TransitionComponent={Fade}
             TransitionProps={{ timeout: 400 }}
         >
-            <HeaderBox>
+            <HeaderBox sx={{ position: 'relative', justifyContent: 'center', textAlign: 'center', py: 2.5 }}>
                 <Box>
-                    <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1.25rem', letterSpacing: '-0.5px' }}>
+                    <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1.15rem', letterSpacing: '-0.5px' }}>
                         Add New Member
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#94a3b8', mt: 0.5 }}>
@@ -113,6 +116,9 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded 
                 <IconButton
                     onClick={onClose}
                     sx={{
+                        position: 'absolute',
+                        right: 8,
+                        top: 8,
                         color: '#64748b',
                         '&:hover': { color: 'white', background: 'rgba(255,255,255,0.05)' }
                     }}
@@ -213,16 +219,17 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded 
                     </Box>
 
                     {/* Actions */}
-                    <Stack direction="row" spacing={2} sx={{ pt: 2 }}>
+                    <Stack direction="row" spacing={2} sx={{ pt: 1.5 }}>
                         <Button
                             onClick={onClose}
                             fullWidth
                             sx={{
-                                py: 1.5,
+                                py: 0.8,
                                 borderRadius: '12px',
                                 background: 'rgba(255, 255, 255, 0.05)',
                                 color: '#e2e8f0',
                                 fontWeight: 600,
+                                fontSize: '0.9rem',
                                 textTransform: 'none',
                                 '&:hover': { background: 'rgba(255, 255, 255, 0.1)' }
                             }}
@@ -234,16 +241,17 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded 
                             fullWidth
                             disabled={isSubmitting}
                             sx={{
-                                py: 1.5,
+                                py: 0.8,
                                 borderRadius: '12px',
                                 background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                                 color: 'white',
                                 fontWeight: 600,
+                                fontSize: '0.9rem',
                                 textTransform: 'none',
-                                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+                                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)',
                                 '&:hover': {
                                     background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                                    boxShadow: '0 6px 20px rgba(37, 99, 235, 0.4)'
+                                    boxShadow: '0 6px 15px rgba(37, 99, 235, 0.3)'
                                 }
                             }}
                         >

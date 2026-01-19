@@ -208,16 +208,16 @@ const CustomSelect = styled(Select)({
         borderWidth: '1.5px'
     },
     '& .MuiSelect-select': {
-        padding: '0.85rem 1.1rem',
+        padding: '0.85rem 1.1rem !important',
         fontSize: '0.95rem',
         fontWeight: 500,
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
-        color: 'white'
+        color: '#f8fafc !important' // Explicitly off-white
     },
     '& .MuiSvgIcon-root': {
-        color: 'rgba(255, 255, 255, 0.5)'
+        color: 'rgba(255, 255, 255, 0.5) !important'
     }
 });
 
@@ -510,21 +510,31 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
             TransitionComponent={Fade}
             transitionDuration={300}
         >
-            <HeaderBox>
+            <HeaderBox sx={{ position: 'relative', justifyContent: 'center', textAlign: 'center', py: 2.5 }}>
                 <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '0.02em' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.15rem', letterSpacing: '0.02em' }}>
                         Add New Expense
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.75rem', mt: 0.5 }}>
+                    <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.75rem', mt: 0.5, color: '#94a3b8' }}>
                         Enter details to split costs
                     </Typography>
                 </Box>
-                <CloseButton onClick={onClose}>
-                    <CloseIcon />
-                </CloseButton>
+                <IconButton
+                    onClick={onClose}
+                    sx={{
+                        position: 'absolute',
+                        right: 12,
+                        top: 12,
+                        color: '#64748b',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        '&:hover': { color: 'white', background: 'rgba(255,255,255,0.1)' }
+                    }}
+                >
+                    <CloseIcon sx={{ fontSize: '1.1rem' }} />
+                </IconButton>
             </HeaderBox>
 
-            <DialogContent sx={{ p: '1.5rem !important' }}>
+            <DialogContent sx={{ p: '1.25rem !important' }}>
                 <Stack spacing={2.5}>
                     {/* Description */}
                     <Box>
@@ -576,7 +586,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                         {...field}
                                         fullWidth
                                         displayEmpty
-                                        sx={{ color: '#e2e8f0', '& .MuiSvgIcon-root': { color: '#94a3b8' } }}
+                                        sx={{ '& .MuiSvgIcon-root': { color: '#94a3b8' } }}
                                         value={field.value || ''}
                                         MenuProps={{
                                             PaperProps: {
@@ -615,7 +625,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                                         sx={{
                                                             width: 28, height: 28,
                                                             borderRadius: '8px',
-                                                            bgcolor: getCategoryStyle(c).bg,
+                                                            bgcolor: `${getCategoryStyle(c).color}15`, // Faded background (15% opacity)
                                                             color: getCategoryStyle(c).color,
                                                             display: 'flex',
                                                             alignItems: 'center',
@@ -648,7 +658,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                     fullWidth
                                     displayEmpty
                                     value={field.value || ''}
-                                    sx={{ color: '#e2e8f0', '& .MuiSvgIcon-root': { color: '#94a3b8' } }}
+                                    sx={{ '& .MuiSvgIcon-root': { color: '#94a3b8' } }}
                                     MenuProps={{
                                         PaperProps: {
                                             sx: {
@@ -695,7 +705,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                                         }}
                                                         src={getAvatarConfig(member.name, member.avatarUrl).src}
                                                     />
-                                                    <span>{isMe ? 'You' : member.name}</span>
+                                                    <span style={{ color: 'inherit' }}>{isMe ? 'You' : member.name}</span>
                                                 </Stack>
                                             </MenuItem>
                                         );
@@ -930,12 +940,13 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             onClick={onAddMemberClick}
                             sx={{
                                 textTransform: 'none',
-                                color: '#2a5298',
+                                color: '#3b82f6', // Brighter blue for visibility
                                 fontWeight: 600,
-                                fontSize: '0.85rem',
+                                fontSize: '0.8rem', // Reduced size
                                 justifyContent: 'flex-start',
                                 pl: 1,
-                                '&:hover': { bgcolor: '#eef2ff' }
+                                py: 0.5,
+                                '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.05)' }
                             }}
                         >
                             Add new member
@@ -948,13 +959,13 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             fullWidth
                             onClick={onClose}
                             sx={{
-                                py: 1.25,
+                                py: 0.8,
                                 borderRadius: '10px',
-                                background: '#f1f5f9',
-                                color: '#64748b',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                color: '#cbd5e1',
                                 fontWeight: 600,
                                 fontSize: '0.85rem',
-                                '&:hover': { background: '#e2e8f0' },
+                                '&:hover': { background: 'rgba(255, 255, 255, 0.1)' },
                                 textTransform: 'none'
                             }}
                         >
@@ -965,26 +976,26 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             disabled={loading}
                             onClick={handleSubmit(onSubmit)}
                             sx={{
-                                py: 1.25,
+                                py: 0.8,
                                 borderRadius: '10px',
-                                background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                                 color: 'white',
                                 fontWeight: 600,
                                 fontSize: '0.85rem',
-                                boxShadow: '0 4px 12px rgba(42, 82, 152, 0.3)',
+                                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)',
                                 '&:hover': {
-                                    boxShadow: '0 6px 16px rgba(42, 82, 152, 0.4)',
+                                    boxShadow: '0 6px 16px rgba(37, 99, 235, 0.3)',
                                     transform: 'translateY(-1px)'
                                 },
                                 '&:disabled': {
-                                    background: '#cbd5e1',
-                                    color: '#94a3b8',
+                                    background: '#1e293b',
+                                    color: '#475569',
                                     boxShadow: 'none',
                                     cursor: 'not-allowed'
                                 },
                                 textTransform: 'none',
                                 transition: 'all 0.2s ease',
-                                fontSize: '12px'
+                                fontSize: '0.85rem'
                             }}
                         >
                             {loading ? (initialExpense ? 'Updating...' : 'Adding...') : (initialExpense ? 'Update Expense' : 'Add Expense')}
