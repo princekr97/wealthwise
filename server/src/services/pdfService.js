@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+import chromiumPkg from '@sparticuz/chromium';
+import chromeAws from 'chrome-aws-lambda';
 import { generateTripReportHTML } from '../utils/pdfTemplate.js';
 
 /**
@@ -39,53 +40,55 @@ export class PDFService {
           };
           console.log('[PDF Service] DEV mode - Using local Chrome');
         } else {
-          // Production (Vercel) - Use @sparticuz/chromium
-          console.log('[PDF Service] PROD mode - Configuring Chromium for serverless...');
+          // Production (Vercel) - Use chrome-aws-lambda (proven solution)
+          console.log('[PDF Service] PROD mode - Using chrome-aws-lambda for Vercel...');
           
           let executablePath;
           try {
-            // Get chromium path - no need for setGraphicsMode in v143+
-            if (process.env.CHROMIUM_EXECUTABLE_PATH) {
-              executablePath = process.env.CHROMIUM_EXECUTABLE_PATH;
-              console.log('[PDF Service] Using env override for chromium path');
-            } else {
-              // Force download if needed (Vercel serverless)
-              executablePath = await chromium.executablePath({ force: true });
+            // Try chrome-aws-lambda first (most reliable on Vercel)
+            executablePath = await chromeAws.executablePath;
+            
+            // Fallback to @sparticuz/chromium if needed
+            if (!executablePath) {
+              console.log('[PDF Service] chrome-aws-lambda returned empty, trying @sparticuz/chromium...');
+              executablePath = await chromiumPkg.executablePath();
             }
             
             console.log('[PDF Service] ✓ Chromium path resolved:', executablePath);
           } catch (pathError) {
             console.error('[PDF Service] ✗ Chromium path resolution failed:', pathError.message);
-            console.error('[PDF Service] Full error:', pathError);
-            throw new Error(`Chromium setup failed: ${pathError.message}. Try setting CHROMIUM_EXECUTABLE_PATH env var.`);
+            throw new Error(`Chromium setup failed: ${pathError.message}`);
           }
           
-          // Validate path exists and is not empty
+          // Validate path
           if (!executablePath || typeof executablePath !== 'string' || executablePath.length === 0) {
             console.error('[PDF Service] ✗ Invalid executablePath:', executablePath);
-            throw new Error('Chromium executablePath is invalid or empty. Ensure @sparticuz/chromium v143+ is installed.');
+            throw new Error('Chromium executablePath is invalid. Check package installation.');
           }
           
-          console.log('[PDF Service] Chromium binary will be loaded from:', executablePath);
+          console.log('[PDF Service] Chromium binary location:', executablePath);
+          
+          // Use chrome-aws-lambda's args (optimized for Lambda/Vercel)
+          const chromeArgs = chromeAws.args || chromiumPkg.args || [];
           
           options = {
             args: [
-              ...chromium.args,
+              ...chromeArgs,
               '--disable-gpu',
               '--disable-dev-shm-usage',
               '--disable-setuid-sandbox',
               '--no-sandbox',
-              '--single-process', // Important for serverless
-              '--no-zygote', // Important for serverless
+              '--single-process',
+              '--no-zygote',
             ],
-            defaultViewport: chromium.defaultViewport,
+            defaultViewport: chromeAws.defaultViewport || chromiumPkg.defaultViewport,
             executablePath: executablePath,
-            headless: chromium.headless,
+            headless: chromeAws.headless || chromiumPkg.headless,
             ignoreHTTPSErrors: true,
           };
           
-          console.log('[PDF Service] Chromium launch config:', {
-            headless: chromium.headless,
+          console.log('[PDF Service] Launch config:', {
+            headless: options.headless,
             argsCount: options.args.length,
             hasExecPath: !!options.executablePath,
           });
