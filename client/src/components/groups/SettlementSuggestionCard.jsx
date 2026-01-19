@@ -268,7 +268,7 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                     </Typography>
                 </Stack>
 
-                {/* Settle Button - Wide */}
+                {/* Settle Button - Fixed Width for Consistency */}
                 <SettleButton
                     variant="contained"
                     onClick={() => onSettle(settlement)}
@@ -276,9 +276,9 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                     title="Click to record this settlement"
                     startIcon={!loading}
                     sx={{
-                        flex: { xs: '1 1 auto', sm: '0 0 auto' },
-                        minWidth: { xs: 'auto', sm: 120 },
-                        // ml: 2  // margin-left: 16px
+                        flex: '0 0 auto',
+                        width: { xs: 100, sm: 120 },
+                        ml: { xs: 1, sm: 1.5 }
                     }}
                 >
                     {loading ? 'Settling...' : 'Settle Up'}

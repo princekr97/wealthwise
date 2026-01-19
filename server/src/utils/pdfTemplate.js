@@ -55,15 +55,49 @@ const escape = (text) => {
 };
 
 /**
- * Generate Avatar URL (Dicebear Notionists)
+ * Generate Avatar as Base64 SVG (No External API)
+ * Creates inline SVG avatars that work in PDFs without network requests
  * @param {string} name - User name
- * @returns {string} Avatar URL
+ * @returns {string} Data URI with SVG avatar
  */
 const getAvatarUrl = (name) => {
   const safeName = name || 'Unknown';
+  
+  // Generate initials (first letter of each word, max 2)
+  const initials = safeName
+    .trim()
+    .split(' ')
+    .filter(word => word.length > 0)
+    .map(word => word[0].toUpperCase())
+    .slice(0, 2)
+    .join('');
+
+  // Generate consistent color based on name hash
   const hash = safeName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const bgColor = TAILWIND_COLORS[hash % TAILWIND_COLORS.length];
-  return `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(safeName)}&backgroundColor=${bgColor}`;
+  const hue = hash % 360;
+  const bgColor = `hsl(${hue}, 65%, 50%)`;
+  const textColor = '#ffffff';
+
+  // Create SVG with initials
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="${bgColor}" rx="50"/>
+      <text 
+        x="50" 
+        y="50" 
+        font-family="Arial, sans-serif" 
+        font-size="40" 
+        font-weight="700" 
+        fill="${textColor}" 
+        text-anchor="middle" 
+        dominant-baseline="central"
+      >${initials || '?'}</text>
+    </svg>
+  `.trim();
+
+  // Convert to base64 data URI
+  const base64 = Buffer.from(svg).toString('base64');
+  return `data:image/svg+xml;base64,${base64}`;
 };
 
 /**
