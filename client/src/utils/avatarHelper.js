@@ -1,10 +1,39 @@
 /**
  * Avatar Helper Utilities
- * Generates CSS-based avatars without external API calls
+ * Generates avatar URLs and properties for consistent user avatars
+ * Uses DiceBear API for illustrated avatars in UI
+ * Uses initials as fallback
  */
 
+// Color palette for consistent avatar backgrounds
+const AVATAR_COLORS = [
+  'b6e3f4', 'c0aede', 'd1d4f9', 'ffd5dc', 'ffdfbf',
+  'feca57', 'ff6b6b', 'ee5a6f', '4ecdc4', '45b7d1',
+  '96ceb4', 'dfe6e9', 'fab1a0', 'fdcb6e', '6c5ce7',
+  'a29bfe', 'fd79a8', 'fdcb6e', '55efc4', '81ecec'
+];
+
 /**
- * Get avatar properties (initials and color) for a name
+ * Get avatar illustration URL using DiceBear API
+ * Creates consistent, beautiful avatar illustrations
+ * @param {string} name - User's name
+ * @returns {string} Avatar URL
+ */
+export const getAvatarUrl = (name) => {
+  if (!name) return null;
+  
+  const safeName = encodeURIComponent(name);
+  
+  // Generate consistent color based on name hash
+  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const bgColor = AVATAR_COLORS[hash % AVATAR_COLORS.length];
+  
+  // Using DiceBear "notionists" style - clean and modern
+  return `https://api.dicebear.com/7.x/notionists/svg?seed=${safeName}&backgroundColor=${bgColor}`;
+};
+
+/**
+ * Get avatar properties (initials and color) for fallback
  * @param {string} name - User's name
  * @returns {Object} { initials, backgroundColor }
  */
@@ -49,37 +78,22 @@ export const getAvatarColor = (name) => {
 };
 
 /**
- * Get avatar configuration with SVG data URI (for components using img src)
- * Creates inline SVG that doesn't require external API calls
+ * Get complete avatar configuration
+ * Returns illustrated avatar URL with fallback initials
  * @param {string} name - User's name
- * @returns {Object} { src: string, bgcolor: string }
+ * @returns {Object} { url, initials, backgroundColor }
  */
 export const getAvatarConfig = (name) => {
   const { initials, backgroundColor } = getAvatarProps(name);
-  
-  // Create inline SVG
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-      <rect width="100" height="100" fill="${backgroundColor}" rx="50"/>
-      <text 
-        x="50" 
-        y="50" 
-        font-family="Arial, sans-serif" 
-        font-size="42" 
-        font-weight="700" 
-        fill="#ffffff" 
-        text-anchor="middle" 
-        dominant-baseline="central"
-      >${initials}</text>
-    </svg>
-  `.trim().replace(/\s+/g, ' ');
-  
-  // Convert to data URI
-  const dataUri = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  const url = getAvatarUrl(name);
   
   return {
-    src: dataUri,
-    bgcolor: backgroundColor
+    url,
+    src: url, // Alias for compatibility
+    initials,
+    backgroundColor,
+    bgcolor: backgroundColor // Alias for compatibility
   };
 };
+
 

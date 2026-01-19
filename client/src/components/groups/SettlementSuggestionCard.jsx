@@ -11,7 +11,7 @@ import {
     alpha
 } from '@mui/material';
 import { formatCurrency } from '../../utils/formatters';
-import { getAvatarProps } from '../../utils/avatarHelper';
+import { getAvatarConfig } from '../../utils/avatarHelper';
 
 // SVG Icons as components
 const ArrowRightIcon = ({ sx }) => (
@@ -166,9 +166,11 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                 {/* From User - Avatar + Name + Phone */}
                 <Stack alignItems="center" spacing={0.4} sx={{ flex: '0 0 auto', minWidth: 63 }}>
                     {(() => {
-                        const { initials, backgroundColor } = getAvatarProps(from.name);
+                        const { url, initials, backgroundColor } = getAvatarConfig(from.name);
                         return (
                             <UserAvatar
+                                src={url}
+                                alt={from.name}
                                 sx={{
                                     bgcolor: backgroundColor,
                                     border: '1px solid rgba(0,0,0,0.05)'
@@ -241,9 +243,11 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                 {/* To User - Avatar + Name + Phone */}
                 <Stack alignItems="center" spacing={0.4} sx={{ flex: '0 0 auto', minWidth: 63 }}>
                     {(() => {
-                        const { initials, backgroundColor } = getAvatarProps(to.name);
+                        const { url, initials, backgroundColor } = getAvatarConfig(to.name);
                         return (
                             <UserAvatar
+                                src={url}
+                                alt={to.name}
                                 sx={{
                                     bgcolor: backgroundColor,
                                     border: '1px solid rgba(0,0,0,0.05)'

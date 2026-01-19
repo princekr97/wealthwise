@@ -34,7 +34,7 @@ import SummaryCardGrid from '../components/layout/SummaryCardGrid';
 import SummaryCard from '../components/layout/SummaryCard';
 import PageLoader from '../components/common/PageLoader';
 import { useAuthStore } from '../store/authStore';
-import { getAvatarProps, getAvatarColor } from '../utils/avatarHelper';
+import { getAvatarConfig } from '../utils/avatarHelper';
 
 
 export default function Groups() {
@@ -625,12 +625,12 @@ export default function Groups() {
                                             <AvatarGroup
                                                 max={4}
                                                 sx={{
-                                                    mt: 0.75, // Reduced margin
+                                                    mt: 0.75,
                                                     justifyContent: 'flex-start',
                                                     '& .MuiAvatar-root': {
-                                                        width: 20, // Reduced from 26
+                                                        width: 20,
                                                         height: 20,
-                                                        fontSize: '0.6rem', // Reduced from 0.7
+                                                        fontSize: '0.6rem',
                                                         border: '2px solid rgba(15, 23, 42, 1)',
                                                         backgroundColor: '#14B8A6',
                                                         fontWeight: 600
@@ -638,11 +638,12 @@ export default function Groups() {
                                                 }}
                                             >
                                                 {group.members.map((member, idx) => {
-                                                    const { initials, backgroundColor } = getAvatarProps(member.name);
+                                                    const { url, initials, backgroundColor } = getAvatarConfig(member.name);
                                                     return (
                                                         <Avatar
                                                             key={member._id || member.userId || member.email || idx}
                                                             alt={member.name}
+                                                            src={url}
                                                             sx={{
                                                                 width: 20,
                                                                 height: 20,
