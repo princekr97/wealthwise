@@ -40,17 +40,23 @@ export class PDFService {
           console.log('[PDF Service] DEV mode - Using local Chrome');
         } else {
           // Production (Vercel) - Use @sparticuz/chromium
-          console.log('[PDF Service] PROD mode - Configuring Chromium for serverless...');
+          console.log('[PDF Service] PROD mode - Configuring Chromium v110...');
+          
+          // v110 stable needs graphics mode disabled explicitly
+          try {
+             if (chromiumPkg.setGraphicsMode) {
+               await chromiumPkg.setGraphicsMode(false);
+             }
+          } catch (e) {
+             console.log('[PDF Service] Note: setGraphicsMode not needed/supported');
+          }
           
           let executablePath;
           try {
-            // Stable v123 Configuration
             if (process.env.CHROMIUM_EXECUTABLE_PATH) {
               executablePath = process.env.CHROMIUM_EXECUTABLE_PATH;
             } else {
-              // Legacy/Stable strategy often needs setGraphicsMode for some versions, 
-              // but purely relying on executablePath is safer.
-              // For v123 on Vercel, simply calling executablePath() is best.
+              // Standard resolution for v110
               executablePath = await chromiumPkg.executablePath();
             }
             
