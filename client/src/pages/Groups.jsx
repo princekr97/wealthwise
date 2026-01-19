@@ -34,6 +34,7 @@ import SummaryCardGrid from '../components/layout/SummaryCardGrid';
 import SummaryCard from '../components/layout/SummaryCard';
 import PageLoader from '../components/common/PageLoader';
 import { useAuthStore } from '../store/authStore';
+import { getAvatarProps, getAvatarColor } from '../utils/avatarHelper';
 
 
 export default function Groups() {
@@ -45,13 +46,6 @@ export default function Groups() {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [groupBalances, setGroupBalances] = useState({});
 
-    const getAvatarColor = (name) => {
-        if (!name) return '#666';
-        const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const hue = hash % 360;
-        return `hsl(${hue}, 70%, 50%)`;
-    };
-
     // Global Stats
     const [stats, setStats] = useState({
         totalOwed: 0,
@@ -60,6 +54,18 @@ export default function Groups() {
         todaySpending: 0,
         monthSpending: 0
     });
+
+    // Pre-compute user identity set (performance optimization)
+    const myIdentifiers = React.useMemo(() => {
+        if (!user) return new Set();
+        const ids = new Set();
+        const myIdStr = String(user._id);
+        const myEmail = user.email ? user.email.toLowerCase() : '';
+        ids.add(myIdStr);
+        if (myEmail) ids.add(myEmail);
+        if (user.name) ids.add(user.name.toLowerCase().trim());
+        return ids;
+    }, [user?._id, user?.email, user?.name]);
 
     useEffect(() => {
         if (user) {
@@ -74,10 +80,8 @@ export default function Groups() {
             setGroups(groupsData);
 
             // Calculate Global Stats
-            // We need to fetch details for each group to get expenses and calculate balances
-            // This is a bit heavy, but fine for MVP
-            // Calculate Global Stats
-            // We need to fetch details for each group to get expenses and calculate balances
+            // Note: This fetches details for each group (N+1 pattern)
+            // TODO: Optimize with backend endpoint that returns pre-calculated stats
             let totalOwed = 0;
             let totalOwe = 0;
             let todaySpending = 0;
@@ -86,19 +90,19 @@ export default function Groups() {
 
             const promises = groupsData.map(g => groupService.getGroupDetails(g._id));
             const details = await Promise.all(promises);
-            const myIdStr = String(user._id);
-            const myEmail = user.email ? user.email.toLowerCase() : '';
             const balances = {};
+
+            // Use pre-computed myIdentifiers from useMemo
+            const extendedIdentifiers = new Set(myIdentifiers);
 
             details.forEach(groupDetail => {
                 if (!groupDetail || !groupDetail.expenses) return;
 
-                // Build Identity Set for "Me" in this group
-                const myIdentifiers = new Set();
-                myIdentifiers.add(myIdStr);
-                if (myEmail) myIdentifiers.add(myEmail);
-
+                // Extend identity set with group-specific member IDs
                 if (groupDetail.members) {
+                    const myIdStr = String(user._id);
+                    const myEmail = user.email ? user.email.toLowerCase() : '';
+
                     groupDetail.members.forEach(m => {
                         let isMe = false;
                         if (m.userId) {
@@ -108,8 +112,8 @@ export default function Groups() {
                         if (!isMe && m.email && m.email.toLowerCase() === myEmail) isMe = true;
 
                         if (isMe) {
-                            if (m._id) myIdentifiers.add(String(m._id));
-                            if (m.name) myIdentifiers.add(m.name.toLowerCase().trim());
+                            if (m._id) extendedIdentifiers.add(String(m._id));
+                            if (m.name) extendedIdentifiers.add(m.name.toLowerCase().trim());
                         }
                     });
                 }
@@ -124,14 +128,14 @@ export default function Groups() {
                     const payer = exp.paidBy;
                     if (payer) {
                         const pId = payer._id || payer;
-                        if (myIdentifiers.has(String(pId))) isPayer = true;
+                        if (extendedIdentifiers.has(String(pId))) isPayer = true;
 
                         if (!isPayer) {
                             const pName = (typeof payer === 'object' ? payer.name : String(payer));
-                            if (pName && myIdentifiers.has(pName.toLowerCase().trim())) isPayer = true;
+                            if (pName && extendedIdentifiers.has(pName.toLowerCase().trim())) isPayer = true;
                         }
 
-                        if (!isPayer && exp.paidByName && myIdentifiers.has(exp.paidByName.toLowerCase().trim())) isPayer = true;
+                        if (!isPayer && exp.paidByName && extendedIdentifiers.has(exp.paidByName.toLowerCase().trim())) isPayer = true;
                     }
 
                     if (isPayer) {
@@ -146,15 +150,15 @@ export default function Groups() {
 
                             if (sUser) {
                                 const sId = sUser._id || sUser;
-                                if (myIdentifiers.has(String(sId))) isSplitUser = true;
+                                if (extendedIdentifiers.has(String(sId))) isSplitUser = true;
 
                                 if (!isSplitUser) {
                                     const sName = (typeof sUser === 'object' ? sUser.name : String(sUser));
-                                    if (sName && myIdentifiers.has(sName.toLowerCase().trim())) isSplitUser = true;
+                                    if (sName && extendedIdentifiers.has(sName.toLowerCase().trim())) isSplitUser = true;
                                 }
                             }
 
-                            if (!isSplitUser && split.userName && myIdentifiers.has(split.userName.toLowerCase().trim())) {
+                            if (!isSplitUser && split.userName && extendedIdentifiers.has(split.userName.toLowerCase().trim())) {
                                 isSplitUser = true;
                             }
 
@@ -263,48 +267,26 @@ export default function Groups() {
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-            {/* Financial Overview - Collapsible */}
+            {/* Financial Overview - Clean List View */}
             {!loading && (
-                <Accordion
-                    defaultExpanded
-                    sx={{
-                        backgroundColor: 'transparent',
-                        backgroundImage: 'none',
-                        boxShadow: 'none',
-                        '&:before': { display: 'none' },
-                        mb: 2 // Reduced from 2.5
-                    }}
-                >
-                    <AccordionSummary
-                        expandIcon={<ExpandMoreIcon sx={{ color: '#6B7280', fontSize: '1.1rem' }} />}
+                <Box sx={{ mb: 3, mt: 1 }}>
+                    <Typography
                         sx={{
-                            backgroundColor: 'rgba(255,255,255,0.03)',
-                            borderRadius: '10px',
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            minHeight: 36, // Reduced from 45
-                            '&.Mui-expanded': {
-                                minHeight: 36,
-                                borderBottomLeftRadius: 0,
-                                borderBottomRightRadius: 0,
-                                borderBottom: 'none'
-                            },
-                            '& .MuiAccordionSummary-content': {
-                                margin: '6px 0' // Reduced from 10px
-                            }
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
+                            mb: 1.5,
+                            color: '#FFFFFF'
                         }}
                     >
-                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#FFFFFF' }}> {/* Reduced from 0.95rem */}
-                            Financial Overview
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails
+                        Financial Overview
+                    </Typography>
+
+                    <Box
                         sx={{
-                            p: 1.5, // Reduced from 2
+                            p: 2,
+                            backgroundColor: 'rgba(255,255,255,0.02)',
+                            borderRadius: '12px',
                             border: '1px solid rgba(255,255,255,0.08)',
-                            borderTop: 'none',
-                            borderBottomLeftRadius: '10px',
-                            borderBottomRightRadius: '10px',
-                            backgroundColor: 'rgba(255,255,255,0.02)'
                         }}
                     >
                         {/* Clean Balance Cards - 2x2 Grid */}
@@ -312,7 +294,7 @@ export default function Groups() {
                             sx={{
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(2, 1fr)',
-                                gap: 1 // Reduced from 1.25
+                                gap: 1.5
                             }}
                         >
                             {/* Card 1 - You Are Owed */}
@@ -320,9 +302,9 @@ export default function Groups() {
                                 sx={{
                                     backgroundColor: 'rgba(255,255,255,0.05)',
                                     border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '10px', // Reduced radius
-                                    p: 1.5, // Reduced from 2
-                                    height: 90, // Reduced from 110
+                                    borderRadius: '10px',
+                                    p: 1.5,
+                                    height: 90,
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
@@ -330,10 +312,10 @@ export default function Groups() {
                                     textAlign: 'center'
                                 }}
                             >
-                                <Typography sx={{ fontSize: '1.3rem', mb: 0.5 }}>📈</Typography> {/* Reduced */}
+                                <Typography sx={{ fontSize: '1.3rem', mb: 0.5 }}>📈</Typography>
                                 <Typography
                                     sx={{
-                                        fontSize: '1.3rem', // Reduced from 1.6rem
+                                        fontSize: '1.3rem',
                                         fontWeight: 700,
                                         color: '#10B981',
                                         mb: 0.2,
@@ -344,7 +326,7 @@ export default function Groups() {
                                 </Typography>
                                 <Typography
                                     sx={{
-                                        fontSize: '0.55rem', // Reduced
+                                        fontSize: '0.55rem',
                                         fontWeight: 500,
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.5px',
@@ -395,7 +377,7 @@ export default function Groups() {
                                 </Typography>
                             </Box>
 
-                            {/* Card 3 - Net Balance (bottom-left, single column) */}
+                            {/* Card 3 - Net Balance */}
                             <Box
                                 sx={{
                                     backgroundColor: 'rgba(255,255,255,0.05)',
@@ -455,7 +437,7 @@ export default function Groups() {
                                     sx={{
                                         fontSize: '1.3rem',
                                         fontWeight: 700,
-                                        color: '#38bdf8', // Light Blue
+                                        color: '#38bdf8',
                                         mb: 0.2,
                                         lineHeight: 1
                                     }}
@@ -488,7 +470,7 @@ export default function Groups() {
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     textAlign: 'center',
-                                    gridColumn: 'span 2' // Make it full width if alone in row? Or just let it flow.
+                                    gridColumn: 'span 2'
                                 }}
                             >
                                 <Typography sx={{ fontSize: '1.3rem', mb: 0.5 }}>🗓️</Typography>
@@ -496,7 +478,7 @@ export default function Groups() {
                                     sx={{
                                         fontSize: '1.3rem',
                                         fontWeight: 700,
-                                        color: '#fbbf24', // Amber
+                                        color: '#fbbf24',
                                         mb: 0.2,
                                         lineHeight: 1
                                     }}
@@ -516,8 +498,8 @@ export default function Groups() {
                                 </Typography>
                             </Box>
                         </Box>
-                    </AccordionDetails>
-                </Accordion>
+                    </Box>
+                </Box>
             )}
 
             {/* Active Groups Section */}
@@ -655,19 +637,25 @@ export default function Groups() {
                                                     }
                                                 }}
                                             >
-                                                {group.members.map((member, idx) => (
-                                                    <Avatar
-                                                        key={member._id || member.userId || member.email || idx}
-                                                        alt={member.name}
-                                                        src={`https://api.dicebear.com/7.x/notionists/svg?seed=${member.name}`}
-                                                        sx={{
-                                                            width: 20,
-                                                            height: 20,
-                                                            border: '2px solid rgba(15, 23, 42, 1)',
-                                                            background: `linear-gradient(135deg, ${getAvatarColor(member.name)}, ${alpha(getAvatarColor(member.name), 0.7)})`
-                                                        }}
-                                                    />
-                                                ))}
+                                                {group.members.map((member, idx) => {
+                                                    const { initials, backgroundColor } = getAvatarProps(member.name);
+                                                    return (
+                                                        <Avatar
+                                                            key={member._id || member.userId || member.email || idx}
+                                                            alt={member.name}
+                                                            sx={{
+                                                                width: 20,
+                                                                height: 20,
+                                                                border: '2px solid rgba(15, 23, 42, 1)',
+                                                                background: `linear-gradient(135deg, ${backgroundColor}, ${alpha(backgroundColor, 0.7)})`,
+                                                                fontSize: '0.6rem',
+                                                                fontWeight: 600
+                                                            }}
+                                                        >
+                                                            {initials}
+                                                        </Avatar>
+                                                    );
+                                                })}
                                             </AvatarGroup>
                                         </Box>
 

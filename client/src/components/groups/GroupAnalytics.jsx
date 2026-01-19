@@ -46,7 +46,8 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
-export default function GroupAnalytics({ expenses, members, currency, currentUser }) {
+// Wrap component in React.memo for performance (prevent unnecessary re-renders)
+const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
     const theme = useTheme();
 
     // 0. Calculate Dashboard Stats
@@ -336,4 +337,8 @@ export default function GroupAnalytics({ expenses, members, currency, currentUse
             </ChartGrid>
         </Box>
     );
-}
+};
+
+// Export with React.memo for performance optimization
+export default React.memo(GroupAnalytics);
+

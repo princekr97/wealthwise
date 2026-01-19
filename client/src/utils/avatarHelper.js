@@ -1,43 +1,49 @@
-
-const AVATAR_COLORS = [
-    '#93c5fd', // Blue 300
-    '#86efac', // Green 300
-    '#fcd34d', // Amber 300
-    '#fca5a5', // Red 300
-    '#d8b4fe', // Purple 300
-    '#a5b4fc', // Indigo 300
-    '#fdba74', // Orange 300
-    '#5eead4', // Teal 300
-    '#f0abfc', // Fuchsia 300
-    '#f9a8d4', // Pink 300
-    '#67e8f9', // Cyan 300
-    '#bef264', // Lime 300
-];
+/**
+ * Avatar Helper Utilities
+ * Generates CSS-based avatars without external API calls
+ */
 
 /**
- * Generates a consistent avatar configuration (background color and image URL) based on the user's name.
- * @param {string} name - The user's name.
- * @param {string} [customUrl] - Optional custom avatar URL (e.g., from user profile).
- * @returns {{ bgcolor: string, src: string, color: string }} - The avatar configuration.
+ * Get avatar properties (initials and color) for a name
+ * @param {string} name - User's name
+ * @returns {Object} { initials, backgroundColor }
  */
-export const getAvatarConfig = (name, customUrl = null) => {
-    if (!name) return { bgcolor: '#f1f5f9', src: '', color: '#1e293b' };
-
-    // Generate consistent color hash
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const bgcolor = AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-
-    // DiceBear URL (Notionists style)
-    // Use encodeURIComponent to handle spaces/special chars in names correctly for the URL
-    const src = customUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(name)}`;
-
-    return { 
-        bgcolor, 
-        src,
-        color: '#1e293b', // Default dark text color for contrast against pastel bg
-        border: '1px solid rgba(0,0,0,0.05)' // Subtle border
+export const getAvatarProps = (name) => {
+  if (!name) {
+    return {
+      initials: '?',
+      backgroundColor: '#666666',
     };
+  }
+
+  // Generate initials (first letter of each word, max 2)
+  const initials = name
+    .trim()
+    .split(' ')
+    .filter(word => word.length > 0)
+    .map(word => word[0].toUpperCase())
+    .slice(0, 2)
+    .join('');
+
+  // Generate consistent color based on name hash
+  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const hue = hash % 360;
+  const backgroundColor = `hsl(${hue}, 70%, 50%)`;
+
+  return {
+    initials: initials || '?',
+    backgroundColor,
+  };
+};
+
+/**
+ * Get avatar color only (for existing avatar components)
+ * @param {string} name - User's name
+ * @returns {string} HSL color string
+ */
+export const getAvatarColor = (name) => {
+  if (!name) return '#666666';
+  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const hue = hash % 360;
+  return `hsl(${hue}, 70%, 50%)`;
 };
