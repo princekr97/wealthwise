@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "npm ci && npm run build || npm install",
-  "installCommand": "npm ci",
+  "buildCommand": "npm ci || npm install",
+  "installCommand": "npm ci || npm install",
   "env": {
     "NODE_ENV": "production",
     "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
