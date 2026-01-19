@@ -31,7 +31,10 @@ export class PDFService {
           console.log('[PDF Service] DEV mode - Using local Chrome');
         } else {
           // Production (Vercel) - Use @sparticuz/chromium
-          console.log('[PDF Service] PROD mode - Resolving Chromium for serverless...');
+          console.log('[PDF Service] PROD mode - Configuring Chromium for serverless...');
+          
+          // CRITICAL: Set graphics mode BEFORE getting executablePath
+          await chromium.setGraphicsMode(false); // Disable GPU for serverless
           
           let executablePath;
           try {
@@ -48,7 +51,15 @@ export class PDFService {
           }
           
           options = {
-            args: chromium.args,
+            args: [
+              ...chromium.args,
+              '--disable-gpu',
+              '--disable-dev-shm-usage',
+              '--disable-setuid-sandbox',
+              '--no-sandbox',
+              '--single-process', // Important for serverless
+              '--no-zygote', // Important for serverless
+            ],
             defaultViewport: chromium.defaultViewport,
             executablePath: executablePath,
             headless: chromium.headless,
@@ -57,7 +68,8 @@ export class PDFService {
           
           console.log('[PDF Service] Chromium config:', {
             headless: chromium.headless,
-            argsCount: chromium.args.length,
+            argsCount: options.args.length,
+            execPath: executablePath.substring(0, 30) + '...', // Truncate for logs
           });
         }
 
