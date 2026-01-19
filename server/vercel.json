@@ -1,9 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "npm install",
-  "installCommand": "npm install",
+  "buildCommand": "npm ci && npm run build || npm install",
+  "installCommand": "npm ci",
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
+    "FONTCONFIG_PATH": "/tmp"
   },
   "functions": {
     "api/index.js": {
