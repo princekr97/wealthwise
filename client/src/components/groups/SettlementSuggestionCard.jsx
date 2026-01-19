@@ -11,7 +11,7 @@ import {
     alpha
 } from '@mui/material';
 import { formatCurrency } from '../../utils/formatters';
-import { getAvatarConfig } from '../../utils/avatarHelper';
+import { getAvatarProps } from '../../utils/avatarHelper';
 
 // SVG Icons as components
 const ArrowRightIcon = ({ sx }) => (
@@ -165,14 +165,19 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
             >
                 {/* From User - Avatar + Name + Phone */}
                 <Stack alignItems="center" spacing={0.4} sx={{ flex: '0 0 auto', minWidth: 63 }}>
-                    <UserAvatar
-                        src={getAvatarConfig(from.name).src}
-                        alt={from.name}
-                        sx={{
-                            bgcolor: getAvatarConfig(from.name).bgcolor,
-                            border: '1px solid rgba(0,0,0,0.05)'
-                        }}
-                    />
+                    {(() => {
+                        const { initials, backgroundColor } = getAvatarProps(from.name);
+                        return (
+                            <UserAvatar
+                                sx={{
+                                    bgcolor: backgroundColor,
+                                    border: '1px solid rgba(0,0,0,0.05)'
+                                }}
+                            >
+                                {initials}
+                            </UserAvatar>
+                        );
+                    })()}
                     <Typography
                         sx={{
                             fontWeight: 600,
@@ -235,14 +240,19 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
 
                 {/* To User - Avatar + Name + Phone */}
                 <Stack alignItems="center" spacing={0.4} sx={{ flex: '0 0 auto', minWidth: 63 }}>
-                    <UserAvatar
-                        src={getAvatarConfig(to.name).src}
-                        alt={to.name}
-                        sx={{
-                            bgcolor: getAvatarConfig(to.name).bgcolor,
-                            border: '1px solid rgba(0,0,0,0.05)'
-                        }}
-                    />
+                    {(() => {
+                        const { initials, backgroundColor } = getAvatarProps(to.name);
+                        return (
+                            <UserAvatar
+                                sx={{
+                                    bgcolor: backgroundColor,
+                                    border: '1px solid rgba(0,0,0,0.05)'
+                                }}
+                            >
+                                {initials}
+                            </UserAvatar>
+                        );
+                    })()}
                     <Typography
                         sx={{
                             fontWeight: 600,
