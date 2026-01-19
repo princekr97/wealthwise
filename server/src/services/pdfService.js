@@ -1,9 +1,11 @@
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import { generateTripReportHTML } from '../utils/pdfTemplate.js';
 
 /**
  * PDF Generation Service using Puppeteer
  * Converts HTML templates to high-quality PDFs
+ * Optimized for Vercel/Serverless environments
  */
 
 export class PDFService {
@@ -13,18 +15,39 @@ export class PDFService {
    * Get or create browser instance (reuse for performance)
    */
   static async getBrowser() {
-    if (!this.browserInstance || !this.browserInstance.isConnected()) {
-      this.browserInstance = await puppeteer.launch({
-        headless: 'new',
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-        ],
-      });
+    try {
+      if (!this.browserInstance || !this.browserInstance.isConnected()) {
+        const isDev = process.env.NODE_ENV === 'development' || !process.env.VERCEL;
+        
+        const options = isDev 
+          ? {
+              args: ['--no-sandbox', '--disable-setuid-sandbox'],
+              headless: true,
+              executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+            }
+          : {
+              args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+              defaultViewport: chromium.defaultViewport,
+              executablePath: await chromium.executablePath(),
+              headless: chromium.headless,
+              ignoreHTTPSErrors: true,
+            };
+
+        console.log(`[PDF Service] Launching browser in ${isDev ? 'DEV' : 'PROD'} mode...`);
+        if (!isDev) {
+          console.log('[PDF Service] Using executablePath:', options.executablePath);
+          console.log('[PDF Service] Chromium args:', options.args);
+        }
+        
+        this.browserInstance = await puppeteer.launch(options);
+        console.log('[PDF Service] Browser launched successfully');
+      }
+      return this.browserInstance;
+    } catch (error) {
+      console.error('[PDF Service] Browser launch failed:', error.message);
+      console.error('[PDF Service] Error stack:', error.stack);
+      throw new Error(`Failed to launch browser: ${error.message}`);
     }
-    return this.browserInstance;
   }
 
   /**
@@ -55,8 +78,8 @@ export class PDFService {
 
       // Set content
       await page.setContent(html, {
-        waitUntil: 'networkidle0', // Wait for images to load
-        timeout: 60000, // Increased timeout for external resources
+        waitUntil: 'domcontentloaded', // Faster and more reliable on serverless (no external resources)
+        timeout: 30000, 
       });
 
       console.log('[PDF Service] Content loaded, generating PDF...');

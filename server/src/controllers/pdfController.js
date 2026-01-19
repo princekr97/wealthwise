@@ -53,11 +53,25 @@ export const pdfController = {
       res.end(pdfBuffer, 'binary');
     } catch (error) {
       console.error('PDF Generation Controller Error:', error);
-      res.status(500).json({
+      console.error('Error stack:', error.stack);
+      
+      // More detailed error response
+      const errorResponse = {
         success: false,
         message: 'PDF generation failed',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-      });
+      };
+
+      // Add more details in development
+      if (process.env.NODE_ENV === 'development') {
+        errorResponse.error = error.message;
+        errorResponse.stack = error.stack;
+      } else {
+        // In production, still log the full error but return sanitized message
+        console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        errorResponse.hint = 'Check server logs for details';
+      }
+
+      res.status(500).json(errorResponse);
     }
   },
 };
