@@ -44,40 +44,29 @@ export class PDFService {
           
           let executablePath;
           try {
-            // Get chromium path
+            // Stable v123 Configuration
             if (process.env.CHROMIUM_EXECUTABLE_PATH) {
               executablePath = process.env.CHROMIUM_EXECUTABLE_PATH;
-              console.log('[PDF Service] Using env override for chromium path');
             } else {
-              // Force download if needed (Vercel serverless)
-              executablePath = await chromiumPkg.executablePath({ force: true });
+              // Legacy/Stable strategy often needs setGraphicsMode for some versions, 
+              // but purely relying on executablePath is safer.
+              // For v123 on Vercel, simply calling executablePath() is best.
+              executablePath = await chromiumPkg.executablePath();
             }
             
             console.log('[PDF Service] ✓ Chromium path resolved:', executablePath);
           } catch (pathError) {
             console.error('[PDF Service] ✗ Chromium path resolution failed:', pathError.message);
-            console.error('[PDF Service] Full error:', pathError);
             throw new Error(`Chromium setup failed: ${pathError.message}`);
           }
           
           // Validate path
-          if (!executablePath || typeof executablePath !== 'string' || executablePath.length === 0) {
-            console.error('[PDF Service] ✗ Invalid executablePath:', executablePath);
-            throw new Error('Chromium executablePath is invalid. Check package installation.');
+          if (!executablePath) {
+            throw new Error('Chromium executablePath is empty');
           }
           
-          console.log('[PDF Service] Chromium binary location:', executablePath);
-          
           options = {
-            args: [
-              ...chromiumPkg.args,
-              '--disable-gpu',
-              '--disable-dev-shm-usage',
-              '--disable-setuid-sandbox',
-              '--no-sandbox',
-              '--single-process',
-              '--no-zygote',
-            ],
+            args: chromiumPkg.args,
             defaultViewport: chromiumPkg.defaultViewport,
             executablePath: executablePath,
             headless: chromiumPkg.headless,
