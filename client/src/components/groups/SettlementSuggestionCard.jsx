@@ -128,9 +128,8 @@ const SettleButton = styled(Button)(({ theme }) => ({
     },
 
     [theme.breakpoints.down('sm')]: {
-        width: '100%',
-        padding: '8px 14px',
-        fontSize: '0.8rem'
+        padding: '6px 12px',
+        fontSize: '0.75rem'
     }
 }));
 
@@ -160,11 +159,11 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
             <Stack
                 direction="row"
                 alignItems="center"
-                spacing={1.5}
+                spacing={{ xs: 0.5, sm: 1.5 }}
                 sx={{ justifyContent: 'space-between' }}
             >
                 {/* From User - Avatar + Name + Phone */}
-                <Stack alignItems="center" spacing={0.4} sx={{ flex: '0 0 auto', minWidth: 63 }}>
+                <Stack alignItems="center" spacing={0.4} sx={{ flex: '0 0 auto', minWidth: { xs: 50, sm: 63 } }}>
                     {(() => {
                         const { url, initials, backgroundColor } = getAvatarConfig(from.name);
                         return (
@@ -186,7 +185,7 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                             color: 'text.primary',
                             fontSize: '0.68rem',
                             textAlign: 'center',
-                            maxWidth: 63,
+                            maxWidth: { xs: 50, sm: 63 },
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
@@ -206,12 +205,12 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                 </Stack>
 
                 {/* Amount - Large & Prominent */}
-                <Box sx={{ flex: '0 0 auto', textAlign: 'center', mx: 1 }}>
+                <Box sx={{ flex: '0 0 auto', textAlign: 'center' }}>
                     <Typography
                         sx={{
                             fontWeight: 700,
                             color: '#00d4ff',
-                            fontSize: { xs: '1.1rem', sm: '1.35rem', md: '1.55rem' },
+                            fontSize: { xs: '1rem', sm: '1.35rem', md: '1.55rem' },
                             lineHeight: 1,
                             mb: 0.4
                         }}
@@ -222,7 +221,7 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                         variant="caption"
                         sx={{
                             color: 'rgba(255, 255, 255, 0.5)',
-                            fontSize: { xs: '0.58rem', sm: '0.63rem' },
+                            fontSize: { xs: '0.55rem', sm: '0.63rem' },
                             fontWeight: 500
                         }}
                     >
@@ -234,14 +233,14 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                 <ArrowRightIcon
                     sx={{
                         color: 'rgba(255, 255, 255, 0.3)',
-                        width: { xs: 20, sm: 24 },
-                        height: { xs: 20, sm: 24 },
+                        width: { xs: 16, sm: 24 },
+                        height: { xs: 16, sm: 24 },
                         flex: '0 0 auto'
                     }}
                 />
 
                 {/* To User - Avatar + Name + Phone */}
-                <Stack alignItems="center" spacing={0.4} sx={{ flex: '0 0 auto', minWidth: 63 }}>
+                <Stack alignItems="center" spacing={0.4} sx={{ flex: '0 0 auto', minWidth: { xs: 50, sm: 63 } }}>
                     {(() => {
                         const { url, initials, backgroundColor } = getAvatarConfig(to.name);
                         return (
@@ -263,7 +262,7 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                             color: 'text.primary',
                             fontSize: '0.68rem',
                             textAlign: 'center',
-                            maxWidth: 63,
+                            maxWidth: { xs: 50, sm: 63 },
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
@@ -291,11 +290,12 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                     startIcon={!loading}
                     sx={{
                         flex: '0 0 auto',
-                        width: { xs: 100, sm: 120 },
-                        ml: { xs: 1, sm: 1.5 }
+                        width: { xs: 'auto', sm: 120 },
+                        minWidth: { xs: 80, sm: 100 },
+                        ml: { xs: 0, sm: 1.5 }
                     }}
                 >
-                    {loading ? 'Settling...' : 'Settle Up'}
+                    {loading ? '...' : 'Settle'}
                 </SettleButton>
             </Stack>
         </SettlementCard>
