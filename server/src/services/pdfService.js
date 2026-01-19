@@ -6,7 +6,16 @@ import { generateTripReportHTML } from '../utils/pdfTemplate.js';
  * PDF Generation Service using Puppeteer
  * Converts HTML templates to high-quality PDFs
  * Optimized for Vercel/Serverless environments
+ * 
+ * Environment Variables (Optional):
+ * - CHROMIUM_EXECUTABLE_PATH: Override chromium binary path
+ * - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: Set to 'true' if using @sparticuz/chromium
  */
+
+// Log versions for debugging
+console.log('[PDF Service] Initializing...');
+console.log('[PDF Service] Environment:', process.env.NODE_ENV);
+console.log('[PDF Service] Vercel:', process.env.VERCEL ? 'Yes' : 'No');
 
 export class PDFService {
   static browserInstance = null;
@@ -38,16 +47,17 @@ export class PDFService {
           
           let executablePath;
           try {
-            executablePath = await chromium.executablePath();
+            // Allow override via environment variable for flexibility
+            executablePath = process.env.CHROMIUM_EXECUTABLE_PATH || await chromium.executablePath();
             console.log('[PDF Service] ✓ Chromium path resolved:', executablePath);
           } catch (pathError) {
             console.error('[PDF Service] ✗ Failed to get chromium path:', pathError);
-            throw new Error(`Chromium path resolution failed: ${pathError.message}`);
+            throw new Error(`Chromium path resolution failed: ${pathError.message}. Try setting CHROMIUM_EXECUTABLE_PATH env var.`);
           }
           
           // Validate path exists
           if (!executablePath || executablePath.length === 0) {
-            throw new Error('Chromium executablePath is empty or undefined');
+            throw new Error('Chromium executablePath is empty or undefined. Ensure @sparticuz/chromium v143+ is installed.');
           }
           
           options = {
