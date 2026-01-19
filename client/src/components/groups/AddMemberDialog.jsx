@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import {
     Dialog,
-    DialogTitle,
     DialogContent,
-    DialogActions,
     TextField,
     Button,
     Stack,
     IconButton,
     InputAdornment,
     Typography,
-    Box
+    Box,
+    Fade
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -24,29 +23,49 @@ import { toast } from 'sonner';
 import { groupService } from '../../services/groupService';
 import { styled } from '@mui/material/styles';
 
+// Premium Styled Dialog matching AddGroupExpenseDialog
 const StyledDialog = styled(Dialog)(({ theme }) => ({
     '& .MuiDialog-paper': {
-        borderRadius: '28px',
-        padding: '8px',
-        background: 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), var(--active-gradient)',
-        backgroundAttachment: 'fixed',
+        borderRadius: '24px',
+        background: '#0f172a', // Deep Slate
         border: '1px solid rgba(255, 255, 255, 0.08)',
-        boxShadow: '0 24px 48px rgba(0,0,0,0.4)',
-        maxWidth: '400px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        maxWidth: '420px',
         width: '100%',
-        color: 'white'
+        color: 'white',
+        overflow: 'hidden'
     }
 }));
 
-const StyledTextField = styled(TextField)({
+const HeaderBox = styled(Box)({
+    padding: '24px',
+    background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0) 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+});
+
+const ModernTextField = styled(TextField)({
     '& .MuiOutlinedInput-root': {
-        borderRadius: '16px',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        color: 'white',
-        '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-        '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
-        '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
-        '& input::placeholder': { color: 'rgba(255, 255, 255, 0.4)', opacity: 1 }
+        borderRadius: '14px',
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        color: '#f8fafc',
+        transition: 'all 0.2s',
+        fontSize: '0.95rem',
+        paddingLeft: '4px',
+        '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderColor: 'rgba(255, 255, 255, 0.15)'
+        },
+        '&.Mui-focused': {
+            backgroundColor: 'rgba(15, 23, 42, 0.8)',
+            borderColor: '#3b82f6',
+            boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.2)'
+        },
+        '& fieldset': { border: 'none' },
+        '& input::placeholder': { color: '#64748b' }
     }
 });
 
@@ -76,152 +95,163 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded 
     };
 
     return (
-        <StyledDialog open={open} onClose={onClose} maxWidth="xs">
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1, color: 'white' }}>
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                    <Box sx={{
-                        width: 42,
-                        height: 42,
-                        borderRadius: '14px',
-                        bgcolor: 'rgba(59, 130, 246, 0.1)',
-                        color: '#3b82f6',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '1px solid rgba(59, 130, 246, 0.2)'
-                    }}>
-                        <PersonAddIcon />
-                    </Box>
-                    <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: '0.5px' }}>Add Member</Typography>
-                </Stack>
-                <IconButton onClick={onClose} size="small" sx={{ color: 'rgba(255, 255, 255, 0.4)', '&:hover': { color: 'white', bgcolor: 'rgba(255,255,255,0.05)' } }}>
+        <StyledDialog
+            open={open}
+            onClose={onClose}
+            TransitionComponent={Fade}
+            TransitionProps={{ timeout: 400 }}
+        >
+            <HeaderBox>
+                <Box>
+                    <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1.25rem', letterSpacing: '-0.5px' }}>
+                        Add New Member
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#94a3b8', mt: 0.5 }}>
+                        Invite a friend to join this group
+                    </Typography>
+                </Box>
+                <IconButton
+                    onClick={onClose}
+                    sx={{
+                        color: '#64748b',
+                        '&:hover': { color: 'white', background: 'rgba(255,255,255,0.05)' }
+                    }}
+                >
                     <CloseIcon />
                 </IconButton>
-            </DialogTitle>
+            </HeaderBox>
 
-            <DialogContent sx={{ mt: 1 }}>
-                <Typography variant="body2" sx={{ mb: 3, color: 'rgba(255, 255, 255, 0.6)', lineHeight: 1.6 }}>
-                    Add a friend with their mobile number. When they register, they'll automatically see this group!
-                </Typography>
-
+            <DialogContent sx={{ p: 3 }}>
                 <Stack spacing={2.5}>
-                    <Controller
-                        name="name"
-                        control={control}
-                        rules={{ required: 'Name is required' }}
-                        render={({ field, fieldState: { error } }) => (
-                            <StyledTextField
-                                {...field}
-                                fullWidth
-                                placeholder="Name (e.g. John Doe)"
-                                error={!!error}
-                                helperText={error?.message}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <BadgeIcon sx={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: 20 }} />
-                                        </InputAdornment>
-                                    )
-                                }}
-                            />
-                        )}
-                    />
+                    {/* Name Input */}
+                    <Box>
+                        <Typography sx={{ color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 500, mb: 1, ml: 1 }}>Name</Typography>
+                        <Controller
+                            name="name"
+                            control={control}
+                            rules={{ required: 'Name is required' }}
+                            render={({ field, fieldState: { error } }) => (
+                                <ModernTextField
+                                    {...field}
+                                    placeholder="e.g. Saurabh Gupta"
+                                    fullWidth
+                                    error={!!error}
+                                    helperText={error?.message}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <BadgeIcon sx={{ color: '#64748b', fontSize: 20 }} />
+                                            </InputAdornment>
+                                        )
+                                    }}
+                                />
+                            )}
+                        />
+                    </Box>
 
-                    <Controller
-                        name="phone"
-                        control={control}
-                        rules={{
-                            required: 'Mobile number is required',
-                            pattern: {
-                                value: /^[0-9]{10}$/,
-                                message: 'Enter 10-digit mobile number'
-                            }
-                        }}
-                        render={({ field, fieldState: { error } }) => (
-                            <StyledTextField
-                                {...field}
-                                fullWidth
-                                placeholder="Mobile Number (Required)"
-                                error={!!error}
-                                helperText={error?.message}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <PhoneIcon sx={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: 20 }} />
-                                        </InputAdornment>
-                                    )
-                                }}
-                            />
-                        )}
-                    />
+                    {/* Phone Input */}
+                    <Box>
+                        <Typography sx={{ color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 500, mb: 1, ml: 1 }}>Mobile Number</Typography>
+                        <Controller
+                            name="phone"
+                            control={control}
+                            rules={{
+                                required: 'Mobile number is required',
+                                pattern: {
+                                    value: /^[0-9]{10}$/,
+                                    message: 'Enter 10-digit mobile number'
+                                }
+                            }}
+                            render={({ field, fieldState: { error } }) => (
+                                <ModernTextField
+                                    {...field}
+                                    placeholder="e.g. 9876543210"
+                                    fullWidth
+                                    error={!!error}
+                                    helperText={error?.message}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <PhoneIcon sx={{ color: '#64748b', fontSize: 20 }} />
+                                            </InputAdornment>
+                                        )
+                                    }}
+                                />
+                            )}
+                        />
+                    </Box>
 
-                    <Controller
-                        name="email"
-                        control={control}
-                        rules={{
-                            pattern: {
-                                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                                message: 'Invalid email format'
-                            }
-                        }}
-                        render={({ field, fieldState: { error } }) => (
-                            <StyledTextField
-                                {...field}
-                                fullWidth
-                                placeholder="Email (Optional)"
-                                error={!!error}
-                                helperText={error?.message}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <EmailIcon sx={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: 20 }} />
-                                        </InputAdornment>
-                                    )
-                                }}
-                            />
-                        )}
-                    />
+                    {/* Email Input */}
+                    <Box>
+                        <Typography sx={{ color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 500, mb: 1, ml: 1 }}>Email Address <span style={{ color: '#64748b', fontWeight: 400 }}>(Optional)</span></Typography>
+                        <Controller
+                            name="email"
+                            control={control}
+                            rules={{
+                                pattern: {
+                                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                                    message: 'Invalid email format'
+                                }
+                            }}
+                            render={({ field, fieldState: { error } }) => (
+                                <ModernTextField
+                                    {...field}
+                                    placeholder="e.g. saurabh@gmail.com"
+                                    fullWidth
+                                    error={!!error}
+                                    helperText={error?.message}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <EmailIcon sx={{ color: '#64748b', fontSize: 20 }} />
+                                            </InputAdornment>
+                                        )
+                                    }}
+                                />
+                            )}
+                        />
+                    </Box>
+
+                    {/* Actions */}
+                    <Stack direction="row" spacing={2} sx={{ pt: 2 }}>
+                        <Button
+                            onClick={onClose}
+                            fullWidth
+                            sx={{
+                                py: 1.5,
+                                borderRadius: '12px',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                color: '#e2e8f0',
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                '&:hover': { background: 'rgba(255, 255, 255, 0.1)' }
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSubmit(onSubmit)}
+                            fullWidth
+                            disabled={isSubmitting}
+                            sx={{
+                                py: 1.5,
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                color: 'white',
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+                                '&:hover': {
+                                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                                    boxShadow: '0 6px 20px rgba(37, 99, 235, 0.4)'
+                                }
+                            }}
+                        >
+                            {isSubmitting ? 'Adding...' : 'Add Member'}
+                        </Button>
+                    </Stack>
                 </Stack>
             </DialogContent>
-
-            <DialogActions sx={{ px: 3, pb: 3, pt: 2, display: 'flex', flexDirection: 'row', gap: 1.5 }}>
-                <Button
-                    onClick={onClose}
-                    fullWidth
-                    sx={{
-                        py: 1.25,
-                        borderRadius: '12px',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        fontWeight: 600,
-                        textTransform: 'none',
-                        '&:hover': { background: 'rgba(255, 255, 255, 0.1)', color: 'white' }
-                    }}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    onClick={handleSubmit(onSubmit)}
-                    variant="contained"
-                    fullWidth
-                    disabled={isSubmitting}
-                    sx={{
-                        py: 1.25,
-                        borderRadius: '12px',
-                        textTransform: 'none',
-                        fontWeight: 700,
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                        '&:hover': {
-                            boxShadow: '0 6px 16px rgba(59, 130, 246, 0.4)',
-                            transform: 'translateY(-1px)'
-                        },
-                        transition: 'all 0.2s ease'
-                    }}
-                >
-                    {isSubmitting ? 'Adding...' : 'Add Member'}
-                </Button>
-            </DialogActions>
         </StyledDialog>
     );
 }

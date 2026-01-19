@@ -57,7 +57,7 @@ export default function AuthLayout({ children }) {
 
             <Box component="footer" sx={{ position: 'absolute', bottom: 16, textAlign: 'center', opacity: 0.7, zIndex: 0 }}>
                 <div className="text-slate-500 text-xs font-medium mb-1">
-                    &copy; {new Date().getFullYear()} WealthWise. All rights reserved.
+                    &copy; {new Date().getFullYear()} KhataBahi. All rights reserved.
                 </div>
                 <div className="text-slate-600 text-[10px]">
                     🎨 Designed & 💻 Developed by <span className="text-emerald-500 font-semibold cursor-default">Prince Gupta</span>

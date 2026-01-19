@@ -11,6 +11,7 @@ import {
     alpha
 } from '@mui/material';
 import { formatCurrency } from '../../utils/formatters';
+import { getAvatarConfig } from '../../utils/avatarHelper';
 
 // SVG Icons as components
 const ArrowRightIcon = ({ sx }) => (
@@ -152,12 +153,7 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
     };
 
     // Generate consistent color for user
-    const getAvatarColor = (name) => {
-        if (!name) return '#666';
-        const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const hue = hash % 360;
-        return `hsl(${hue}, 70%, 50%)`;
-    };
+
 
     return (
         <SettlementCard elevation={0}>
@@ -170,16 +166,13 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                 {/* From User - Avatar + Name + Phone */}
                 <Stack alignItems="center" spacing={0.4} sx={{ flex: '0 0 auto', minWidth: 63 }}>
                     <UserAvatar
+                        src={getAvatarConfig(from.name).src}
+                        alt={from.name}
                         sx={{
-                            background: `linear-gradient(135deg, ${getAvatarColor(from.name)}, ${alpha(getAvatarColor(from.name), 0.7)})`
+                            bgcolor: getAvatarConfig(from.name).bgcolor,
+                            border: '1px solid rgba(0,0,0,0.05)'
                         }}
-                    >
-                        <img
-                            src={`https://api.dicebear.com/7.x/notionists/svg?seed=${from.name}`}
-                            alt={from.name}
-                            style={{ width: '100%', height: '100%', borderRadius: '50%' }}
-                        />
-                    </UserAvatar>
+                    />
                     <Typography
                         sx={{
                             fontWeight: 600,
@@ -243,16 +236,13 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                 {/* To User - Avatar + Name + Phone */}
                 <Stack alignItems="center" spacing={0.4} sx={{ flex: '0 0 auto', minWidth: 63 }}>
                     <UserAvatar
+                        src={getAvatarConfig(to.name).src}
+                        alt={to.name}
                         sx={{
-                            background: `linear-gradient(135deg, ${getAvatarColor(to.name)}, ${alpha(getAvatarColor(to.name), 0.7)})`
+                            bgcolor: getAvatarConfig(to.name).bgcolor,
+                            border: '1px solid rgba(0,0,0,0.05)'
                         }}
-                    >
-                        <img
-                            src={`https://api.dicebear.com/7.x/notionists/svg?seed=${to.name}`}
-                            alt={to.name}
-                            style={{ width: '100%', height: '100%', borderRadius: '50%' }}
-                        />
-                    </UserAvatar>
+                    />
                     <Typography
                         sx={{
                             fontWeight: 600,

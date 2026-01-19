@@ -50,7 +50,7 @@ export function Register() {
   const onSubmit = async (values) => {
     const res = await registerUser(values);
     if (res.success) {
-      toast.success('Account created. Welcome to WealthWise!');
+      toast.success('Account created. Welcome to KhataBahi!');
       navigate('/app/dashboard', { replace: true });
     } else {
       toast.error(res.message || 'Unable to register');
@@ -70,7 +70,7 @@ export function Register() {
               fontSize: { xs: '1.125rem', sm: '1.25rem', md: '1.5rem' },
             }}
           >
-            Create your WealthWise account
+            Create your KhataBahi account
           </Typography>
         </Box>
         <Typography

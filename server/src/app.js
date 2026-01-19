@@ -16,6 +16,7 @@ import budgetRoutes from './routes/budgetRoutes.js';
 import goalRoutes from './routes/goalRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
+import pdfRoutes from './routes/pdfRoutes.js';
 import { connectDB } from './config/db.js';
 
 const app = express();
@@ -28,6 +29,7 @@ app.use(
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400, // Cache preflight response for 24 hours
     preflightContinue: false,
     optionsSuccessStatus: 204
   })
@@ -175,6 +177,7 @@ app.use('/api/budgets', budgetRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/pdf', pdfRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

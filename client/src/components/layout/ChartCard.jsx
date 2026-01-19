@@ -6,7 +6,8 @@
  */
 
 import React from 'react';
-import { Box, Card, CardContent, Typography, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Card, CardContent, Typography, useTheme, useMediaQuery, Collapse } from '@mui/material';
+import { KeyboardArrowDown as KeyboardArrowDownIcon } from '@mui/icons-material';
 
 /**
  * ChartCard provides a consistent wrapper for chart visualizations
@@ -25,79 +26,99 @@ export default function ChartCard({
     children,
     footer,
     noPadding = false,
+    collapsible = false,
+    defaultExpanded = true
 }) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+    const [expanded, setExpanded] = React.useState(defaultExpanded);
 
     // Calculate responsive height
     const responsiveHeight = isMobile ? height * 0.85 : (isTablet ? height * 0.95 : height);
 
     return (
-        <Card sx={{ height: '100%' }}>
-            {/* Header */}
-            <CardContent sx={{ pb: 0 }}>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        mb: { xs: 1.5, sm: 2 },
-                    }}
-                >
+        <Box sx={{ width: '100%' }}>
+            {/* Header - Simple and clean */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: expanded ? 2 : 0,
+                    cursor: collapsible ? 'pointer' : 'default',
+                    minHeight: '48px',
+                    p: 1.5,
+                    borderRadius: '12px',
+                    transition: 'background 0.2s',
+                    '&:hover': collapsible ? { bgcolor: 'rgba(255,255,255,0.03)' } : {}
+                }}
+                onClick={() => collapsible && setExpanded(!expanded)}
+            >
+                <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <Typography
                         variant="h6"
                         sx={{
                             fontWeight: 700,
-                            fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' }, // Bolder and larger
-                            letterSpacing: '-0.01em'
+                            fontSize: { xs: '1rem', sm: '1.1rem' },
+                            letterSpacing: '-0.01em',
+                            lineHeight: 1.2,
+                            color: '#e2e8f0'
                         }}
                     >
                         {title}
                     </Typography>
-                    {subtitle && (
+                    {subtitle && expanded && (
                         <Typography
                             variant="caption"
-                            color="textSecondary"
                             sx={{
                                 fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                                fontWeight: 500
+                                fontWeight: 500,
+                                mt: 0.5,
+                                color: '#94a3b8'
                             }}
                         >
                             {subtitle}
                         </Typography>
                     )}
                 </Box>
-            </CardContent>
+                {collapsible && (
+                    <KeyboardArrowDownIcon
+                        fontSize="medium"
+                        sx={{
+                            color: '#94a3b8',
+                            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.3s ease',
+                            opacity: 0.7
+                        }}
+                    />
+                )}
+            </Box>
 
-            {/* Chart Content */}
-            <CardContent
-                sx={{
-                    pt: 0,
-                    pb: footer ? 0 : undefined,
-                    px: noPadding ? 0 : undefined,
-                }}
-            >
-                <Box
-                    sx={{
-                        width: '100%',
-                        height: responsiveHeight,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                    }}
-                >
-                    {children}
+            <Collapse in={expanded}>
+                {/* Content wrapper */}
+                <Box sx={{ px: noPadding ? 0 : 1.5, pb: footer ? 0 : 2 }}>
+                    <Box
+                        sx={{
+                            width: '100%',
+                            height: responsiveHeight,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}
+                    >
+                        {children}
+                    </Box>
                 </Box>
-            </CardContent>
 
-            {/* Optional Footer */}
-            {footer && (
-                <CardContent sx={{ pt: 2 }}>
-                    {footer}
-                </CardContent>
-            )}
-        </Card>
+                {/* Optional Footer */}
+                {footer && (
+                    <Box sx={{ pt: 1, px: 1.5, pb: 2 }}>
+                        {footer}
+                    </Box>
+                )}
+            </Collapse>
+        </Box>
     );
 }
 
@@ -157,77 +178,55 @@ export function CategoryLegend({ data, colors, formatter = (v) => v }) {
     const total = data.reduce((sum, i) => sum + (i.value || i.total || 0), 0);
 
     return (
-        <Box
-            sx={{
-                borderTop: '1px solid rgba(255,255,255,0.08)',
-                pt: 2.5,
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(auto-fill, minmax(140px, 1fr))' },
-                gap: 1.5,
-            }}
-        >
+        <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             {data.map((item, index) => {
                 const val = item.value || item.total || 0;
                 const percentage = total > 0 ? ((val / total) * 100).toFixed(1) : '0';
                 const color = colors[index % colors.length];
 
                 return (
-                    <Box
-                        key={index}
-                        sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 0.5,
-                            p: 1.25,
-                            borderRadius: 2,
-                            backgroundColor: 'rgba(255,255,255,0.02)',
-                            border: '1px solid rgba(255,255,255,0.05)',
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                                backgroundColor: 'rgba(255,255,255,0.04)',
-                                borderColor: 'rgba(255,255,255,0.1)'
-                            }
-                        }}
-                    >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box
-                                sx={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: '50%',
-                                    bgcolor: color,
-                                    flexShrink: 0
-                                }}
-                            />
-                            <Typography
-                                variant="caption"
-                                sx={{
-                                    fontSize: '0.75rem',
-                                    fontWeight: 600,
-                                    flex: 1,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    color: 'text.primary'
-                                }}
-                            >
-                                {item.name || item.category || item.source}
-                            </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 0.25 }}>
-                            <Typography
-                                variant="caption"
-                                sx={{
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700,
-                                    color: color
-                                }}
-                            >
+                    <Box key={index} sx={{ width: '100%' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Box
+                                    sx={{
+                                        width: 8,
+                                        height: 8,
+                                        borderRadius: '50%',
+                                        bgcolor: color,
+                                        boxShadow: `0 0 8px ${color}`
+                                    }}
+                                />
+                                <Typography sx={{ fontSize: '0.85rem', color: '#e2e8f0', fontWeight: 500 }}>
+                                    {item.name || item.category || item.source}
+                                </Typography>
+                                <Typography sx={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>
+                                    {percentage}%
+                                </Typography>
+                            </Box>
+                            <Typography sx={{ fontSize: '0.85rem', color: '#f8fafc', fontWeight: 600 }}>
                                 {formatter(val)}
                             </Typography>
-                            <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem', fontWeight: 500 }}>
-                                {percentage}%
-                            </Typography>
+                        </Box>
+                        {/* Progress Bar */}
+                        <Box
+                            sx={{
+                                width: '100%',
+                                height: 4,
+                                borderRadius: 2,
+                                bgcolor: 'rgba(255, 255, 255, 0.05)',
+                                overflow: 'hidden'
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    width: `${percentage}%`,
+                                    height: '100%',
+                                    bgcolor: color,
+                                    borderRadius: 2,
+                                    transition: 'width 1s ease-in-out'
+                                }}
+                            />
                         </Box>
                     </Box>
                 );

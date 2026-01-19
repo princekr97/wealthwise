@@ -26,10 +26,16 @@ import {
     Accordion,
     AccordionSummary,
     AccordionDetails,
-    alpha
+    alpha,
+    Dialog,
+    DialogContent,
+    DialogActions,
+    ListItemIcon,
+    Collapse
 } from '@mui/material';
 import {
     Add as AddIcon,
+    PostAdd as AddExpenseIcon,
     ArrowBack as ArrowBackIcon,
     Delete as DeleteIcon,
     Download as DownloadIcon,
@@ -54,8 +60,14 @@ import {
     CardGiftcard as GiftsIcon,
     Savings as SavingsIcon,
     Category as CategoryIcon,
-    Hotel as HotelIcon
+    Hotel as HotelIcon,
+    Assessment as ReportIcon,
+    Close as CloseIcon,
+    Share as ShareIcon,
+    PersonAdd as AddMemberIcon,
+    KeyboardArrowDown as KeyboardArrowDownIcon
 } from '@mui/icons-material';
+
 import { groupService } from '../services/groupService';
 import PageContainer from '../components/layout/PageContainer';
 import PageLoader from '../components/common/PageLoader';
@@ -81,6 +93,20 @@ export default function GroupDetails() {
     const navigate = useNavigate();
     const { user: authUser } = useAuthStore();
     const [user, setUser] = useState(null);
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [pdfUrl, setPdfUrl] = useState(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
+    const [shareLoading, setShareLoading] = useState(false);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [showAnalytics, setShowAnalytics] = useState(true);
+    const openMenu = Boolean(anchorEl);
+
+    const handleMenuClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
 
 
     // Get user from auth store or localStorage
@@ -124,7 +150,6 @@ export default function GroupDetails() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState(null);
-    const [exportAnchorEl, setExportAnchorEl] = useState(null);
 
     useEffect(() => {
         fetchGroupDetails();
@@ -147,27 +172,82 @@ export default function GroupDetails() {
     const [exporting, setExporting] = useState(false);
 
     const handleDownloadReport = async () => {
-        if (group && expenses) {
-            setExportAnchorEl(null);
-            setExporting(true);
-            try {
-                // Tiny delay to let UI render the loader
-                await new Promise(resolve => setTimeout(resolve, 100));
-                generateGroupReport(group, expenses, balances);
-                toast.success('PDF Report downloaded');
-            } catch (error) {
-                console.error('Export failed:', error);
-                toast.error('Failed to generate report');
-            } finally {
-                setExporting(false);
-            }
+        if (!group) return;
+        setExporting(true);
+        try {
+            toast.info('Generating PDF Report...');
+            await generateGroupReport(group, expenses, balances);
+            toast.success('Report downloaded successfully');
+        } catch (error) {
+            console.error('Download error:', error);
+            toast.error('Failed to generate report');
+        } finally {
+            setExporting(false);
         }
     };
 
+    const handlePreviewReport = async () => {
+        if (!group) return;
+        setPreviewLoading(true);
+        try {
+            const url = await generateGroupReport(group, expenses, balances, true);
+            setPdfUrl(url);
+            setPreviewOpen(true);
+        } catch (error) {
+            console.error('Preview error:', error);
+            toast.error('Failed to preview report');
+        } finally {
+            setPreviewLoading(false);
+        }
+    };
 
+    const handleClosePreview = () => {
+        setPreviewOpen(false);
+        if (pdfUrl) {
+            URL.revokeObjectURL(pdfUrl);
+            setPdfUrl(null);
+        }
+    };
+
+    const handleShareReport = async () => {
+        if (!group) return;
+        setShareLoading(true);
+        try {
+            toast.info('Preparing to share...');
+            // Generate PDF Blob URL
+            const url = await generateGroupReport(group, expenses, balances, true);
+
+            // Fetch blob from URL
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const file = new File([blob], `${group.name.replace(/\s+/g, '_')}_Report.pdf`, { type: 'application/pdf' });
+
+            if (navigator.share && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: `${group.name} Expense Report`,
+                    text: `Here is the expense report for ${group.name}.`,
+                });
+                toast.success('Shared successfully!');
+            } else {
+                throw new Error('Web Share API not supported');
+            }
+        } catch (error) {
+            console.error('Share error:', error);
+            // Fallback to simple download if share fails
+            if (error.message !== 'Web Share API not supported' && error.name !== 'AbortError') {
+                toast.error('Sharing failed, downloading instead...');
+                handleDownloadReport();
+            } else if (error.message === 'Web Share API not supported') {
+                toast.info('Sharing not supported on this device. Downloading file...');
+                handleDownloadReport();
+            }
+        } finally {
+            setShareLoading(false);
+        }
+    };
     const handleDownloadCSV = async () => {
         if (group && expenses) {
-            setExportAnchorEl(null);
             setExporting(true);
             try {
                 await new Promise(resolve => setTimeout(resolve, 100));
@@ -492,69 +572,164 @@ export default function GroupDetails() {
                 {/* Top Action Icons */}
                 {/* Top Action Icons */}
                 <Stack direction="row" spacing={1.5} alignItems="center">
-                    <Box
-                        title="Add Expense"
-                        onClick={() => setIsExpenseDialogOpen(true)}
-                        className="glass-card-clean"
-                        sx={{
-                            width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', borderRadius: '12px',
-                            background: 'rgba(20, 184, 166, 0.1)', border: '1px solid rgba(255, 255, 255, 0.1)',
-                            color: '#14B8A6', transition: 'all 0.2s',
-                            '&:hover': { background: 'rgba(20, 184, 166, 0.2)' }
-                        }}
-                    >
-                        <AddIcon />
-                    </Box>
 
-                    <Box
-                        title="Export Report"
-                        onClick={(e) => !exporting && setExportAnchorEl(e.currentTarget)}
-                        className="glass-card-clean"
-                        sx={{
-                            width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: exporting ? 'wait' : 'pointer', borderRadius: '12px',
-                            background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)',
-                            color: 'text.primary', transition: 'all 0.2s',
-                            '&:hover': { background: 'rgba(255, 255, 255, 0.1)' }
-                        }}
-                    >
-                        {exporting ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
-                    </Box>
 
-                    <Box
-                        title="Edit Group"
-                        onClick={() => setIsEditDialogOpen(true)}
-                        className="glass-card-clean"
-                        sx={{
-                            width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', borderRadius: '12px',
-                            background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)',
-                            color: 'text.primary', transition: 'all 0.2s',
-                            '&:hover': { background: 'rgba(255, 255, 255, 0.1)' }
-                        }}
-                    >
-                        <EditIcon />
-                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1 }}> {/* Grouped Action Buttons */}
+                        <Box
+                            title="Add Expense"
+                            onClick={() => setIsExpenseDialogOpen(true)}
+                            className="glass-card-clean"
+                            sx={{
+                                width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', borderRadius: '12px',
+                                background: 'rgba(20, 184, 166, 0.15)', border: '1px solid rgba(20, 184, 166, 0.3)',
+                                color: '#2DD4BF', transition: 'all 0.2s',
+                                '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(20, 184, 166, 0.3)' }
+                            }}
+                        >
+                            <AddExpenseIcon />
+                        </Box>
 
-                    <Box
-                        title="Delete Group"
-                        onClick={() => setConfirmDialog({
-                            open: true,
-                            title: 'Delete Group',
-                            message: 'Are you sure you want to delete this group? This action cannot be undone.',
-                            onConfirm: handleDeleteGroup
-                        })}
-                        className="glass-card-clean"
-                        sx={{
-                            width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', borderRadius: '12px',
-                            background: 'rgba(255, 50, 50, 0.1)', border: '1px solid rgba(255, 255, 255, 0.1)',
-                            color: '#FF6B6B', transition: 'all 0.2s',
-                            '&:hover': { background: 'rgba(255, 50, 50, 0.2)' }
-                        }}
-                    >
-                        <DeleteIcon />
+                        <Box
+                            title="Add Member"
+                            onClick={() => setIsAddMemberDialogOpen(true)}
+                            className="glass-card-clean"
+                            sx={{
+                                width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', borderRadius: '12px',
+                                background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)',
+                                color: '#FBBF24', transition: 'all 0.2s',
+                                '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }
+                            }}
+                        >
+                            <AddMemberIcon />
+                        </Box>
+
+                        <Box
+                            title="Trip Report & Export"
+                            onClick={() => !previewLoading && handlePreviewReport()}
+                            className="glass-card-clean"
+                            sx={{
+                                width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: previewLoading ? 'wait' : 'pointer', borderRadius: '12px',
+                                background: 'rgba(236, 72, 153, 0.15)', border: '1px solid rgba(236, 72, 153, 0.3)',
+                                color: '#EC4899', transition: 'all 0.2s',
+                                '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)' }
+                            }}
+                        >
+                            {previewLoading ? <CircularProgress size={20} color="inherit" /> : <ReportIcon />}
+                        </Box>
+
+                        {/* More Options Menu */}
+                        <Box
+                            title="More Options"
+                            onClick={handleMenuClick}
+                            className="glass-card-clean"
+                            sx={{
+                                width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', borderRadius: '12px',
+                                background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)',
+                                color: 'text.secondary', transition: 'all 0.2s',
+                                '&:hover': { background: 'rgba(255, 255, 255, 0.1)', color: 'white' }
+                            }}
+                        >
+                            <MoreVertIcon />
+                        </Box>
+
+                        <Menu
+                            anchorEl={anchorEl}
+                            open={openMenu}
+                            onClose={handleMenuClose}
+                            PaperProps={{
+                                sx: {
+                                    mt: 1.5,
+                                    background: 'rgba(15, 23, 42, 0.85)', // Deep slate with opacity
+                                    backdropFilter: 'blur(20px)', // Strong blur for glass effect
+                                    border: '1px solid rgba(255, 255, 255, 0.1)', // Subtle light border
+                                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05)', // Deep shadow + slight inner glow
+                                    borderRadius: '16px',
+                                    minWidth: '220px',
+                                    padding: '8px',
+                                    overflow: 'visible', // For any potential pop-outs (if needed later)
+                                    '&:before': { // Small arrow pointer
+                                        content: '""',
+                                        display: 'block',
+                                        position: 'absolute',
+                                        top: 0,
+                                        right: 14,
+                                        width: 10,
+                                        height: 10,
+                                        bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                        transform: 'translateY(-50%) rotate(45deg)',
+                                        zIndex: 0,
+                                        borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                                        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                                    }
+                                }
+                            }}
+                            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                        >
+                            <Typography variant="overline" sx={{ px: 2, py: 1, color: '#64748b', fontWeight: 700, letterSpacing: '1px', fontSize: '0.7rem' }}>
+                                ACTIONS
+                            </Typography>
+
+                            <MenuItem
+                                onClick={() => { handleMenuClose(); setIsEditDialogOpen(true); }}
+                                sx={{
+                                    py: 1.5,
+                                    px: 2,
+                                    borderRadius: '10px',
+                                    mb: 0.5,
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                        background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)',
+                                        borderLeft: '3px solid #3b82f6',
+                                        paddingLeft: '13px' // Compensate for border
+                                    }
+                                }}
+                            >
+                                <ListItemIcon sx={{ color: '#60a5fa', minWidth: '36px !important' }}>
+                                    <EditIcon fontSize="small" />
+                                </ListItemIcon>
+                                <Box>
+                                    <Typography variant="body2" fontWeight={600} sx={{ color: '#e2e8f0' }}>Edit Group</Typography>
+                                    <Typography variant="caption" sx={{ color: '#64748b' }}>Rename or change icon</Typography>
+                                </Box>
+                            </MenuItem>
+
+                            <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', my: 1 }} />
+
+                            <MenuItem
+                                onClick={() => {
+                                    handleMenuClose(); setConfirmDialog({
+                                        open: true,
+                                        title: 'Delete Group',
+                                        message: 'Are you sure you want to delete this group? This action cannot be undone.',
+                                        onConfirm: handleDeleteGroup
+                                    });
+                                }}
+                                sx={{
+                                    py: 1.5,
+                                    px: 2,
+                                    borderRadius: '10px',
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                        background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
+                                        borderLeft: '3px solid #ef4444',
+                                        paddingLeft: '13px'
+                                    }
+                                }}
+                            >
+                                <ListItemIcon sx={{ color: '#f87171', minWidth: '36px !important' }}>
+                                    <DeleteIcon fontSize="small" />
+                                </ListItemIcon>
+                                <Box>
+                                    <Typography variant="body2" fontWeight={600} sx={{ color: '#f87171' }}>Delete Group</Typography>
+                                    <Typography variant="caption" sx={{ color: 'rgba(248, 113, 113, 0.6)' }}>Irreversible action</Typography>
+                                </Box>
+                            </MenuItem>
+                        </Menu>
                     </Box>
                 </Stack>
             </Box>
@@ -661,7 +836,7 @@ export default function GroupDetails() {
                                                             style={{ width: '100%', height: '100%' }}
                                                         />
                                                     </Box>
-                                                    <Typography sx={{ fontSize: '0.85rem' }}>{name} {bal >= 0 ? 'you owe' : 'owes you'}</Typography>
+                                                    <Typography sx={{ fontSize: '0.85rem' }}>{name} <span style={{ opacity: 0.6 }}>{bal >= 0 ? 'you owe' : 'owes you'}</span></Typography>
                                                 </Box>
                                                 <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: bal >= 0 ? '#F87171' : '#34D399' }}>
                                                     {formatCurrency(Math.abs(bal))}
@@ -717,17 +892,37 @@ export default function GroupDetails() {
             {/* TAB 0: DASHBOARD */}
             {tabValue === 0 && (
                 <Box sx={{ px: { xs: 0, sm: 2 }, pb: 3 }}>
-                    {/* Reuse GroupAnalytics but wrap it or customize it if needed. 
-                        For now, we will render it directly as it has good charts.
-                        Ideally, we would refactor GroupAnalytics to match the exact card style requested,
-                        but let's wrap it in a clean container.
-                    */}
-                    <GroupAnalytics
-                        expenses={expenses}
-                        members={group.members}
-                        currency={group.currency}
-                        currentUser={user}
-                    />
+                    <Box
+                        onClick={() => setShowAnalytics(!showAnalytics)}
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            mb: 2,
+                            cursor: 'pointer',
+                            p: 1.5,
+                            borderRadius: '12px',
+                            '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' }
+                        }}
+                    >
+                        <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 700, color: '#e2e8f0' }}>
+                            Analytics Overview
+                        </Typography>
+                        <IconButton
+                            size="small"
+                            sx={{ color: '#94a3b8', transform: showAnalytics ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }}
+                        >
+                            <KeyboardArrowDownIcon />
+                        </IconButton>
+                    </Box>
+                    <Collapse in={showAnalytics}>
+                        <GroupAnalytics
+                            expenses={expenses}
+                            members={group.members}
+                            currency={group.currency}
+                            currentUser={user}
+                        />
+                    </Collapse>
                 </Box>
             )}
 
@@ -926,22 +1121,7 @@ export default function GroupDetails() {
                 group={group}
             />
 
-            {/* Popover Menu for Downloads */}
-            <Menu
-                anchorEl={exportAnchorEl}
-                open={Boolean(exportAnchorEl)}
-                onClose={() => setExportAnchorEl(null)}
-                PaperProps={{
-                    sx: {
-                        bgcolor: '#1e293b',
-                        color: 'white',
-                        border: '1px solid rgba(255,255,255,0.1)'
-                    }
-                }}
-            >
-                <MenuItem onClick={handleDownloadReport}>Download PDF</MenuItem>
-                <MenuItem onClick={handleDownloadCSV}>Export CSV</MenuItem>
-            </Menu>
+            {/* PDF download is now triggered directly from the download icon button */}
 
             <ConfirmDialog
                 open={isDeleteDialogOpen}
@@ -966,6 +1146,100 @@ export default function GroupDetails() {
                 title={confirmDialog.title}
                 message={confirmDialog.message}
             />
+            {/* PDF Preview Dialog - Ultra Clean */}
+            <Dialog
+                open={previewOpen}
+                onClose={handleClosePreview}
+                maxWidth="lg"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        height: '85vh',
+                        background: '#0f172a',
+                        color: 'white',
+                        borderRadius: '16px',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    }
+                }}
+            >
+                {/* Minimal Header - Icons Only */}
+                <div style={{
+                    padding: '12px 20px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    background: '#0f172a',
+                    borderBottom: '1px solid rgba(255,255,255,0.08)'
+                }}>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        {/* Share Icon */}
+                        <IconButton
+                            onClick={handleShareReport}
+                            title="Share PDF"
+                            disabled={shareLoading}
+                            sx={{
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                color: '#34d399', // Green
+                                border: '1px solid rgba(52, 211, 153, 0.2)',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                    background: 'rgba(52, 211, 153, 0.15)',
+                                    borderColor: '#34d399',
+                                    transform: 'translateY(-1px)'
+                                }
+                            }}
+                        >
+                            {shareLoading ? <CircularProgress size={16} color="inherit" /> : <ShareIcon fontSize="small" />}
+                        </IconButton>
+
+                        {/* Download Icon */}
+                        <IconButton
+                            onClick={handleDownloadReport}
+                            title="Download PDF"
+                            sx={{
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                color: '#38bdf8', // Light Blue
+                                border: '1px solid rgba(56, 189, 248, 0.2)',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                    background: 'rgba(56, 189, 248, 0.15)',
+                                    borderColor: '#38bdf8',
+                                    transform: 'translateY(-1px)'
+                                }
+                            }}
+                        >
+                            <DownloadIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+
+                    {/* Right: Close Icon */}
+                    <IconButton
+                        onClick={handleClosePreview}
+                        size="small"
+                        sx={{
+                            color: '#64748b',
+                            '&:hover': { color: 'white', background: 'rgba(255,255,255,0.1)' }
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </div>
+
+                {/* PDF Viewer (Toolbar Hidden) */}
+                <div style={{ flex: 1, height: '100%', background: '#1e293b' }}>
+                    {pdfUrl && (
+                        <iframe
+                            src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                            width="100%"
+                            height="100%"
+                            style={{ border: 'none' }}
+                            title="Trip Report Preview"
+                        />
+                    )}
+                </div>
+            </Dialog>
         </PageContainer>
     );
 }

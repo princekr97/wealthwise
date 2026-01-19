@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Box, Drawer, IconButton, Typography, useTheme, useMediaQuery, alpha } from '@mui/material';
+import Logo from '../../assets/images/logo.png';
 import {
   Menu as MenuIcon,
   Close as CloseIcon,
@@ -72,38 +73,29 @@ export function Layout({ children }) {
       {/* Logo */}
       <Box
         sx={{
-          px: 2.5,
-          py: 2,
+          px: 0,
+          py: 1,
           display: 'flex',
           alignItems: 'center',
-          gap: 1.5,
-          borderBottom: `1px solid ${colors.border}`
+          justifyContent: 'center',
+          borderBottom: `1px solid ${colors.border}`,
+          overflow: 'hidden',
+          height: '64px' // Fixed height to prevent layout shift
         }}
       >
         <Box
+          component="img"
+          src={Logo}
+          alt="KhataBahi"
           sx={{
-            width: 36,
-            height: 36,
-            borderRadius: 2,
-            background: 'linear-gradient(135deg, #22C55E 0%, #3B82F6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: colors.bgPrimary,
-            fontWeight: 700,
-            fontSize: '1rem'
+            width: '100%',
+            maxWidth: '260px',
+            height: '100%',
+            display: 'block',
+            objectFit: 'contain',
+            transform: 'scale(2.8)' // Drastically increased scale to fill container
           }}
-        >
-          W
-        </Box>
-        <Box>
-          <Typography sx={{ fontWeight: 600, fontSize: '0.9rem', color: colors.textPrimary }}>
-            WealthWise
-          </Typography>
-          <Typography sx={{ fontSize: '0.65rem', color: colors.textSecondary, mt: -0.3 }}>
-            Personal Finance Hub
-          </Typography>
-        </Box>
+        />
       </Box>
 
       {/* Navigation */}
@@ -306,7 +298,7 @@ export function Layout({ children }) {
           {/* Global App Footer */}
           <Box component="footer" sx={{ py: 3, textAlign: 'center', mt: 'auto', opacity: 0.7 }}>
             <Typography variant="caption" display="block" sx={{ color: colors.textSecondary, mb: 0.5 }}>
-              &copy; {new Date().getFullYear()} WealthWise. All rights reserved.
+              &copy; {new Date().getFullYear()} KhataBahi. All rights reserved.
             </Typography>
             <Typography variant="caption" sx={{ color: colors.textSecondary }}>
               🎨 Designed & 💻 Developed by{' '}

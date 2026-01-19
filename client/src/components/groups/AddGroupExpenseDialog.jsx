@@ -65,6 +65,8 @@ import {
     PersonAdd as PersonAddIcon  // For Add Member button
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
+import { getAvatarConfig } from '../../utils/avatarHelper';
+import { getCategoryStyle } from '../../utils/categoryHelper';
 import { toast } from 'sonner';
 import { groupService } from '../../services/groupService';
 import { styled } from '@mui/material/styles';
@@ -296,7 +298,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
         defaultValues: {
             description: '',
             amount: '',
-            category: 'Uncategorized',
+            category: '',
             paidBy: currentUser?._id || '',
             splits: []
         }
@@ -319,7 +321,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                 reset({
                     description: initialExpense.description,
                     amount: initialExpense.amount,
-                    category: initialExpense.category || 'Uncategorized',
+                    category: initialExpense.category || '',
                     paidBy: (initialExpense.paidBy?._id || initialExpense.paidBy) || '',
                     splits: initialExpense.splits || []
                 });
@@ -329,11 +331,21 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                 }
             } else {
                 setSplitType('equal');
+
+                // Find matching member ID for current user to ensure dropdown value match
+                let defaultPayer = '';
+                if (currentUser && group?.members) {
+                    const matchingMember = group.members.find(m => String(getMemberId(m)) === String(currentUser._id));
+                    if (matchingMember) {
+                        defaultPayer = getMemberId(matchingMember);
+                    }
+                }
+
                 reset({
                     description: '',
                     amount: '',
-                    category: 'Uncategorized',
-                    paidBy: currentUser?._id || '',
+                    category: '',
+                    paidBy: defaultPayer,
                     splits: []
                 });
                 setSelectedMemberIds(group?.members?.map(m => String(getMemberId(m))) || []);
@@ -345,57 +357,73 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
         }
     }, [open, initialExpense, reset, group, currentUser]);
 
-    // Recalculate Equal Splits when amount or selection changes (Smart default for both modes)
+    // Track previous selection to detect additions/removals
+    const prevSelectedRef = React.useRef(selectedMemberIds);
+
+    // Recalculate Equal Splits when amount or selection changes
+    // This logic now applies to BOTH 'equal' and 'custom' modes to provide "Auto-Equalize" behavior.
+    // In 'custom' mode, users can then manually edit the values (unlike 'equal' mode where inputs are disabled).
     useEffect(() => {
-        if (amount) {
-            const totalAmount = parseFloat(amount);
-            if (isNaN(totalAmount) || totalAmount <= 0) return;
+        if (!amount) return;
 
-            const activeMembers = selectedMemberIds.length;
-            if (activeMembers === 0) return; // Divide by zero protection
+        const totalAmount = parseFloat(amount);
+        if (isNaN(totalAmount) || totalAmount <= 0) return;
 
-            const amountPerPerson = totalAmount / activeMembers;
-            // Floor to 2 decimals to avoid overshooting total
-            const roundedAmount = Math.floor(amountPerPerson * 100) / 100;
+        const activeMembers = selectedMemberIds.length;
 
-            // Calculate remainder due to rounding
-            const currentTotal = roundedAmount * activeMembers;
-            const remainder = parseFloat((totalAmount - currentTotal).toFixed(2));
+        // If no one is selected, just zero out everyone
+        if (activeMembers === 0) {
+            const zeroSplits = members.map(m => ({
+                userId: getMemberId(m),
+                name: m.name,
+                amount: 0
+            }));
+            setValue('splits', zeroSplits);
+            return;
+        }
 
-            let remainderAdded = false;
+        // Calculate Equal Share
+        const amountPerPerson = totalAmount / activeMembers;
+        const roundedAmount = Math.floor(amountPerPerson * 100) / 100;
 
-            const newSplits = members.map((member) => {
-                const mId = String(getMemberId(member));
-                const isSelected = selectedMemberIds.includes(mId);
+        const currentTotal = roundedAmount * activeMembers;
+        const remainder = parseFloat((totalAmount - currentTotal).toFixed(2));
 
-                if (!isSelected) {
-                    return {
-                        userId: getMemberId(member),
-                        name: member.name,
-                        amount: 0
-                    };
-                }
+        let remainderAdded = false;
 
-                let splitAmount = roundedAmount;
-                // Add remainder to the first selected person found to balance exactly
-                if (!remainderAdded) {
-                    splitAmount = parseFloat((roundedAmount + remainder).toFixed(2));
-                    remainderAdded = true;
-                }
+        const newSplits = members.map((member) => {
+            const mId = String(getMemberId(member));
+            const isSelected = selectedMemberIds.includes(mId);
 
+            if (!isSelected) {
                 return {
                     userId: getMemberId(member),
                     name: member.name,
-                    amount: splitAmount
+                    amount: 0
                 };
-            });
+            }
 
-            // Only update if the calculated splits are effectively different to avoid loops?
-            // Actually, react-hook-form setValue shouldn't loop if values are same, but checking is safe.
-            // For now, straightforward update.
-            setValue('splits', newSplits, { shouldValidate: true });
-        }
-    }, [amount, members, selectedMemberIds, setValue, splitType]); // Added splitType back so switching tabs triggers recalc
+            let splitAmount = roundedAmount;
+            // Distribute remainder to first selected person
+            if (!remainderAdded) {
+                splitAmount = parseFloat((roundedAmount + remainder).toFixed(2));
+                remainderAdded = true;
+            }
+
+            return {
+                userId: getMemberId(member),
+                name: member.name,
+                amount: splitAmount
+            };
+        });
+
+        // We update the form values. 
+        // Note: In 'custom' mode, this OVERWRITES manual edits if the 'amount' or 'selection' changes.
+        // This is the desired behavior per user request.
+        // Manual edits are only preserved if NO dependency changes (i.e. just typing).
+        setValue('splits', newSplits, { shouldValidate: true });
+
+    }, [amount, members, selectedMemberIds, setValue]);
 
 
 
@@ -442,7 +470,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
             const expenseData = {
                 description: data.description,
                 amount: expenseAmount,
-                category: data.category || 'Uncategorized',
+                category: data.category || 'Misc.',
                 paidBy: data.paidBy,
                 paidByName: members.find(m => String(getMemberId(m)) === String(data.paidBy))?.name || '',
                 splits: validSplits,
@@ -548,15 +576,55 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                         {...field}
                                         fullWidth
                                         displayEmpty
-                                        sx={{ color: '#acb1b8ff' }}
+                                        sx={{ color: '#e2e8f0', '& .MuiSvgIcon-root': { color: '#94a3b8' } }}
                                         value={field.value || ''}
+                                        MenuProps={{
+                                            PaperProps: {
+                                                sx: {
+                                                    bgcolor: '#0f172a',
+                                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                    borderRadius: '12px',
+                                                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)',
+                                                    mt: 1,
+                                                    '& .MuiMenuItem-root': {
+                                                        color: '#cbd5e1',
+                                                        fontSize: '0.9rem',
+                                                        p: '10px 16px',
+                                                        gap: '12px',
+                                                        transition: 'all 0.2s',
+                                                        '&:hover': {
+                                                            bgcolor: 'rgba(255, 255, 255, 0.04)',
+                                                            color: '#fff'
+                                                        },
+                                                        '&.Mui-selected': {
+                                                            bgcolor: 'rgba(59, 130, 246, 0.12) !important',
+                                                            color: '#60a5fa',
+                                                            fontWeight: 600
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }}
                                     >
-                                        <MenuItem value="" disabled sx={{ fontSize: '0.85rem' }}>Select Category</MenuItem>
+                                        <MenuItem value="" disabled sx={{ fontSize: '0.85rem', color: '#64748b !important' }}>Select Category</MenuItem>
                                         {CATEGORIES.map(c => {
                                             const Icon = CATEGORY_ICONS[c] || CategoryIcon;
                                             return (
-                                                <MenuItem key={c} value={c} sx={{ fontSize: '0.85rem', gap: 1.5, display: 'flex', alignItems: 'center' }}>
-                                                    <Icon sx={{ fontSize: '1.2rem', color: '#64748b' }} />
+                                                <MenuItem key={c} value={c}>
+                                                    <Box
+                                                        sx={{
+                                                            width: 28, height: 28,
+                                                            borderRadius: '8px',
+                                                            bgcolor: getCategoryStyle(c).bg,
+                                                            color: getCategoryStyle(c).color,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            mr: 1.5
+                                                        }}
+                                                    >
+                                                        <Icon sx={{ fontSize: '1.1rem', color: 'inherit' }} />
+                                                    </Box>
                                                     {c}
                                                 </MenuItem>
                                             );
@@ -580,20 +648,54 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                     fullWidth
                                     displayEmpty
                                     value={field.value || ''}
-                                    sx={{ color: '#c6cdd6ff' }}
+                                    sx={{ color: '#e2e8f0', '& .MuiSvgIcon-root': { color: '#94a3b8' } }}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            sx: {
+                                                bgcolor: '#0f172a',
+                                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                borderRadius: '12px',
+                                                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)',
+                                                mt: 1,
+                                                '& .MuiMenuItem-root': {
+                                                    color: '#cbd5e1',
+                                                    fontSize: '0.9rem',
+                                                    p: '10px 16px',
+                                                    gap: '12px',
+                                                    transition: 'all 0.2s',
+                                                    '&:hover': {
+                                                        bgcolor: 'rgba(255, 255, 255, 0.04)',
+                                                        color: '#fff'
+                                                    },
+                                                    '&.Mui-selected': {
+                                                        bgcolor: 'rgba(59, 130, 246, 0.12) !important',
+                                                        color: '#60a5fa',
+                                                        fontWeight: 600
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }}
                                 >
-                                    <MenuItem value="" disabled sx={{ fontSize: '0.85rem' }}>Select Member</MenuItem>
+                                    <MenuItem value="" disabled sx={{ fontSize: '0.85rem', color: '#64748b !important' }}>Select Member</MenuItem>
                                     {members.map(member => {
                                         const isMe = currentUser && String(getMemberId(member)) === String(currentUser._id);
                                         return (
                                             <MenuItem
                                                 key={member._id}
                                                 value={getMemberId(member)}
-                                                sx={{ fontSize: '0.85rem' }}
                                             >
-                                                <Stack direction="row" alignItems="center" gap={1}>
-                                                    <Avatar sx={{ width: 20, height: 20, fontSize: '0.6rem' }}>{member.name[0]}</Avatar>
-                                                    {isMe ? 'You' : member.name}
+                                                <Stack direction="row" alignItems="center" spacing={1.5}>
+                                                    <Avatar
+                                                        sx={{
+                                                            width: 24, height: 24,
+                                                            bgcolor: getAvatarConfig(member.name, member.avatarUrl).bgcolor,
+                                                            color: '#0f172a',
+                                                            border: '1px solid #e2e8f0'
+                                                        }}
+                                                        src={getAvatarConfig(member.name, member.avatarUrl).src}
+                                                    />
+                                                    <span>{isMe ? 'You' : member.name}</span>
                                                 </Stack>
                                             </MenuItem>
                                         );
@@ -621,7 +723,15 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                 {['equal', 'custom'].map((type) => (
                                     <Button
                                         key={type}
-                                        onClick={() => setSplitType(type)}
+                                        onClick={() => {
+                                            setSplitType(type);
+                                            // Always reset to "All Selected" for both modes providing a clean "Select All" start
+                                            const allIds = members.map(m => String(getMemberId(m)));
+                                            setSelectedMemberIds(allIds);
+                                            prevSelectedRef.current = allIds;
+
+                                            // Trigger re-calc is handled by useEffect on splitType/selection change
+                                        }}
                                         disableRipple
                                         sx={{
                                             flex: 1,
@@ -650,8 +760,8 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             {splitType === 'equal' ? 'Select people involved' : <span>Split among <span style={{ color: '#f59e0b', fontSize: '0.75rem' }}>(Tap to unselect)</span></span>}
                         </Typography>
 
-                        {/* Unified Split List View */}
-                        <Stack spacing={1.5} sx={{ mb: 2 }}>
+                        {/* Modern Compact Split List */}
+                        <Stack spacing={1} sx={{ mb: 2 }}>
                             {members.map((member, index) => {
                                 const mId = getMemberId(member);
                                 const isMe = currentUser && String(mId) === String(currentUser._id);
@@ -661,6 +771,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                     <Box
                                         key={mId}
                                         onClick={() => {
+                                            if (splitType === 'equal') return; // Disabled in equal mode per request
                                             setSelectedMemberIds(prev => {
                                                 const sId = String(mId);
                                                 if (prev.includes(sId)) {
@@ -673,111 +784,135 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'space-between',
-                                            p: 1.5,
-                                            borderRadius: '16px',
-                                            background: isSelected ? '#fff7ed' : '#f8fafc',
+                                            p: '8px 12px',
+                                            borderRadius: '12px',
+                                            background: isSelected ? 'rgba(59, 130, 246, 0.08)' : 'transparent',
                                             border: '1px solid',
-                                            borderColor: isSelected ? '#fed7aa' : 'transparent',
+                                            borderColor: isSelected ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                            cursor: splitType === 'equal' ? 'default' : 'pointer',
                                             transition: 'all 0.2s ease',
-                                            cursor: 'pointer'
+                                            '&:hover': {
+                                                background: (splitType !== 'equal' && isSelected) ? 'rgba(59, 130, 246, 0.12)' : (splitType !== 'equal' ? 'rgba(255, 255, 255, 0.03)' : 'transparent')
+                                            }
                                         }}
                                     >
-                                        <Stack direction="row" alignItems="center" spacing={2}>
-                                            {/* Custom Checkbox - Only visible in Custom/Unequal mode */}
-                                            {splitType !== 'equal' && (
+                                        {/* Left: Avatar & Name */}
+                                        {/* Left: Checkbox + Avatar & Name */}
+                                        <Stack direction="row" alignItems="center" spacing={1.5}>
+                                            {/* Custom Checkbox - Restored for 'Unequally' mode */}
+                                            {splitType === 'custom' && (
                                                 <Box
                                                     sx={{
-                                                        width: 18,
-                                                        height: 18,
+                                                        width: 20,
+                                                        height: 20,
                                                         borderRadius: '6px',
-                                                        background: isSelected ? '#4f46e5' : 'white', // Indigo-600
+                                                        background: isSelected ? '#3b82f6' : 'rgba(255,255,255,0.1)',
                                                         border: isSelected ? 'none' : '2px solid #cbd5e0',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
                                                         color: 'white',
                                                         transition: 'all 0.2s',
-                                                        boxShadow: isSelected ? '0 2px 4px rgba(79, 70, 229, 0.2)' : 'none'
+                                                        flexShrink: 0
                                                     }}
                                                 >
-                                                    {isSelected && <CheckIcon sx={{ fontSize: '0.9rem' }} />}
+                                                    {isSelected && <CheckIcon sx={{ fontSize: '14px', strokeWidth: 2 }} />}
                                                 </Box>
                                             )}
 
-                                            <Stack direction="row" alignItems="center" spacing={1.5}>
+                                            <Box sx={{ position: 'relative' }}>
                                                 <Avatar
-                                                    sx={{ width: 35, height: 35, bgcolor: '#f1f5f9' }}
-                                                    src={member.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${member.name}`}
+                                                    sx={{
+                                                        width: 36, height: 36,
+                                                        bgcolor: getAvatarConfig(member.name, member.avatarUrl).bgcolor,
+                                                        color: '#1e293b',
+                                                        border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    src={getAvatarConfig(member.name, member.avatarUrl).src}
                                                     alt={member.name}
                                                 />
-                                                <Typography sx={{ fontWeight: 600, color: '#1e293b', fontSize: '0.8rem' }}>
-                                                    {isMe ? 'You' : (member.name.length > 6 ? member.name.substring(0, 6) + '...' : member.name)}
-                                                </Typography>
-                                            </Stack>
+                                            </Box>
+
+                                            <Typography sx={{
+                                                fontWeight: isSelected ? 600 : 500,
+                                                color: isSelected ? 'white' : '#94a3b8',
+                                                fontSize: '0.9rem',
+                                                transition: 'color 0.2s'
+                                            }}>
+                                                {isMe ? 'You' : member.name}
+                                            </Typography>
                                         </Stack>
 
-                                        <Box sx={{ width: 110 }}>
+
+                                        {/* Right: Amount Input */}
+                                        <Box onClick={(e) => e.stopPropagation()}>
                                             {isSelected ? (
-                                                <Box onClick={(e) => e.stopPropagation()}>
-                                                    <Controller
-                                                        name={`splits.${index}.amount`}
-                                                        control={control}
-                                                        render={({ field }) => (
-                                                            <TextField
-                                                                {...field}
-                                                                placeholder="0"
-                                                                type="number"
-                                                                variant="outlined"
-                                                                size="small"
-                                                                disabled={splitType === 'equal'} // Auto-calc in equal mode
-                                                                InputProps={{
-                                                                    startAdornment: <Typography sx={{ mr: 0.5, color: splitType === 'equal' ? '#111112ff' : '#101011ff', fontSize: '0.85rem' }}>₹</Typography>
-                                                                }}
-                                                                sx={{
-                                                                    '& .MuiOutlinedInput-root': {
-                                                                        borderRadius: '10px',
-                                                                        bgcolor: splitType === 'equal' ? '#f1f5f9' : 'white',
-                                                                        '& fieldset': { borderColor: splitType === 'equal' ? 'transparent' : '#e2e8f0' },
-                                                                        '&:hover fieldset': { borderColor: splitType === 'equal' ? 'transparent' : '#cbd5e0' },
-                                                                        '&.Mui-focused fieldset': { borderColor: splitType === 'equal' ? 'transparent' : '#4f46e5' }
-                                                                    },
-                                                                    '& .MuiInputBase-input': {
-                                                                        fontSize: '0.8rem',
-                                                                        fontWeight: 700,
-                                                                        textAlign: 'right',
-                                                                        color: '#1e293b',
-                                                                    },
-                                                                    '& .MuiInputBase-input.Mui-disabled': {
-                                                                        opacity: 1,
-                                                                        color: '#1e293b !important',
-                                                                        WebkitTextFillColor: '#1e293b !important',
-                                                                    }
-                                                                }}
-                                                            />
-                                                        )}
-                                                    />
-                                                </Box>
+                                                <Controller
+                                                    name={`splits.${index}.amount`}
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <TextField
+                                                            {...field}
+                                                            placeholder="0"
+                                                            type="number"
+                                                            variant="standard" // Cleaner standard variant
+                                                            size="small"
+                                                            disabled={splitType === 'equal'}
+                                                            InputProps={{
+                                                                disableUnderline: true,
+                                                                startAdornment: <Typography sx={{ mr: 0.5, color: splitType === 'equal' ? '#94a3b8' : 'white', fontSize: '0.9rem', fontWeight: 600 }}>₹</Typography>
+                                                            }}
+                                                            sx={{
+                                                                width: '80px',
+                                                                '& .MuiInputBase-input': {
+                                                                    fontSize: '0.95rem',
+                                                                    fontWeight: 700,
+                                                                    textAlign: 'right',
+                                                                    color: splitType === 'equal' ? '#94a3b8' : 'white', // Grey out auto-calc
+                                                                    p: 0.5
+                                                                },
+                                                                '& .MuiInputBase-input.Mui-disabled': {
+                                                                    color: '#94a3b8 !important',
+                                                                    WebkitTextFillColor: '#94a3b8 !important',
+                                                                }
+                                                            }}
+                                                        />
+                                                    )}
+                                                />
                                             ) : (
-                                                <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', textAlign: 'right', fontWeight: 500, py: 1, pr: 1.5 }}>
-                                                    ₹0
+                                                <Typography sx={{ color: '#475569', fontSize: '0.9rem', fontWeight: 500 }}>
+                                                    -
                                                 </Typography>
                                             )}
                                         </Box>
                                     </Box>
                                 );
                             })}
+                        </Stack>
 
-                            {/* Remaining Amount Indicator (Visible in Both for clarity, or just Unequal?)
-                                In Equal mode, remainder adds up to 0 automatically essentially.
-                                Ideally show always for validation.
-                            */}
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 1, py: 1 }}>
-                                <Typography sx={{ fontWeight: 600, fontSize: '0.9rem', color: '#64748b' }}>
-                                    Selected: {selectedMemberIds.length} / {members.length}
-                                </Typography>
-                                {splitType === 'custom' && (
-                                    <Typography sx={{ fontWeight: 600, fontSize: '0.9rem', color: '#16a34a' }}>
-                                        Remaining: <span style={{ color: '#16a34a' }}>₹{
+                        {/* Summary / Remaining */}
+                        <Box sx={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            px: 1.5, py: 1,
+                            mb: 2,
+                            borderRadius: '12px',
+                            background: 'rgba(255,255,255,0.02)',
+                            border: '1px dashed rgba(255,255,255,0.1)'
+                        }}>
+                            <Typography sx={{ fontWeight: 500, fontSize: '0.8rem', color: '#94a3b8' }}>
+                                Selected: <span style={{ color: 'white' }}>{selectedMemberIds.length}</span> of {members.length}
+                            </Typography>
+                            {splitType === 'custom' && (
+                                <Typography sx={{ fontWeight: 500, fontSize: '0.8rem', color: '#94a3b8' }}>
+                                    Remaining: <span style={{
+                                        color: (() => {
+                                            const assigned = (watch('splits') || []).reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0);
+                                            const total = parseFloat(amount || 0);
+                                            const rem = Math.max(0, (total - assigned));
+                                            return rem > 0.1 ? '#ef4444' : '#10b981'; // Red if not zero, Green if matches
+                                        })(), fontWeight: 700
+                                    }}>₹{
                                             (() => {
                                                 const assigned = (watch('splits') || []).reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0);
                                                 const total = parseFloat(amount || 0);
@@ -785,10 +920,9 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                                 return rem;
                                             })()
                                         }</span>
-                                    </Typography>
-                                )}
-                            </Box>
-                        </Stack>
+                                </Typography>
+                            )}
+                        </Box>
 
                         {/* Add Member Button - Triggers Popup */}
                         <Button

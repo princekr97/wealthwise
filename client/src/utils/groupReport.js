@@ -1,157 +1,109 @@
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { formatCurrency } from './formatters';
+import { apiClient } from '../services/api';
 
-export const generateGroupReport = (group, expenses, balances) => {
-    const doc = new jsPDF();
+/**
+ * Modern PDF Generation using Backend API
+ * Replaces client-side jsPDF with server-side HTML-to-PDF conversion
+ */
 
-    // -- TITLE --
-    doc.setFontSize(22);
-    doc.setTextColor(33, 150, 243); // Blue
-    doc.text(group.name, 14, 20);
-
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Report Generated: ${new Date().toLocaleDateString()}`, 14, 28);
-    doc.text(`Members: ${group.members.map(m => m.name).join(', ')}`, 14, 34);
-
-    let finalY = 45;
-
-    // Helper for PDF-safe currency
-    const safeCurrency = (amount) => `Rs. ${Number(amount).toFixed(2)}`;
-
-    // -- BALANCES SECTION --
-    doc.setFontSize(14);
-    doc.setTextColor(0);
-    doc.text('Current Balances', 14, finalY);
-    finalY += 8;
-
-    const balanceRows = Object.entries(balances)
-        .filter(([_, bal]) => Math.abs(bal) > 0.1)
-        .map(([memberId, bal]) => {
-            const member = group.members.find(m => (m.userId?._id || m.userId) === memberId);
-            const name = member ? member.name : 'Unknown';
-            const status = bal > 0 ? 'gets back' : 'owes';
-            return [name, status, safeCurrency(Math.abs(bal))];
-        });
-
-    if (balanceRows.length > 0) {
-        autoTable(doc, {
-            startY: finalY,
-            head: [['Member', 'Status', 'Amount']],
-            body: balanceRows,
-            theme: 'striped',
-            headStyles: { fillColor: [51, 65, 85] },
-            columnStyles: { 2: { halign: 'right' } }
-        });
-        finalY = doc.lastAutoTable.finalY + 15;
-    } else {
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text("All settled up!", 14, finalY);
-        finalY += 15;
-    }
-
-    // -- ANALYTICS SECTION --
-    doc.setFontSize(14);
-    doc.setTextColor(0);
-    doc.text('Expense Summary', 14, finalY);
-    finalY += 8;
-
-    // Calculate Totals
-    const totalSpending = expenses.reduce((sum, exp) => exp.category !== 'Settlement' ? sum + exp.amount : sum, 0);
-
-    // Category Breakdown
-    const categoryTotals = expenses.reduce((acc, exp) => {
-        if (exp.category === 'Settlement') return acc;
-        acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
-        return acc;
-    }, {});
-
-    const categoryRows = Object.entries(categoryTotals)
-        .sort((a, b) => b[1] - a[1]) // Sort by amount desc
-        .map(([cat, amount]) => [cat, safeCurrency(amount)]);
-
-    // Display Total
-    doc.setFontSize(12);
-    doc.setTextColor(50);
-    doc.text(`Total Group Spending: ${safeCurrency(totalSpending)}`, 14, finalY);
-    finalY += 10;
-
-    if (categoryRows.length > 0) {
-        autoTable(doc, {
-            startY: finalY,
-            head: [['Category', 'Total Amount']],
-            body: categoryRows,
-            theme: 'plain',
-            headStyles: { fillColor: [240, 240, 240], textColor: 50, fontStyle: 'bold' },
-            columnStyles: { 1: { halign: 'right' } },
-            styles: { fontSize: 10 }
-        });
-        finalY = doc.lastAutoTable.finalY + 15;
-    } else {
-        finalY += 5;
-    }
-
-    // -- EXPENSES TABLE --
-    doc.setFontSize(14);
-    doc.setTextColor(0);
-    doc.text('Expense History', 14, finalY);
-    finalY += 8;
-
-    const expenseRows = expenses.map(exp => {
-        return [
-            new Date(exp.date).toLocaleString(),
-            exp.description,
-            exp.category,
-            exp.paidBy.name,
-            safeCurrency(exp.amount)
-        ];
+export const generateGroupReport = async (group, expenses, balances, preview = false) => {
+  try {
+    console.log('📄 Generating PDF with data:', { 
+      groupName: group.name, 
+      memberCount: group.members?.length,
+      expenseCount: expenses?.length,
+      hasBalances: !!balances 
     });
 
-    autoTable(doc, {
-        startY: finalY,
-        head: [['Date', 'Description', 'Category', 'Paid By', 'Amount']],
-        body: expenseRows,
-        theme: 'grid',
-        headStyles: { fillColor: [34, 197, 94] }, // Green
-        alternateRowStyles: { fillColor: [240, 253, 244] },
-        columnStyles: { 4: { halign: 'right' } }
-    });
+    const response = await apiClient.post(
+      '/pdf/trip-report',
+      {
+        group,
+        expenses,
+        balances,
+      },
+      {
+        responseType: 'arraybuffer', // Use arraybuffer instead of blob for binary data
+        headers: {
+          'Accept': 'application/pdf',
+        },
+      }
+    );
 
+    console.log('✅ PDF received, size:', response.data.byteLength, 'bytes');
 
-    // Save
-    doc.save(`${group.name.replace(/\s+/g, '_')}_Report.pdf`);
+    // Create blob from arraybuffer
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    
+    // Create URL
+    const url = URL.createObjectURL(blob);
+
+    if (preview) {
+      return url; // Return URL for previewing
+    }
+
+    // Generate filename
+    const filename = `${group.name.replace(/[^a-z0-9]/gi, '_')}_Report.pdf`;
+    
+    // Create download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Cleanup URL after delay
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    
+    return true;
+  } catch (error) {
+    console.error('❌ PDF Generation Error:', error);
+    throw error;
+  }
 };
 
+
+// CSV export remains the same
 export const generateGroupCSV = (group, expenses) => {
-    // CSV Header
-    const headers = ['Date', 'Description', 'Category', 'Paid By', 'Amount', 'Currency'];
+  const headers = [
+    'Date',
+    'Description',
+    'Category',
+    'Paid By',
+    'Amount',
+    'Currency',
+  ];
 
-    // CSV Rows
-    const rows = expenses.map(exp => [
-        new Date(exp.date).toLocaleDateString(),
-        `"${exp.description}"`, // Escape quotes
-        exp.category,
-        `"${exp.paidBy.name}"`,
-        exp.amount,
-        group.currency
-    ]);
+  const rows = expenses.map((exp) => [
+    new Date(exp.date).toLocaleDateString(),
+    `"${exp.description}"`,
+    exp.category,
+    `"${exp.paidBy?.name || exp.paidByName || 'Unknown'}"`,
+    exp.amount,
+    group.currency || 'INR',
+  ]);
 
-    const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.join(','))
-    ].join('\n');
+  const csvContent = [
+    headers.join(','),
+    ...rows.map((row) => row.join(',')),
+  ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `${group.name.replace(/\s+/g, '_')}_Expenses.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+  const blob = new Blob([csvContent], {
+    type: 'text/csv;charset=utf-8;',
+  });
+
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+
+  link.setAttribute('href', url);
+  link.setAttribute(
+    'download',
+    `${group.name.replace(/\s+/g, '_')}_Expenses.csv`
+  );
+  link.style.visibility = 'hidden';
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };

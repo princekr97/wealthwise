@@ -12,6 +12,7 @@ import {
   ArrowForward as ArrowForwardIcon,
   CheckCircleOutline as CheckIcon
 } from '@mui/icons-material';
+import Logo from '../assets/images/logo.png';
 
 export function Landing() {
   return (
@@ -35,26 +36,20 @@ function Header() {
       <Container maxWidth="lg" sx={{ px: { xs: 3, sm: 6 }, py: { xs: 2.5, sm: 6 } }}>
         <div className="flex items-center justify-between gap-4">
           {/* Logo Section */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center">
             <Box sx={{
-              height: { xs: 36, sm: 40 },
-              width: { xs: 36, sm: 40 },
-              minWidth: { xs: 36, sm: 40 },
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #10B981 0%, #3b82f6 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+              height: { xs: 48, sm: 64 },
+              width: { xs: 140, sm: 180 },
+              display: 'flex', alignItems: 'center',
+              overflow: 'hidden'
             }}>
-              <span className="font-extrabold text-white text-lg sm:text-xl tracking-tight">W</span>
+              <img
+                src={Logo}
+                alt="KhataBahi"
+                className="h-full w-auto object-contain"
+                style={{ transform: 'scale(2.8)' }}
+              />
             </Box>
-            <div className="flex flex-col">
-              <span className="text-lg font-bold tracking-tight text-white/90 leading-none sm:mb-1">
-                WealthWise
-              </span>
-              <p className="text-slate-400 text-[10px] sm:text-xs font-medium hidden sm:block">
-                Master your money, simplify your life.
-              </p>
-            </div>
           </div>
 
           {/* Auth Buttons */}
