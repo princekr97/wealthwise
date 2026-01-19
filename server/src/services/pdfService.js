@@ -19,33 +19,57 @@ export class PDFService {
       if (!this.browserInstance || !this.browserInstance.isConnected()) {
         const isDev = process.env.NODE_ENV === 'development' || !process.env.VERCEL;
         
-        const options = isDev 
-          ? {
-              args: ['--no-sandbox', '--disable-setuid-sandbox'],
-              headless: true,
-              executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-            }
-          : {
-              args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-              defaultViewport: chromium.defaultViewport,
-              executablePath: await chromium.executablePath(),
-              headless: chromium.headless,
-              ignoreHTTPSErrors: true,
-            };
-
-        console.log(`[PDF Service] Launching browser in ${isDev ? 'DEV' : 'PROD'} mode...`);
-        if (!isDev) {
-          console.log('[PDF Service] Using executablePath:', options.executablePath);
-          console.log('[PDF Service] Chromium args:', options.args);
-        }
+        let options;
         
+        if (isDev) {
+          // Local development
+          options = {
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            headless: true,
+            executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+          };
+          console.log('[PDF Service] DEV mode - Using local Chrome');
+        } else {
+          // Production (Vercel) - Use @sparticuz/chromium
+          console.log('[PDF Service] PROD mode - Resolving Chromium for serverless...');
+          
+          let executablePath;
+          try {
+            executablePath = await chromium.executablePath();
+            console.log('[PDF Service] ✓ Chromium path resolved:', executablePath);
+          } catch (pathError) {
+            console.error('[PDF Service] ✗ Failed to get chromium path:', pathError);
+            throw new Error(`Chromium path resolution failed: ${pathError.message}`);
+          }
+          
+          // Validate path exists
+          if (!executablePath || executablePath.length === 0) {
+            throw new Error('Chromium executablePath is empty or undefined');
+          }
+          
+          options = {
+            args: chromium.args,
+            defaultViewport: chromium.defaultViewport,
+            executablePath: executablePath,
+            headless: chromium.headless,
+            ignoreHTTPSErrors: true,
+          };
+          
+          console.log('[PDF Service] Chromium config:', {
+            headless: chromium.headless,
+            argsCount: chromium.args.length,
+          });
+        }
+
+        console.log(`[PDF Service] Launching browser...`);
         this.browserInstance = await puppeteer.launch(options);
-        console.log('[PDF Service] Browser launched successfully');
+        console.log('[PDF Service] ✓ Browser launched successfully');
       }
       return this.browserInstance;
     } catch (error) {
-      console.error('[PDF Service] Browser launch failed:', error.message);
-      console.error('[PDF Service] Error stack:', error.stack);
+      console.error('[PDF Service] ✗ Browser launch FAILED');
+      console.error('[PDF Service] Error:', error.message);
+      console.error('[PDF Service] Stack:', error.stack);
       throw new Error(`Failed to launch browser: ${error.message}`);
     }
   }
