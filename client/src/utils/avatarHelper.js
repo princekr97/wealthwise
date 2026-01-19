@@ -47,3 +47,39 @@ export const getAvatarColor = (name) => {
   const hue = hash % 360;
   return `hsl(${hue}, 70%, 50%)`;
 };
+
+/**
+ * Get avatar configuration with SVG data URI (for components using img src)
+ * Creates inline SVG that doesn't require external API calls
+ * @param {string} name - User's name
+ * @returns {Object} { src: string, bgcolor: string }
+ */
+export const getAvatarConfig = (name) => {
+  const { initials, backgroundColor } = getAvatarProps(name);
+  
+  // Create inline SVG
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="${backgroundColor}" rx="50"/>
+      <text 
+        x="50" 
+        y="50" 
+        font-family="Arial, sans-serif" 
+        font-size="42" 
+        font-weight="700" 
+        fill="#ffffff" 
+        text-anchor="middle" 
+        dominant-baseline="central"
+      >${initials}</text>
+    </svg>
+  `.trim().replace(/\s+/g, ' ');
+  
+  // Convert to data URI
+  const dataUri = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  
+  return {
+    src: dataUri,
+    bgcolor: backgroundColor
+  };
+};
+
