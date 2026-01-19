@@ -42,23 +42,31 @@ export class PDFService {
           // Production (Vercel) - Use @sparticuz/chromium
           console.log('[PDF Service] PROD mode - Configuring Chromium for serverless...');
           
-          // CRITICAL: Set graphics mode BEFORE getting executablePath
-          await chromium.setGraphicsMode(false); // Disable GPU for serverless
-          
           let executablePath;
           try {
-            // Allow override via environment variable for flexibility
-            executablePath = process.env.CHROMIUM_EXECUTABLE_PATH || await chromium.executablePath();
+            // Get chromium path - no need for setGraphicsMode in v143+
+            if (process.env.CHROMIUM_EXECUTABLE_PATH) {
+              executablePath = process.env.CHROMIUM_EXECUTABLE_PATH;
+              console.log('[PDF Service] Using env override for chromium path');
+            } else {
+              // Force download if needed (Vercel serverless)
+              executablePath = await chromium.executablePath({ force: true });
+            }
+            
             console.log('[PDF Service] ✓ Chromium path resolved:', executablePath);
           } catch (pathError) {
-            console.error('[PDF Service] ✗ Failed to get chromium path:', pathError);
-            throw new Error(`Chromium path resolution failed: ${pathError.message}. Try setting CHROMIUM_EXECUTABLE_PATH env var.`);
+            console.error('[PDF Service] ✗ Chromium path resolution failed:', pathError.message);
+            console.error('[PDF Service] Full error:', pathError);
+            throw new Error(`Chromium setup failed: ${pathError.message}. Try setting CHROMIUM_EXECUTABLE_PATH env var.`);
           }
           
-          // Validate path exists
-          if (!executablePath || executablePath.length === 0) {
-            throw new Error('Chromium executablePath is empty or undefined. Ensure @sparticuz/chromium v143+ is installed.');
+          // Validate path exists and is not empty
+          if (!executablePath || typeof executablePath !== 'string' || executablePath.length === 0) {
+            console.error('[PDF Service] ✗ Invalid executablePath:', executablePath);
+            throw new Error('Chromium executablePath is invalid or empty. Ensure @sparticuz/chromium v143+ is installed.');
           }
+          
+          console.log('[PDF Service] Chromium binary will be loaded from:', executablePath);
           
           options = {
             args: [
@@ -76,10 +84,10 @@ export class PDFService {
             ignoreHTTPSErrors: true,
           };
           
-          console.log('[PDF Service] Chromium config:', {
+          console.log('[PDF Service] Chromium launch config:', {
             headless: chromium.headless,
             argsCount: options.args.length,
-            execPath: executablePath.substring(0, 30) + '...', // Truncate for logs
+            hasExecPath: !!options.executablePath,
           });
         }
 
