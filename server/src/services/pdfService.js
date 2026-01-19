@@ -110,6 +110,13 @@ export class PDFService {
     } catch (error) {
       console.error('[PDF Service] Error:', error.message);
       console.error('[PDF Service] Stack:', error.stack);
+      
+      // If we failed to create a page or browser seems broken, clean up
+      if (!page || error.message.includes('closed') || error.message.includes('not opened')) {
+          console.warn('[PDF Service] Browser/Page issue detected, resetting instance...');
+          await PDFService.cleanup();
+      }
+      
       throw new Error(`PDF generation failed: ${error.message}`);
     } finally {
       if (page) {

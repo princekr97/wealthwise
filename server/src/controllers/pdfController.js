@@ -56,21 +56,19 @@ export const pdfController = {
       console.error('Error stack:', error.stack);
       
       // More detailed error response
+      // More detailed error response
       const errorResponse = {
         success: false,
-        message: 'PDF generation failed',
+        message: `PDF generation failed: ${error.message}`, // Expose error for debugging
       };
 
-      // Add more details in development
-      if (process.env.NODE_ENV === 'development') {
+      // Add more details
+      if (process.env.NODE_ENV === 'development' || true) { // FORCE DEBUG MODE for now
         errorResponse.error = error.message;
         errorResponse.stack = error.stack;
-      } else {
-        // In production, still log the full error but return sanitized message
-        console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-        errorResponse.hint = 'Check server logs for details';
       }
 
+      console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
       res.status(500).json(errorResponse);
     }
   },
