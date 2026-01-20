@@ -122,17 +122,30 @@ export class PDFService {
 
       // Set content
       await page.setContent(html, {
-        waitUntil: 'domcontentloaded', // Faster and more reliable on serverless (no external resources)
+        waitUntil: 'domcontentloaded',
         timeout: 30000, 
       });
 
+      // Wait for images to load (with timeout fallback for production)
+      try {
+        await page.waitForFunction(
+          () => Array.from(document.images).every(img => img.complete),
+          { timeout: 10000 }
+        );
+        console.log('[PDF Service] All images loaded');
+      } catch (e) {
+        console.warn('[PDF Service] Image loading timeout, proceeding anyway');
+      }
+
       console.log('[PDF Service] Content loaded, generating PDF...');
 
-      // Generate PDF
+      // Generate PDF with compression
       const pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
         preferCSSPageSize: false,
+        omitBackground: false,
+        scale: 0.95, // Slight scale reduction for compression
       });
 
       console.log('[PDF Service] PDF generated, size:', pdfBuffer.length, 'bytes');

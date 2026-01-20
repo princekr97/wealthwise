@@ -71,8 +71,10 @@ export default function PageHeader({
                         startIcon={actionIcon}
                         onClick={onAction}
                         sx={{
-                            minWidth: isMobile ? '10rem' : '13rem',
-                            fontSize: isMobile ? '0.75rem' : '0.875rem',
+                            minWidth: isMobile ? '9rem' : '11.7rem',
+                            fontSize: isMobile ? '0.675rem' : '0.7875rem',
+                            px: isMobile ? 1.8 : 2.7,
+                            py: isMobile ? 0.9 : 1.08
                         }}
                     >
                         {actionLabel}

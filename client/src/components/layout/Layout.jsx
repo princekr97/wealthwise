@@ -6,9 +6,13 @@
  */
 
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { Box, Drawer, IconButton, Typography, useTheme, useMediaQuery, alpha } from '@mui/material';
-import Logo from '../../assets/images/logo.png';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Box, Drawer, IconButton, Typography, useTheme, useMediaQuery, alpha, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
+import { Logout as LogoutIcon, DeleteForever as DeleteIcon } from '@mui/icons-material';
+import { useAuthStore } from '../../store/authStore';
+import { toast } from 'sonner';
+import ConfirmDialog from '../common/ConfirmDialog';
+import logo from '../../assets/images/khatabahi-logo.png';
 import {
   Menu as MenuIcon,
   Close as CloseIcon,
@@ -51,12 +55,59 @@ const colors = {
 
 export function Layout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmType, setConfirmType] = useState('logout');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout, deleteAccount } = useAuthStore();
+
+  // Get user initials
+  const getUserInitials = () => {
+    if (!user?.name) return 'U';
+    const names = user.name.trim().split(' ');
+    if (names.length === 1) return names[0].charAt(0).toUpperCase();
+    return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+  };
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    handleMenuClose();
+    setConfirmType('logout');
+    setConfirmOpen(true);
+  };
+
+  const handleDeleteAccount = () => {
+    handleMenuClose();
+    setConfirmType('delete');
+    setConfirmOpen(true);
+  };
+
+  const confirmLogout = () => {
+    logout();
+  };
+
+  const confirmDeleteAccount = async () => {
+    const res = await deleteAccount();
+    if (res.success) {
+      toast.success('Your account has been permanently deleted.');
+    } else {
+      toast.error(res.message || 'Failed to delete account');
+      setConfirmOpen(false);
+    }
   };
 
   const SidebarContent = () => (
@@ -73,29 +124,56 @@ export function Layout({ children }) {
       {/* Logo */}
       <Box
         sx={{
-          px: 0,
-          py: 1,
+          px: 3,
+          py: 2,
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          alignItems: 'center', // Changed to center for horizontal alignment
+          justifyContent: 'flex-start',
           borderBottom: `1px solid ${colors.border}`,
-          overflow: 'hidden',
-          height: '64px' // Fixed height to prevent layout shift
+          height: '64px',
+          gap: 1.5 // Space between logo and text
         }}
       >
         <Box
           component="img"
-          src={Logo}
-          alt="KhataBahi"
+          src={logo}
+          alt="KhataBahi Logo"
           sx={{
-            width: '100%',
-            maxWidth: '260px',
-            height: '100%',
-            display: 'block',
-            objectFit: 'contain',
-            transform: 'scale(2.8)' // Drastically increased scale to fill container
+            width: 38,
+            height: 38,
+            borderRadius: '10px',
+            // Subtle glow effect
+            filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.4))'
           }}
         />
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Typography
+            sx={{
+              fontSize: '1.4rem',
+              fontWeight: 800,
+              background: 'linear-gradient(135deg, #22C55E 0%, #3B82F6 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              letterSpacing: '-0.02em',
+              lineHeight: 1
+            }}
+          >
+            KhataBahi
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: '0.6rem',
+              color: colors.textSecondary,
+              fontWeight: 500,
+              letterSpacing: '0.5px',
+              lineHeight: 1,
+              mt: 0.25
+            }}
+          >
+            Hisaab-Kitaab Made Easy
+          </Typography>
+        </Box>
       </Box>
 
       {/* Navigation */}
@@ -245,39 +323,125 @@ export function Layout({ children }) {
             <Typography
               sx={{
                 display: { xs: 'none', sm: 'block' },
-                fontSize: '0.8rem',
-                color: colors.textSecondary
+                fontSize: '0.85rem',
+                color: colors.textSecondary,
+                fontWeight: 500
               }}
             >
-              Welcome Back, <span style={{ color: colors.textPrimary, fontWeight: 500 }}>Investor</span>
+              Welcome Back, <span style={{ color: colors.textPrimary, fontWeight: 600 }}>{user?.name?.split(' ')[0] || 'Investor'}</span>
             </Typography>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ display: { xs: 'none', sm: 'block' }, textAlign: 'right' }}>
-              <Typography sx={{ fontSize: '0.65rem', color: colors.textSecondary }}>
-                Today's snapshot
-              </Typography>
-              <Typography sx={{ fontSize: '0.7rem', color: colors.primary, fontWeight: 500 }}>
-                You're on track 🎯
-              </Typography>
-            </Box>
             <Box
               sx={{
-                width: 36,
-                height: 36,
+                display: { xs: 'none', sm: 'flex' },
+                alignItems: 'center',
+                gap: 1.5,
+                px: 2,
+                py: 1,
+                borderRadius: '12px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.08)'
+              }}
+            >
+              <Box sx={{ textAlign: 'right' }}>
+                <Typography sx={{ fontSize: '0.7rem', color: colors.textSecondary, lineHeight: 1.2 }}>
+                  Today's snapshot
+                </Typography>
+                <Typography sx={{ fontSize: '0.75rem', color: colors.primary, fontWeight: 600, lineHeight: 1.2 }}>
+                  You're on track 🎯
+                </Typography>
+              </Box>
+            </Box>
+            <Box
+              onClick={handleMenuOpen}
+              sx={{
+                width: 40,
+                height: 40,
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #22C55E 0%, #3B82F6 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: colors.bgPrimary,
-                fontSize: '0.75rem',
-                fontWeight: 600
+                color: '#0F172A',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
+                border: '2px solid rgba(255, 255, 255, 0.1)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                  boxShadow: '0 6px 16px rgba(34, 197, 94, 0.4)'
+                }
               }}
             >
-              PG
+              {getUserInitials()}
             </Box>
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              slotProps={{
+                paper: {
+                  elevation: 0,
+                  sx: {
+                    mt: 1.5,
+                    minWidth: 200,
+                    bgcolor: '#1E293B',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 2,
+                    overflow: 'visible',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                    '&:before': {
+                      content: '""',
+                      display: 'block',
+                      position: 'absolute',
+                      top: 0,
+                      right: 14,
+                      width: 10,
+                      height: 10,
+                      bgcolor: '#1E293B',
+                      transform: 'translateY(-50%) rotate(45deg)',
+                      zIndex: 0,
+                      borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderLeft: '1px solid rgba(255, 255, 255, 0.1)'
+                    }
+                  }
+                }
+              }}
+              sx={{
+                '& .MuiMenuItem-root': {
+                  color: '#F1F5F9',
+                  py: 1.5,
+                  px: 2,
+                  fontSize: '0.9rem',
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.05)'
+                  }
+                },
+                '& .MuiListItemIcon-root': {
+                  minWidth: 36
+                }
+              }}
+            >
+              <MenuItem onClick={handleLogout}>
+                <ListItemIcon>
+                  <LogoutIcon fontSize="small" sx={{ color: '#FFA500' }} />
+                </ListItemIcon>
+                <ListItemText>Logout</ListItemText>
+              </MenuItem>
+              <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)', my: 0.5 }} />
+              <MenuItem onClick={handleDeleteAccount}>
+                <ListItemIcon>
+                  <DeleteIcon fontSize="small" sx={{ color: '#EF4444' }} />
+                </ListItemIcon>
+                <ListItemText>Delete Account</ListItemText>
+              </MenuItem>
+            </Menu>
           </Box>
         </Box>
 
@@ -309,6 +473,20 @@ export function Layout({ children }) {
           </Box>
         </Box>
       </Box>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => { setConfirmOpen(false); setConfirmType('logout'); }}
+        title={confirmType === 'delete' ? "Delete Account" : "Logout"}
+        message={
+          confirmType === 'delete'
+            ? "Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be lost."
+            : "Are you sure you want to logout? You will need to login again to access your account."
+        }
+        onConfirm={confirmType === 'delete' ? confirmDeleteAccount : confirmLogout}
+        confirmText={confirmType === 'delete' ? "Delete Forever" : "Logout"}
+        severity={confirmType === 'delete' ? "error" : "warning"}
+      />
     </Box>
   );
 }

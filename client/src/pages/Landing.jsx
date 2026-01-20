@@ -8,11 +8,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Box, Typography, Button, Container, useMediaQuery, useTheme } from '@mui/material';
+import logo from '../assets/images/khatabahi-logo.png';
 import {
   ArrowForward as ArrowForwardIcon,
   CheckCircleOutline as CheckIcon
 } from '@mui/icons-material';
-import Logo from '../assets/images/logo.png';
 
 export function Landing() {
   return (
@@ -36,19 +36,49 @@ function Header() {
       <Container maxWidth="lg" sx={{ px: { xs: 3, sm: 6 }, py: { xs: 2.5, sm: 6 } }}>
         <div className="flex items-center justify-between gap-4">
           {/* Logo Section */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
+            <Box
+              component="img"
+              src={logo}
+              alt="KhataBahi Logo"
+              sx={{
+                width: { xs: 32, sm: 40 },
+                height: { xs: 32, sm: 40 },
+                borderRadius: '10px',
+                filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))'
+              }}
+            />
             <Box sx={{
-              height: { xs: 48, sm: 64 },
-              width: { xs: 140, sm: 180 },
-              display: 'flex', alignItems: 'center',
-              overflow: 'hidden'
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              gap: 0.25
             }}>
-              <img
-                src={Logo}
-                alt="KhataBahi"
-                className="h-full w-auto object-contain"
-                style={{ transform: 'scale(2.8)' }}
-              />
+              <Typography
+                sx={{
+                  fontSize: { xs: '1.2rem', sm: '1.5rem' },
+                  fontWeight: 800,
+                  background: 'linear-gradient(135deg, #22C55E 0%, #3B82F6 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1
+                }}
+              >
+                KhataBahi
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: { xs: '0.55rem', sm: '0.6rem' },
+                  color: 'rgba(148, 163, 184, 0.8)',
+                  fontWeight: 500,
+                  letterSpacing: '0.5px',
+                  lineHeight: 1
+                }}
+              >
+                Hisaab-Kitaab Made Easy
+              </Typography>
             </Box>
           </div>
 

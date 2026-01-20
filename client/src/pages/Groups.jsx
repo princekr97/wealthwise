@@ -265,17 +265,102 @@ export default function Groups() {
                 onAction={() => setIsAddDialogOpen(true)}
             />
 
+            {/* Hero Banner */}
+            <Box sx={{ mb: 3, mt: 1 }}>
+                <Box
+                    sx={{
+                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '20px',
+                        p: { xs: 3, sm: 4 },
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}
+                >
+                    {/* Abstract SVG Background */}
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            opacity: 0.15,
+                            pointerEvents: 'none'
+                        }}
+                    >
+                        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} />
+                                    <stop offset="100%" style={{ stopColor: '#10b981', stopOpacity: 1 }} />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="10%" cy="20%" r="120" fill="url(#grad1)" />
+                            <circle cx="85%" cy="75%" r="150" fill="url(#grad1)" />
+                            <circle cx="70%" cy="15%" r="80" fill="#3b82f6" opacity="0.6" />
+                            <circle cx="25%" cy="80%" r="100" fill="#10b981" opacity="0.6" />
+                            <path d="M0,100 Q150,50 300,100 T600,100" stroke="#3b82f6" strokeWidth="2" fill="none" opacity="0.5" />
+                            <path d="M100,0 Q200,100 300,50 T500,80" stroke="#10b981" strokeWidth="2" fill="none" opacity="0.5" />
+                        </svg>
+                    </Box>
+                    <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <Box
+                            sx={{
+                                width: { xs: 60, sm: 80 },
+                                height: { xs: 60, sm: 80 },
+                                borderRadius: '20px',
+                                background: 'linear-gradient(135deg, #3b82f6, #10b981)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 10px 30px rgba(59, 130, 246, 0.3)'
+                            }}
+                        >
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <circle cx="9" cy="7" r="4" stroke="white" strokeWidth="2"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </Box>
+                        <Box sx={{ flex: 1 }}>
+                            <Typography
+                                sx={{
+                                    fontSize: { xs: '1.25rem', sm: '1.75rem' },
+                                    fontWeight: 700,
+                                    color: 'white',
+                                    mb: 0.5,
+                                    letterSpacing: '-0.02em'
+                                }}
+                            >
+                                Group Expense Tracker
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                                    color: '#94a3b8',
+                                    fontWeight: 500
+                                }}
+                            >
+                                Split expenses, track balances, and settle up with friends
+                            </Typography>
+                        </Box>
+                    </Box>
+                </Box>
+            </Box>
+
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-            {/* Financial Overview - Clean List View */}
+            {/* Financial Overview - Optimized Compact Design */}
             {!loading && (
-                <Box sx={{ mb: 3, mt: 1 }}>
+                <Box sx={{ mb: 2.5 }}>
                     <Typography
                         sx={{
-                            fontSize: '0.9rem',
+                            fontSize: '0.85rem',
                             fontWeight: 600,
-                            mb: 1.5,
-                            color: '#FFFFFF'
+                            mb: 1.2,
+                            color: '#FFFFFF',
+                            letterSpacing: '0.3px'
                         }}
                     >
                         Financial Overview
@@ -283,220 +368,144 @@ export default function Groups() {
 
                     <Box
                         sx={{
-                            p: 2,
-                            backgroundColor: 'rgba(255,255,255,0.02)',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(255,255,255,0.08)',
+                            display: 'grid',
+                            gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' },
+                            gap: 1.2
                         }}
                     >
-                        {/* Clean Balance Cards - 2x2 Grid */}
+                        {/* Card 1 - You Are Owed */}
                         <Box
                             sx={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(2, 1fr)',
-                                gap: 1.5
+                                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%)',
+                                border: '1px solid rgba(16, 185, 129, 0.2)',
+                                borderRadius: '12px',
+                                p: 1.8,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                textAlign: 'center',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.15)'
+                                }
                             }}
                         >
-                            {/* Card 1 - You Are Owed */}
-                            <Box
+                            <Typography sx={{ fontSize: '1.5rem', mb: 0.5 }}>📈</Typography>
+                            <Typography
                                 sx={{
-                                    backgroundColor: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '10px',
-                                    p: 1.5,
-                                    height: 90,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    textAlign: 'center'
+                                    fontSize: '1.4rem',
+                                    fontWeight: 700,
+                                    color: '#10B981',
+                                    mb: 0.3,
+                                    lineHeight: 1
                                 }}
                             >
-                                <Typography sx={{ fontSize: '1.3rem', mb: 0.5 }}>📈</Typography>
-                                <Typography
-                                    sx={{
-                                        fontSize: '1.3rem',
-                                        fontWeight: 700,
-                                        color: '#10B981',
-                                        mb: 0.2,
-                                        lineHeight: 1
-                                    }}
-                                >
-                                    {formatCurrency(stats.totalOwed)}
-                                </Typography>
-                                <Typography
-                                    sx={{
-                                        fontSize: '0.55rem',
-                                        fontWeight: 500,
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.5px',
-                                        color: '#6B7280'
-                                    }}
-                                >
-                                    YOU ARE OWED
-                                </Typography>
-                            </Box>
+                                {formatCurrency(stats.totalOwed)}
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    fontSize: '0.6rem',
+                                    fontWeight: 600,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.8px',
+                                    color: 'rgba(16, 185, 129, 0.7)'
+                                }}
+                            >
+                                You Are Owed
+                            </Typography>
+                        </Box>
 
-                            {/* Card 2 - You Owe */}
-                            <Box
+                        {/* Card 2 - You Owe */}
+                        <Box
+                            sx={{
+                                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.02) 100%)',
+                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                borderRadius: '12px',
+                                p: 1.8,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                textAlign: 'center',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)'
+                                }
+                            }}
+                        >
+                            <Typography sx={{ fontSize: '1.5rem', mb: 0.5 }}>📉</Typography>
+                            <Typography
                                 sx={{
-                                    backgroundColor: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '10px',
-                                    p: 1.5,
-                                    height: 90,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    textAlign: 'center'
+                                    fontSize: '1.4rem',
+                                    fontWeight: 700,
+                                    color: '#EF4444',
+                                    mb: 0.3,
+                                    lineHeight: 1
                                 }}
                             >
-                                <Typography sx={{ fontSize: '1.3rem', mb: 0.5 }}>📉</Typography>
-                                <Typography
-                                    sx={{
-                                        fontSize: '1.3rem',
-                                        fontWeight: 700,
-                                        color: '#FF6B6B',
-                                        mb: 0.2,
-                                        lineHeight: 1
-                                    }}
-                                >
-                                    {formatCurrency(stats.totalOwe)}
-                                </Typography>
-                                <Typography
-                                    sx={{
-                                        fontSize: '0.55rem',
-                                        fontWeight: 500,
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.5px',
-                                        color: '#6B7280'
-                                    }}
-                                >
-                                    YOU OWE
-                                </Typography>
-                            </Box>
+                                {formatCurrency(stats.totalOwe)}
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    fontSize: '0.6rem',
+                                    fontWeight: 600,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.8px',
+                                    color: 'rgba(239, 68, 68, 0.7)'
+                                }}
+                            >
+                                You Owe
+                            </Typography>
+                        </Box>
 
-                            {/* Card 3 - Net Balance */}
-                            <Box
+                        {/* Card 3 - Net Balance */}
+                        <Box
+                            sx={{
+                                background: stats.netBalance >= 0
+                                    ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 100%)'
+                                    : 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.02) 100%)',
+                                border: stats.netBalance >= 0 ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+                                borderRadius: '12px',
+                                p: 1.8,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                textAlign: 'center',
+                                gridColumn: { xs: 'span 2', sm: 'auto' },
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: stats.netBalance >= 0 ? '0 4px 12px rgba(59, 130, 246, 0.15)' : '0 4px 12px rgba(239, 68, 68, 0.15)'
+                                }
+                            }}
+                        >
+                            <Typography sx={{ fontSize: '1.5rem', mb: 0.5 }}>⚖️</Typography>
+                            <Typography
                                 sx={{
-                                    backgroundColor: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '10px',
-                                    p: 1.5,
-                                    height: 90,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    textAlign: 'center'
+                                    fontSize: '1.4rem',
+                                    fontWeight: 700,
+                                    color: stats.netBalance >= 0 ? '#3B82F6' : '#EF4444',
+                                    mb: 0.3,
+                                    lineHeight: 1
                                 }}
                             >
-                                <Typography sx={{ fontSize: '1.3rem', mb: 0.5 }}>⚖️</Typography>
-                                <Typography
-                                    sx={{
-                                        fontSize: '1.3rem',
-                                        fontWeight: 700,
-                                        color: stats.netBalance >= 0 ? '#10B981' : '#FF6B6B',
-                                        mb: 0.2,
-                                        lineHeight: 1
-                                    }}
-                                >
-                                    {formatCurrency(stats.netBalance)}
-                                </Typography>
-                                <Typography
-                                    sx={{
-                                        fontSize: '0.55rem',
-                                        fontWeight: 500,
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.5px',
-                                        color: '#6B7280'
-                                    }}
-                                >
-                                    NET BALANCE
-                                </Typography>
-                            </Box>
-
-                            {/* Card 4 - Today Spending */}
-                            <Box
+                                {formatCurrency(stats.netBalance)}
+                            </Typography>
+                            <Typography
                                 sx={{
-                                    backgroundColor: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '10px',
-                                    p: 1.5,
-                                    height: 90,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    textAlign: 'center'
+                                    fontSize: '0.6rem',
+                                    fontWeight: 600,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.8px',
+                                    color: stats.netBalance >= 0 ? 'rgba(59, 130, 246, 0.7)' : 'rgba(239, 68, 68, 0.7)'
                                 }}
                             >
-                                <Typography sx={{ fontSize: '1.3rem', mb: 0.5 }}>📅</Typography>
-                                <Typography
-                                    sx={{
-                                        fontSize: '1.3rem',
-                                        fontWeight: 700,
-                                        color: '#38bdf8',
-                                        mb: 0.2,
-                                        lineHeight: 1
-                                    }}
-                                >
-                                    {formatCurrency(stats.todaySpending)}
-                                </Typography>
-                                <Typography
-                                    sx={{
-                                        fontSize: '0.55rem',
-                                        fontWeight: 500,
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.5px',
-                                        color: '#6B7280'
-                                    }}
-                                >
-                                    TODAY'S SPEND
-                                </Typography>
-                            </Box>
-
-                            {/* Card 5 - Month Spending */}
-                            <Box
-                                sx={{
-                                    backgroundColor: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '10px',
-                                    p: 1.5,
-                                    height: 90,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    textAlign: 'center',
-                                    gridColumn: 'span 2'
-                                }}
-                            >
-                                <Typography sx={{ fontSize: '1.3rem', mb: 0.5 }}>🗓️</Typography>
-                                <Typography
-                                    sx={{
-                                        fontSize: '1.3rem',
-                                        fontWeight: 700,
-                                        color: '#fbbf24',
-                                        mb: 0.2,
-                                        lineHeight: 1
-                                    }}
-                                >
-                                    {formatCurrency(stats.monthSpending)}
-                                </Typography>
-                                <Typography
-                                    sx={{
-                                        fontSize: '0.55rem',
-                                        fontWeight: 500,
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.5px',
-                                        color: '#6B7280'
-                                    }}
-                                >
-                                    THIS MONTH
-                                </Typography>
-                            </Box>
+                                Net Balance
+                            </Typography>
                         </Box>
                     </Box>
                 </Box>

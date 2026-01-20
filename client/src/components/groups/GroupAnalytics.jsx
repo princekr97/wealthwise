@@ -172,11 +172,19 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                         p: 3,
                         display: 'flex',
                         flexDirection: 'column',
+                        alignItems: 'center',
                         justifyContent: 'center',
-                        transition: 'transform 0.2s',
-                        '&:hover': { background: 'rgba(255, 255, 255, 0.05)' }
+                        transition: 'all 0.3s',
+                        '&:hover': { background: 'rgba(255, 255, 255, 0.05)', transform: 'translateY(-4px)' }
                     }}
                 >
+                    <Box sx={{ mb: 1.5 }}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="7" width="18" height="12" rx="2" stroke="#3b82f6" strokeWidth="2" fill="rgba(59, 130, 246, 0.1)"/>
+                            <circle cx="12" cy="13" r="3" stroke="#3b82f6" strokeWidth="2" fill="rgba(59, 130, 246, 0.2)"/>
+                            <path d="M3 11h18" stroke="#3b82f6" strokeWidth="2"/>
+                        </svg>
+                    </Box>
                     <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 1, textAlign: 'center' }}>
                         Total Spending
                     </Typography>
@@ -195,11 +203,18 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                         p: 3,
                         display: 'flex',
                         flexDirection: 'column',
+                        alignItems: 'center',
                         justifyContent: 'center',
-                        transition: 'transform 0.2s',
-                        '&:hover': { background: 'rgba(255, 255, 255, 0.05)' }
+                        transition: 'all 0.3s',
+                        '&:hover': { background: 'rgba(255, 255, 255, 0.05)', transform: 'translateY(-4px)' }
                     }}
                 >
+                    <Box sx={{ mb: 1.5 }}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="6" width="18" height="14" rx="2" stroke="#10b981" strokeWidth="2" fill="rgba(16, 185, 129, 0.1)"/>
+                            <path d="M3 10h18M7 14h2M7 17h4" stroke="#10b981" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                    </Box>
                     <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 1, textAlign: 'center' }}>
                         You Paid
                     </Typography>
@@ -219,37 +234,34 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                         p: 3,
                         display: 'flex',
                         flexDirection: 'column',
+                        alignItems: 'center',
                         justifyContent: 'center',
-                        transition: 'transform 0.2s',
-                        '&:hover': { background: 'rgba(255, 255, 255, 0.05)' }
+                        transition: 'all 0.3s',
+                        '&:hover': { background: 'rgba(255, 255, 255, 0.05)', transform: 'translateY(-4px)' }
                     }}
                 >
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%' }}>
-                        <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 1 }}>
-                            Average Spend
-                        </Typography>
-                        <Typography
-                            sx={{
-                                fontSize: '1.75rem',
-                                fontWeight: 700,
-                                color: '#f8fafc',
-                                letterSpacing: '-0.5px'
-                            }}
-                        >
-                            {formatCurrency(stats.totalGroupSpend / (members.length || 1))}
-                        </Typography>
+                    <Box sx={{ mb: 1.5 }}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="9" cy="7" r="3" stroke="#f59e0b" strokeWidth="2" fill="rgba(245, 158, 11, 0.1)"/>
+                            <circle cx="15" cy="7" r="3" stroke="#f59e0b" strokeWidth="2" fill="rgba(245, 158, 11, 0.1)"/>
+                            <path d="M3 20c0-3.5 2.5-6 6-6s6 2.5 6 6M15 20c0-3.5 2.5-6 6-6" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
                     </Box>
+                    <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 1, textAlign: 'center' }}>
+                        Average Spend
+                    </Typography>
+                    <Typography sx={{ fontSize: '1.75rem', fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px', textAlign: 'center' }}>
+                        {formatCurrency(stats.totalGroupSpend / (members.length || 1))}
+                    </Typography>
                     <Box
                         sx={{
                             mt: 1.5,
-                            mx: 'auto',
                             px: 1.5, py: 0.5,
                             borderRadius: '10px',
                             fontSize: '0.75rem',
                             fontWeight: 600,
                             bgcolor: 'rgba(129, 140, 248, 0.1)',
-                            color: '#818cf8',
-                            width: 'fit-content'
+                            color: '#818cf8'
                         }}
                     >
                         Per Person
@@ -264,7 +276,8 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                     title="Expenses by Category"
                     subtitle={`${categoryData.length} categories`}
                     collapsible={true}
-                    height={322} // Increased by 15% (280 * 1.15)
+                    defaultExpanded={true}
+                    height={380}
                     footer={
                         <CategoryLegend
                             data={categoryData}
@@ -280,8 +293,8 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                                 cx="50%"
                                 cy="50%"
                                 labelLine={false}
-                                innerRadius={isMobile ? 40 : 63} // Increased by 15%
-                                outerRadius={isMobile ? 75 : 98} // Increased by 15%
+                                innerRadius={isMobile ? 50 : 70}
+                                outerRadius={isMobile ? 90 : 115}
                                 paddingAngle={2}
                                 fill="#8884d8"
                                 dataKey="value"
@@ -300,8 +313,8 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                     title="Spending by Member"
                     subtitle="Who spent the most?"
                     collapsible={true}
-                    height={322} // Increased by 15%
-                    defaultExpanded={false}
+                    height={380}
+                    defaultExpanded={true}
                 >
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart

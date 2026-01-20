@@ -7,29 +7,66 @@
  */
 
 import React from 'react';
-import { Box, Card, CardContent } from '@mui/material';
+import { Box, Card, CardContent, Typography } from '@mui/material';
+import logo from '../../assets/images/khatabahi-logo.png';
 
-/**
- * AuthLayout provides consistent wrapper for auth forms
- * Features:
- * - Centered card layout
- * - Glassmorphism background
- * - Mobile-first responsive padding
- */
 export default function AuthLayout({ children }) {
     return (
         <Box
             sx={{
                 minHeight: '100vh',
                 display: 'flex',
+                flexDirection: 'column', // Stack logo and card
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: 'transparent',
-                // Mobile-first padding
                 px: { xs: 2, sm: 3, md: 4 },
                 py: { xs: 4, sm: 6, md: 8 },
+                gap: 3
             }}
         >
+            {/* Logo Section */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                <Box
+                    component="img"
+                    src={logo}
+                    alt="KhataBahi Logo"
+                    sx={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: '12px',
+                        filter: 'drop-shadow(0 0 12px rgba(34, 197, 94, 0.4))'
+                    }}
+                />
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Typography
+                        sx={{
+                            fontSize: '1.75rem',
+                            fontWeight: 800,
+                            background: 'linear-gradient(135deg, #22C55E 0%, #3B82F6 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                            letterSpacing: '-0.02em',
+                            lineHeight: 1
+                        }}
+                    >
+                        KhataBahi
+                    </Typography>
+                    <Typography
+                        sx={{
+                            fontSize: '0.65rem',
+                            color: '#94A3B8',
+                            fontWeight: 500,
+                            letterSpacing: '0.5px',
+                            lineHeight: 1,
+                            mt: 0.25
+                        }}
+                    >
+                        Hisaab-Kitaab Made Easy
+                    </Typography>
+                </Box>
+            </Box>
             <Card
                 sx={{
                     width: '100%',

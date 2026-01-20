@@ -41,95 +41,90 @@ const UserIcon = () => (
 
 // Styled components for premium look with mobile optimization
 const SettlementCard = styled(Paper)(({ theme }) => ({
-    background: `linear-gradient(135deg, 
-        ${alpha(theme.palette.primary.main, 0.05)} 0%, 
-        ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+    background: 'rgba(255, 255, 255, 0.05)',
     backdropFilter: 'blur(20px)',
-    border: `1px solid ${alpha(theme.palette.common.white, 0.1)}`,
-    borderRadius: 16,
-    padding: '14px',   // 16 -> 14 (reduced by 2)
-    marginBottom: '12px',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: 14,
+    padding: '12px',
+    marginBottom: '10px',
+    transition: 'all 0.2s ease',
 
     '&:hover': {
         transform: 'translateY(-2px)',
-        boxShadow: `0 12px 40px ${alpha(theme.palette.primary.main, 0.2)}`,
-        border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`
+        background: 'rgba(255, 255, 255, 0.08)',
+        border: '1px solid rgba(255, 255, 255, 0.15)'
     },
 
-    // Mobile breakpoint (max-width: 899.95px = md breakpoint)
     [theme.breakpoints.down('md')]: {
         padding: '10px',
-        borderRadius: '14px',
-        marginBottom: '10px'
+        borderRadius: '12px',
+        marginBottom: '8px'
     }
 }));
 
 const UserAvatar = styled(Avatar)(({ theme }) => ({
-    width: 43,  // 48 -> 43 (10% reduction)
-    height: 43,
-    fontSize: '1.1rem',  // 1.2 -> 1.1
-    fontWeight: 700,
-    boxShadow: `0 4px 16px ${alpha(theme.palette.primary.main, 0.25)}`,
+    width: 40,
+    height: 40,
+    fontSize: '1rem',
+    fontWeight: 600,
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
 
-    // Mobile breakpoint
     [theme.breakpoints.down('md')]: {
-        width: 38,
-        height: 38,
-        fontSize: '0.9rem'
+        width: 36,
+        height: 36,
+        fontSize: '0.85rem'
     },
 
     [theme.breakpoints.down('sm')]: {
-        width: 34,
-        height: 34,
-        fontSize: '0.8rem'
+        width: 32,
+        height: 32,
+        fontSize: '0.75rem'
     }
 }));
 
 const AmountDisplay = styled(Box)(({ theme }) => ({
     textAlign: 'center',
-    padding: '10px 16px',  // 12/20 -> 10/16
-    background: alpha(theme.palette.background.paper, 0.5),
-    borderRadius: 10,  // 12 -> 10
-    border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
+    padding: '8px 14px',
+    background: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 8,
+    border: '1px solid rgba(255, 255, 255, 0.08)',
 
-    // Mobile  breakpoint
     [theme.breakpoints.down('md')]: {
-        padding: '8px 12px',
-        borderRadius: 8
+        padding: '6px 10px',
+        borderRadius: 6
     },
 
     [theme.breakpoints.down('sm')]: {
-        padding: '6px 10px'
+        padding: '5px 8px'
     }
 }));
 
 const SettleButton = styled(Button)(({ theme }) => ({
-    borderRadius: 10,  // 12 -> 10
-    padding: '8px 20px',  // 10/24 -> 8/20
+    borderRadius: 8,
+    padding: '7px 18px',
     textTransform: 'none',
-    fontSize: '0.9rem',  // 0.95 -> 0.9
+    fontSize: '0.85rem',
     fontWeight: 600,
-    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-    color: theme.palette.common.white,
-    boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.35)}`,
+    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    color: '#FFFFFF',
+    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
     whiteSpace: 'nowrap',
 
     '&:hover': {
-        background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
-        boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.45)}`
+        background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+        transform: 'translateY(-1px)',
+        boxShadow: '0 6px 16px rgba(16, 185, 129, 0.4)'
     },
 
-    // Mobile breakpoint
     [theme.breakpoints.down('md')]: {
-        padding: '6px 16px',
-        fontSize: '0.85rem',
-        borderRadius: 8
+        padding: '6px 14px',
+        fontSize: '0.8rem',
+        borderRadius: 7
     },
 
     [theme.breakpoints.down('sm')]: {
-        padding: '6px 12px',
-        fontSize: '0.75rem'
+        padding: '5px 10px',
+        fontSize: '0.7rem'
     }
 }));
 
@@ -182,8 +177,8 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                     <Typography
                         sx={{
                             fontWeight: 600,
-                            color: 'text.primary',
-                            fontSize: '0.68rem',
+                            color: '#E2E8F0',
+                            fontSize: '0.75rem',
                             textAlign: 'center',
                             maxWidth: { xs: 50, sm: 63 },
                             overflow: 'hidden',
@@ -195,8 +190,8 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                     </Typography>
                     <Typography
                         sx={{
-                            color: 'text.secondary',
-                            fontSize: '0.58rem',
+                            color: '#94A3B8',
+                            fontSize: '0.65rem',
                             textAlign: 'center'
                         }}
                     >
@@ -209,10 +204,10 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                     <Typography
                         sx={{
                             fontWeight: 700,
-                            color: '#00d4ff',
-                            fontSize: { xs: '1rem', sm: '1.35rem', md: '1.55rem' },
+                            color: '#34D399',
+                            fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.4rem' },
                             lineHeight: 1,
-                            mb: 0.4
+                            mb: 0.3
                         }}
                     >
                         ₹{amount.toFixed(0)}
@@ -220,8 +215,8 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                     <Typography
                         variant="caption"
                         sx={{
-                            color: 'rgba(255, 255, 255, 0.5)',
-                            fontSize: { xs: '0.55rem', sm: '0.63rem' },
+                            color: '#94A3B8',
+                            fontSize: { xs: '0.65rem', sm: '0.7rem' },
                             fontWeight: 500
                         }}
                     >
@@ -259,8 +254,8 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                     <Typography
                         sx={{
                             fontWeight: 600,
-                            color: 'text.primary',
-                            fontSize: '0.68rem',
+                            color: '#E2E8F0',
+                            fontSize: '0.75rem',
                             textAlign: 'center',
                             maxWidth: { xs: 50, sm: 63 },
                             overflow: 'hidden',
@@ -272,8 +267,8 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                     </Typography>
                     <Typography
                         sx={{
-                            color: 'text.secondary',
-                            fontSize: '0.58rem',
+                            color: '#94A3B8',
+                            fontSize: '0.65rem',
                             textAlign: 'center'
                         }}
                     >
@@ -287,7 +282,14 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                     onClick={() => onSettle(settlement)}
                     disabled={loading}
                     title="Click to record this settlement"
-                    startIcon={!loading}
+                    startIcon={
+                        !loading && (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/>
+                                <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        )
+                    }
                     sx={{
                         flex: '0 0 auto',
                         width: { xs: 'auto', sm: 120 },
@@ -333,46 +335,77 @@ export function SettlementSuggestionsList({ settlements, onSettle, onSettleAll, 
 
     return (
         <Box>
-            {/* Header */}
-            <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                justifyContent="space-between"
-                alignItems={{ xs: 'flex-start', sm: 'center' }}
-                spacing={{ xs: 2, sm: 0 }}
-                sx={{ mb: 3 }}
+            {/* Header - Trendy Fintech Style */}
+            <Box
+                sx={{
+                    mb: 2.5,
+                    p: 2,
+                    borderRadius: '16px',
+                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
+                    border: '1px solid rgba(139, 92, 246, 0.25)',
+                    backdropFilter: 'blur(10px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: { xs: 2, sm: 0 }
+                }}
             >
                 <Box sx={{ flex: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
-                        Suggested Settlements
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                        Simplified to {settlements.length} payment{settlements.length > 1 ? 's' : ''}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                        <Box sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: '10px',
+                            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.35)'
+                        }}>
+                            {/* Sparkles Icon - Represents Success/Celebration */}
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M19 3L19.5 5.5L22 6L19.5 6.5L19 9L18.5 6.5L16 6L18.5 5.5L19 3Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </Box>
+                        <Box>
+                            <Typography sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#F1F5F9', lineHeight: 1.2 }}>
+                                Suggested Settlements
+                            </Typography>
+                            <Typography sx={{ color: '#94A3B8', fontSize: '0.75rem', fontWeight: 500 }}>
+                                Simplified to {settlements.length} payment{settlements.length > 1 ? 's' : ''}
+                            </Typography>
+                        </Box>
+                    </Box>
                 </Box>
 
                 {settlements.length > 1 && (
                     <Button
-                        variant="outlined"
                         onClick={onSettleAll}
                         disabled={loading}
                         sx={{
-                            borderRadius: 3,
+                            borderRadius: '10px',
                             textTransform: 'none',
-                            borderColor: alpha('#fff', 0.2),
-                            color: 'primary.main',
-                            fontSize: { xs: '0.85rem', sm: '0.875rem' },
-                            padding: { xs: '6px 16px', sm: '8px 20px' },
+                            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                            color: '#FFFFFF',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            padding: '8px 20px',
                             width: { xs: '100%', sm: 'auto' },
+                            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.35)',
+                            border: 'none',
                             '&:hover': {
-                                borderColor: 'primary.main',
-                                background: alpha('#fff', 0.05)
+                                background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 6px 16px rgba(139, 92, 246, 0.45)'
                             }
                         }}
                     >
                         Mark All as Settled
                     </Button>
                 )}
-            </Stack>
+            </Box>
 
             {/* Settlement Cards */}
             <Stack spacing={{ xs: 1.5, sm: 2 }}>

@@ -85,26 +85,56 @@ export default function Settings() {
         subtitle="Manage your account and preferences"
       />
 
-      {/* Tabs */}
-      <Card sx={{ mb: 3 }}>
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          variant={isMobile ? 'scrollable' : 'standard'}
-          scrollButtons="auto"
+      {/* Tabs - Modern Pill Style */}
+      <Box sx={{ mb: 3 }}>
+        <Stack
+          direction="row"
+          spacing={1}
           sx={{
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
-            '& .MuiTab-root': {
-              minHeight: { xs: 48, sm: 56 },
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            },
+            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+            borderRadius: '12px',
+            p: 0.5,
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            width: '100%'
           }}
         >
-          <Tab icon={<PaletteIcon />} label="Appearance" iconPosition="start" />
-          <Tab icon={<PersonIcon />} label="Profile" iconPosition="start" />
-          <Tab icon={<NotificationsIcon />} label="Notifications" iconPosition="start" />
-        </Tabs>
-      </Card>
+          {[
+            { icon: <PaletteIcon sx={{ fontSize: 18 }} />, label: 'Appearance', index: 0 },
+            { icon: <PersonIcon sx={{ fontSize: 18 }} />, label: 'Profile', index: 1 }
+          ].map(({ icon, label, index }) => (
+            <Box
+              key={index}
+              onClick={() => setActiveTab(index)}
+              sx={{
+                flex: 1,
+                px: 2,
+                py: 1.2,
+                cursor: 'pointer',
+                color: activeTab === index ? 'white' : 'rgba(255,255,255,0.6)',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                borderRadius: '10px',
+                backgroundColor: activeTab === index ? 'rgba(20, 184, 166, 0.15)' : 'transparent',
+                border: activeTab === index ? '1px solid rgba(20, 184, 166, 0.3)' : '1px solid transparent',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1,
+                whiteSpace: 'nowrap',
+                '&:hover': {
+                  color: 'white',
+                  backgroundColor: activeTab === index ? 'rgba(20, 184, 166, 0.2)' : 'rgba(255, 255, 255, 0.05)'
+                }
+              }}
+            >
+              {icon}
+              {label}
+            </Box>
+          ))}
+        </Stack>
+      </Box>
 
       {/* Profile Tab */}
       {activeTab === 1 && (
@@ -175,39 +205,6 @@ export default function Settings() {
         </Stack>
       )}
 
-      {/* Notifications Tab */}
-      {activeTab === 2 && (
-        <Card>
-          <CardContent>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
-              Notification Preferences
-            </Typography>
-
-            <Stack spacing={2} divider={<Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />}>
-              <NotificationItem
-                title="Budget Alerts"
-                description="Get notified when you exceed budget limits"
-                defaultChecked
-              />
-              <NotificationItem
-                title="EMI Reminders"
-                description="Reminder for upcoming EMI payments"
-                defaultChecked
-              />
-              <NotificationItem
-                title="Bill Notifications"
-                description="Alerts for pending bills and due dates"
-                defaultChecked
-              />
-              <NotificationItem
-                title="Weekly Summary"
-                description="Get weekly expense and income summary"
-                defaultChecked={false}
-              />
-            </Stack>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Appearance Tab */}
       {activeTab === 0 && (

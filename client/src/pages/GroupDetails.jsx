@@ -82,6 +82,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 import { generateGroupReport, generateGroupCSV } from '../utils/groupReport';
 import { formatCurrency } from '../utils/formatters';
 import { calculateSettlements } from '../utils/settlementCalculator';
+import { getCategoryStyle } from '../utils/categoryHelper';
 import { SettlementSuggestionsList } from '../components/groups/SettlementSuggestionCard';
 import { toast } from 'sonner';
 import { useAuthStore } from '../store/authStore';
@@ -98,7 +99,6 @@ export default function GroupDetails() {
     const [previewLoading, setPreviewLoading] = useState(false);
     const [shareLoading, setShareLoading] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
-    const [showAnalytics, setShowAnalytics] = useState(true);
     const openMenu = Boolean(anchorEl);
 
     const handleMenuClick = (event) => {
@@ -146,6 +146,7 @@ export default function GroupDetails() {
         await fetchGroupDetails(); // Force refresh to show new data immediately
     };
     const [isSettleDialogOpen, setIsSettleDialogOpen] = useState(false);
+    const [selectedSettlement, setSelectedSettlement] = useState(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
@@ -552,185 +553,188 @@ export default function GroupDetails() {
 
     return (
         <PageContainer>
-            {/* 1. Custom Header & Navigation - Reduced Sizes */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}> {/* mb: 3 -> 2.5 */}
+            {/* 1. Custom Header & Navigation - Compact Design */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <Box
                     onClick={() => navigate('/app/groups')}
                     sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 0.75, // Reduced gap
+                        justifyContent: 'center',
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
                         cursor: 'pointer',
                         color: 'text.secondary',
-                        transition: 'color 0.2s',
-                        '&:hover': { color: 'text.primary' }
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                            color: 'text.primary',
+                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                            borderColor: 'rgba(255, 255, 255, 0.15)'
+                        }
                     }}
                 >
-                    <ArrowBackIcon sx={{ fontSize: 18 }} /> {/* 20 -> 18 */}
+                    <ArrowBackIcon sx={{ fontSize: 20 }} />
                 </Box>
 
-                {/* Top Action Icons */}
-                {/* Top Action Icons */}
-                <Stack direction="row" spacing={1.5} alignItems="center">
+                {/* Top Action Icons - Compact */}
+                <Stack direction="row" spacing={1} alignItems="center">
+                    <Box
+                        title="Add Expense"
+                        onClick={() => setIsExpenseDialogOpen(true)}
+                        className="glass-card-clean"
+                        sx={{
+                            width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', borderRadius: '10px',
+                            background: 'rgba(20, 184, 166, 0.12)', border: '1px solid rgba(20, 184, 166, 0.25)',
+                            color: '#2DD4BF', transition: 'all 0.2s',
+                            '&:hover': { transform: 'scale(1.05)', boxShadow: '0 4px 12px rgba(20, 184, 166, 0.25)' }
+                        }}
+                    >
+                        <AddExpenseIcon sx={{ fontSize: 20 }} />
+                    </Box>
 
+                    <Box
+                        title="Add Member"
+                        onClick={() => setIsAddMemberDialogOpen(true)}
+                        className="glass-card-clean"
+                        sx={{
+                            width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', borderRadius: '10px',
+                            background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.25)',
+                            color: '#FBBF24', transition: 'all 0.2s',
+                            '&:hover': { transform: 'scale(1.05)', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.25)' }
+                        }}
+                    >
+                        <AddMemberIcon sx={{ fontSize: 20 }} />
+                    </Box>
 
-                    <Box sx={{ display: 'flex', gap: 1 }}> {/* Grouped Action Buttons */}
-                        <Box
-                            title="Add Expense"
-                            onClick={() => setIsExpenseDialogOpen(true)}
-                            className="glass-card-clean"
+                    <Box
+                        title="Trip Report & Export"
+                        onClick={() => !previewLoading && handlePreviewReport()}
+                        className="glass-card-clean"
+                        sx={{
+                            width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: previewLoading ? 'wait' : 'pointer', borderRadius: '10px',
+                            background: 'rgba(236, 72, 153, 0.12)', border: '1px solid rgba(236, 72, 153, 0.25)',
+                            color: '#EC4899', transition: 'all 0.2s',
+                            '&:hover': { transform: 'scale(1.05)', boxShadow: '0 4px 12px rgba(236, 72, 153, 0.25)' }
+                        }}
+                    >
+                        {previewLoading ? <CircularProgress size={18} color="inherit" /> : <ReportIcon sx={{ fontSize: 20 }} />}
+                    </Box>
+
+                    <Box
+                        title="More Options"
+                        onClick={handleMenuClick}
+                        className="glass-card-clean"
+                        sx={{
+                            width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', borderRadius: '10px',
+                            background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)',
+                            color: 'text.secondary', transition: 'all 0.2s',
+                            '&:hover': { background: 'rgba(255, 255, 255, 0.08)', color: 'white', transform: 'scale(1.05)' }
+                        }}
+                    >
+                        <MoreVertIcon sx={{ fontSize: 20 }} />
+                    </Box>
+
+                    <Menu
+                        anchorEl={anchorEl}
+                        open={openMenu}
+                        onClose={handleMenuClose}
+                        PaperProps={{
+                            sx: {
+                                mt: 1.5,
+                                background: 'rgba(15, 23, 42, 0.85)', // Deep slate with opacity
+                                backdropFilter: 'blur(20px)', // Strong blur for glass effect
+                                border: '1px solid rgba(255, 255, 255, 0.1)', // Subtle light border
+                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05)', // Deep shadow + slight inner glow
+                                borderRadius: '16px',
+                                minWidth: '220px',
+                                padding: '8px',
+                                overflow: 'visible', // For any potential pop-outs (if needed later)
+                                '&:before': { // Small arrow pointer
+                                    content: '""',
+                                    display: 'block',
+                                    position: 'absolute',
+                                    top: 0,
+                                    right: 14,
+                                    width: 10,
+                                    height: 10,
+                                    bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                    transform: 'translateY(-50%) rotate(45deg)',
+                                    zIndex: 0,
+                                    borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                                }
+                            }
+                        }}
+                        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                    >
+                        <Typography variant="overline" sx={{ px: 2, py: 1, color: '#64748b', fontWeight: 700, letterSpacing: '1px', fontSize: '0.7rem' }}>
+                            ACTIONS
+                        </Typography>
+
+                        <MenuItem
+                            onClick={() => { handleMenuClose(); setIsEditDialogOpen(true); }}
                             sx={{
-                                width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', borderRadius: '12px',
-                                background: 'rgba(20, 184, 166, 0.15)', border: '1px solid rgba(20, 184, 166, 0.3)',
-                                color: '#2DD4BF', transition: 'all 0.2s',
-                                '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(20, 184, 166, 0.3)' }
-                            }}
-                        >
-                            <AddExpenseIcon />
-                        </Box>
-
-                        <Box
-                            title="Add Member"
-                            onClick={() => setIsAddMemberDialogOpen(true)}
-                            className="glass-card-clean"
-                            sx={{
-                                width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', borderRadius: '12px',
-                                background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)',
-                                color: '#FBBF24', transition: 'all 0.2s',
-                                '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }
-                            }}
-                        >
-                            <AddMemberIcon />
-                        </Box>
-
-                        <Box
-                            title="Trip Report & Export"
-                            onClick={() => !previewLoading && handlePreviewReport()}
-                            className="glass-card-clean"
-                            sx={{
-                                width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: previewLoading ? 'wait' : 'pointer', borderRadius: '12px',
-                                background: 'rgba(236, 72, 153, 0.15)', border: '1px solid rgba(236, 72, 153, 0.3)',
-                                color: '#EC4899', transition: 'all 0.2s',
-                                '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)' }
-                            }}
-                        >
-                            {previewLoading ? <CircularProgress size={20} color="inherit" /> : <ReportIcon />}
-                        </Box>
-
-                        {/* More Options Menu */}
-                        <Box
-                            title="More Options"
-                            onClick={handleMenuClick}
-                            className="glass-card-clean"
-                            sx={{
-                                width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', borderRadius: '12px',
-                                background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)',
-                                color: 'text.secondary', transition: 'all 0.2s',
-                                '&:hover': { background: 'rgba(255, 255, 255, 0.1)', color: 'white' }
-                            }}
-                        >
-                            <MoreVertIcon />
-                        </Box>
-
-                        <Menu
-                            anchorEl={anchorEl}
-                            open={openMenu}
-                            onClose={handleMenuClose}
-                            PaperProps={{
-                                sx: {
-                                    mt: 1.5,
-                                    background: 'rgba(15, 23, 42, 0.85)', // Deep slate with opacity
-                                    backdropFilter: 'blur(20px)', // Strong blur for glass effect
-                                    border: '1px solid rgba(255, 255, 255, 0.1)', // Subtle light border
-                                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05)', // Deep shadow + slight inner glow
-                                    borderRadius: '16px',
-                                    minWidth: '220px',
-                                    padding: '8px',
-                                    overflow: 'visible', // For any potential pop-outs (if needed later)
-                                    '&:before': { // Small arrow pointer
-                                        content: '""',
-                                        display: 'block',
-                                        position: 'absolute',
-                                        top: 0,
-                                        right: 14,
-                                        width: 10,
-                                        height: 10,
-                                        bgcolor: 'rgba(15, 23, 42, 0.85)',
-                                        transform: 'translateY(-50%) rotate(45deg)',
-                                        zIndex: 0,
-                                        borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
-                                        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                                    }
+                                py: 1.5,
+                                px: 2,
+                                borderRadius: '10px',
+                                mb: 0.5,
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)',
+                                    borderLeft: '3px solid #3b82f6',
+                                    paddingLeft: '13px' // Compensate for border
                                 }
                             }}
-                            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                         >
-                            <Typography variant="overline" sx={{ px: 2, py: 1, color: '#64748b', fontWeight: 700, letterSpacing: '1px', fontSize: '0.7rem' }}>
-                                ACTIONS
-                            </Typography>
+                            <ListItemIcon sx={{ color: '#60a5fa', minWidth: '36px !important' }}>
+                                <EditIcon fontSize="small" />
+                            </ListItemIcon>
+                            <Box>
+                                <Typography variant="body2" fontWeight={600} sx={{ color: '#e2e8f0' }}>Edit Group</Typography>
+                                <Typography variant="caption" sx={{ color: '#64748b' }}>Rename or change icon</Typography>
+                            </Box>
+                        </MenuItem>
 
-                            <MenuItem
-                                onClick={() => { handleMenuClose(); setIsEditDialogOpen(true); }}
-                                sx={{
-                                    py: 1.5,
-                                    px: 2,
-                                    borderRadius: '10px',
-                                    mb: 0.5,
-                                    transition: 'all 0.2s ease',
-                                    '&:hover': {
-                                        background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)',
-                                        borderLeft: '3px solid #3b82f6',
-                                        paddingLeft: '13px' // Compensate for border
-                                    }
-                                }}
-                            >
-                                <ListItemIcon sx={{ color: '#60a5fa', minWidth: '36px !important' }}>
-                                    <EditIcon fontSize="small" />
-                                </ListItemIcon>
-                                <Box>
-                                    <Typography variant="body2" fontWeight={600} sx={{ color: '#e2e8f0' }}>Edit Group</Typography>
-                                    <Typography variant="caption" sx={{ color: '#64748b' }}>Rename or change icon</Typography>
-                                </Box>
-                            </MenuItem>
+                        <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', my: 1 }} />
 
-                            <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', my: 1 }} />
-
-                            <MenuItem
-                                onClick={() => {
-                                    handleMenuClose(); setConfirmDialog({
-                                        open: true,
-                                        title: 'Delete Group',
-                                        message: 'Are you sure you want to delete this group? This action cannot be undone.',
-                                        onConfirm: handleDeleteGroup
-                                    });
-                                }}
-                                sx={{
-                                    py: 1.5,
-                                    px: 2,
-                                    borderRadius: '10px',
-                                    transition: 'all 0.2s ease',
-                                    '&:hover': {
-                                        background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
-                                        borderLeft: '3px solid #ef4444',
-                                        paddingLeft: '13px'
-                                    }
-                                }}
-                            >
-                                <ListItemIcon sx={{ color: '#f87171', minWidth: '36px !important' }}>
-                                    <DeleteIcon fontSize="small" />
-                                </ListItemIcon>
-                                <Box>
-                                    <Typography variant="body2" fontWeight={600} sx={{ color: '#f87171' }}>Delete Group</Typography>
-                                    <Typography variant="caption" sx={{ color: 'rgba(248, 113, 113, 0.6)' }}>Irreversible action</Typography>
-                                </Box>
-                            </MenuItem>
-                        </Menu>
-                    </Box>
+                        <MenuItem
+                            onClick={() => {
+                                handleMenuClose(); setConfirmDialog({
+                                    open: true,
+                                    title: 'Delete Group',
+                                    message: 'Are you sure you want to delete this group? This action cannot be undone.',
+                                    onConfirm: handleDeleteGroup
+                                });
+                            }}
+                            sx={{
+                                py: 1.5,
+                                px: 2,
+                                borderRadius: '10px',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
+                                    borderLeft: '3px solid #ef4444',
+                                    paddingLeft: '13px'
+                                }
+                            }}
+                        >
+                            <ListItemIcon sx={{ color: '#f87171', minWidth: '36px !important' }}>
+                                <DeleteIcon fontSize="small" />
+                            </ListItemIcon>
+                            <Box>
+                                <Typography variant="body2" fontWeight={600} sx={{ color: '#f87171' }}>Delete Group</Typography>
+                                <Typography variant="caption" sx={{ color: 'rgba(248, 113, 113, 0.6)' }}>Irreversible action</Typography>
+                            </Box>
+                        </MenuItem>
+                    </Menu>
                 </Stack>
             </Box>
 
@@ -852,36 +856,44 @@ export default function GroupDetails() {
 
 
 
-            {/* 4. Tabs Navigation - Reduced Sizes */}
-            <Box sx={{ borderBottom: '2px solid rgba(255,255,255,0.1)', mb: 3, px: 2 }}> {/* mb: 4 -> 3 */}
-                <Stack direction="row" spacing={3}> {/* spacing: 4 -> 3 */}
+            {/* 4. Tabs Navigation - Modern Pill Design */}
+            <Box sx={{ mb: 3 }}>
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '12px',
+                        p: 0.4,
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        display: 'inline-flex',
+                        width: 'fit-content',
+                        position: 'relative'
+                    }}
+                >
                     {['Dashboard', 'Expenses', 'Balances'].map((tab, index) => (
                         <Box
                             key={tab}
                             onClick={() => setTabValue(index)}
                             sx={{
-                                pb: 1.25, // Reduced
+                                px: 2.5,
+                                py: 1,
                                 cursor: 'pointer',
-                                color: tabValue === index ? 'white' : 'rgba(255,255,255,0.5)',
+                                color: tabValue === index ? 'white' : 'rgba(255,255,255,0.6)',
                                 fontWeight: 600,
-                                fontSize: '0.9rem', // 1rem -> 0.9rem
-                                position: 'relative',
-                                transition: 'color 0.2s',
-                                '&:hover': { color: 'white' }
+                                fontSize: '0.85rem',
+                                borderRadius: '10px',
+                                background: tabValue === index ? 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' : 'transparent',
+                                boxShadow: tabValue === index ? '0 4px 12px rgba(20, 184, 166, 0.3)' : 'none',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                whiteSpace: 'nowrap',
+                                '&:hover': {
+                                    color: 'white',
+                                    background: tabValue === index ? 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' : 'rgba(255, 255, 255, 0.05)'
+                                }
                             }}
                         >
                             {tab}
-                            {tabValue === index && (
-                                <Box sx={{
-                                    position: 'absolute',
-                                    bottom: -2,
-                                    left: 0,
-                                    right: 0,
-                                    height: '2px', // 3px -> 2px
-                                    borderRadius: '3px',
-                                    background: '#14B8A6'
-                                }} />
-                            )}
                         </Box>
                     ))}
                 </Stack>
@@ -891,47 +903,42 @@ export default function GroupDetails() {
 
             {/* TAB 0: DASHBOARD */}
             {tabValue === 0 && (
-                <Box sx={{ px: { xs: 0, sm: 2 }, pb: 3 }}>
-                    <Box
-                        onClick={() => setShowAnalytics(!showAnalytics)}
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            mb: 2,
-                            cursor: 'pointer',
-                            p: 1.5,
-                            borderRadius: '12px',
-                            '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' }
-                        }}
-                    >
-                        <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 700, color: '#e2e8f0' }}>
-                            Analytics Overview
-                        </Typography>
-                        <IconButton
-                            size="small"
-                            sx={{ color: '#94a3b8', transform: showAnalytics ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }}
-                        >
-                            <KeyboardArrowDownIcon />
-                        </IconButton>
-                    </Box>
-                    <Collapse in={showAnalytics}>
-                        <GroupAnalytics
-                            expenses={expenses}
-                            members={group.members}
-                            currency={group.currency}
-                            currentUser={user}
-                        />
-                    </Collapse>
+                <Box 
+                    sx={{ 
+                        px: { xs: 0, sm: 2 }, 
+                        pb: 3,
+                        animation: 'fadeIn 0.3s ease-in-out',
+                        '@keyframes fadeIn': {
+                            from: { opacity: 0, transform: 'translateY(10px)' },
+                            to: { opacity: 1, transform: 'translateY(0)' }
+                        }
+                    }}
+                >
+                    <GroupAnalytics
+                        expenses={expenses}
+                        members={group.members}
+                        currency={group.currency}
+                        currentUser={user}
+                    />
                 </Box>
             )}
 
             {/* TAB 1: EXPENSES */}
             {tabValue === 1 && (
-                <Box sx={{ px: { xs: 0, sm: 2 }, pb: 3 }}>
+                <Box 
+                    sx={{ 
+                        px: { xs: 0, sm: 2 }, 
+                        pb: 3,
+                        animation: 'fadeIn 0.3s ease-in-out',
+                        '@keyframes fadeIn': {
+                            from: { opacity: 0, transform: 'translateY(10px)' },
+                            to: { opacity: 1, transform: 'translateY(0)' }
+                        }
+                    }}
+                >
                     <Stack spacing={1.5}> {/* spacing: 2 -> 1.5 */}
                         {expenses.length === 0 ? (
-                            <Box sx={{ textAlign: 'center', py: 6, opacity: 0.6 }}> {/* Reduced py */}
+                            <Box sx={{ textAlign: 'center', py: 6, opacity: 0.6 }}>
                                 <Typography variant="h2" sx={{ mb: 1.5, fontSize: '2.5rem' }}>📝</Typography>
                                 <Typography variant="h6" sx={{ fontSize: '1.1rem' }}>No expenses yet</Typography>
                                 <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>Add your first expense to get started!</Typography>
@@ -943,48 +950,67 @@ export default function GroupDetails() {
                                     className="glass-card-clean"
                                     onClick={() => setSelectedExpense(expense)}
                                     sx={{
-                                        p: 2, // 2.5 -> 2
-                                        borderRadius: '16px', // 20px -> 16px
+                                        p: 1.5,
+                                        borderRadius: '14px',
                                         cursor: 'pointer',
-                                        transition: 'background 0.2s',
-                                        '&:hover': { background: 'rgba(255,255,255,0.12)' },
+                                        transition: 'all 0.2s',
+                                        '&:hover': { background: 'rgba(255,255,255,0.12)', transform: 'translateY(-2px)' },
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: 1.5 // 2 -> 1.5
+                                        gap: 1.5,
+                                        borderLeft: `3px solid ${getCategoryStyle(expense.category).color}`
                                     }}
                                 >
                                     {/* Icon Container */}
                                     <Box sx={{
-                                        minWidth: 42, // 48 -> 42
+                                        minWidth: 42,
                                         height: 42,
-                                        borderRadius: '50%',
-                                        background: 'rgba(59, 130, 246, 0.15)', // Blue tint
+                                        borderRadius: '10px',
+                                        background: `linear-gradient(135deg, ${getCategoryStyle(expense.category).color}CC 0%, ${getCategoryStyle(expense.category).color}80 100%)`,
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        fontSize: '1.1rem', // 1.25 -> 1.1
-                                        color: '#60A5FA' // Blue 400
+                                        fontSize: '1.1rem',
+                                        color: '#FFFFFF',
+                                        boxShadow: `0 4px 12px ${getCategoryStyle(expense.category).color}30`
                                     }}>
                                         {getCategoryIcon(expense.category)}
                                     </Box>
 
                                     {/* Main Content */}
-                                    <Box sx={{ flex: 1 }}>
-                                        <Typography sx={{ fontWeight: 600, color: 'white', fontSize: '0.9rem', mb: 0.2 }}> {/* Reduced fonts */}
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        <Typography sx={{ fontWeight: 600, color: '#F1F5F9', fontSize: '0.9rem', mb: 0.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                             {expense.description}
                                         </Typography>
-                                        <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-                                            {new Date(expense.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} • Paid by {getPayerName(expense)}
-                                        </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                            <Typography sx={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
+                                                {new Date(expense.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                            </Typography>
+                                            <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: '#64748B' }} />
+                                            <Typography sx={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
+                                                {getPayerName(expense)}
+                                            </Typography>
+                                            <Box sx={{ 
+                                                px: 0.75, 
+                                                py: 0.2, 
+                                                borderRadius: '5px', 
+                                                bgcolor: `${getCategoryStyle(expense.category).color}25`,
+                                                border: `1px solid ${getCategoryStyle(expense.category).color}50`
+                                            }}>
+                                                <Typography sx={{ fontSize: '0.65rem', color: '#F1F5F9', fontWeight: 600 }}>
+                                                    {expense.category}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
                                     </Box>
 
                                     {/* Amount */}
-                                    <Box sx={{ textAlign: 'right' }}>
-                                        <Typography sx={{ fontWeight: 700, color: 'white', fontSize: '1rem' }}> {/* 1.1 -> 1.0 */}
+                                    <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+                                        <Typography sx={{ fontWeight: 700, color: '#F1F5F9', fontSize: '1rem', lineHeight: 1.2 }}>
                                             {formatCurrency(expense.amount)}
                                         </Typography>
-                                        <Typography sx={{ fontSize: '0.7rem', color: '#94A3B8' }}>
-                                            total
+                                        <Typography sx={{ fontSize: '0.65rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                            {expense.splits?.length || 0} split{expense.splits?.length !== 1 ? 's' : ''}
                                         </Typography>
                                     </Box>
                                 </Box>
@@ -996,7 +1022,17 @@ export default function GroupDetails() {
 
             {/* TAB 2: BALANCES */}
             {tabValue === 2 && (
-                <Box sx={{ px: { xs: 0, sm: 2 }, pb: 3 }}>
+                <Box 
+                    sx={{ 
+                        px: { xs: 0, sm: 2 }, 
+                        pb: 3,
+                        animation: 'fadeIn 0.3s ease-in-out',
+                        '@keyframes fadeIn': {
+                            from: { opacity: 0, transform: 'translateY(10px)' },
+                            to: { opacity: 1, transform: 'translateY(0)' }
+                        }
+                    }}
+                >
                     {/* Settlement Suggestions Section */}
                     {(() => {
                         console.log('Balances being passed to calculateSettlements:', balances);
@@ -1008,24 +1044,9 @@ export default function GroupDetails() {
                             return (
                                 <SettlementSuggestionsList
                                     settlements={settlements}
-                                    onSettle={async (settlement) => {
-                                        try {
-                                            console.log('Before settlement:', { balances, settlement });
-                                            await groupService.settleDebt(id, {
-                                                payerId: settlement.from.userId,
-                                                receiverId: settlement.to.userId,
-                                                amount: settlement.amount,
-                                                payerName: settlement.from.name,
-                                                receiverName: settlement.to.name
-                                            });
-                                            toast.success(`Settlement recorded: ${settlement.from.name} → ${settlement.to.name}`);
-                                            await fetchGroupDetails();
-                                            console.log('After settlement - new group:', group);
-                                            console.log('After settlement - new balances:', balances);
-                                        } catch (error) {
-                                            console.error('Settlement error:', error);
-                                            toast.error('Failed to record settlement');
-                                        }
+                                    onSettle={(settlement) => {
+                                        setSelectedSettlement(settlement);
+                                        setIsSettleDialogOpen(true);
                                     }}
                                     onSettleAll={async () => {
                                         try {
@@ -1103,12 +1124,14 @@ export default function GroupDetails() {
                 open={isSettleDialogOpen}
                 onClose={() => {
                     setIsSettleDialogOpen(false);
+                    setSelectedSettlement(null);
                     fetchGroupDetails();
                 }}
                 group={group}
                 currentUser={user}
                 balances={balances}
                 onSettled={fetchGroupDetails}
+                initialSettlement={selectedSettlement}
             />
 
             <AddGroupDialog
@@ -1152,6 +1175,7 @@ export default function GroupDetails() {
                 onClose={handleClosePreview}
                 maxWidth="lg"
                 fullWidth
+                disableScrollLock={false}
                 PaperProps={{
                     sx: {
                         height: '85vh',
@@ -1161,6 +1185,11 @@ export default function GroupDetails() {
                         overflow: 'hidden',
                         border: '1px solid rgba(255,255,255,0.1)',
                         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    }
+                }}
+                sx={{
+                    '& .MuiBackdrop-root': {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)'
                     }
                 }}
             >
@@ -1228,13 +1257,13 @@ export default function GroupDetails() {
                 </div>
 
                 {/* PDF Viewer (Toolbar Hidden) */}
-                <div style={{ flex: 1, height: '100%', background: '#1e293b' }}>
+                <div style={{ flex: 1, height: '100%', background: '#1e293b', overflow: 'auto' }}>
                     {pdfUrl && (
                         <iframe
-                            src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                            src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`}
                             width="100%"
                             height="100%"
-                            style={{ border: 'none' }}
+                            style={{ border: 'none', minHeight: '100%' }}
                             title="Trip Report Preview"
                         />
                     )}

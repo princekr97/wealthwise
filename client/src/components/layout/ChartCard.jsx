@@ -38,7 +38,15 @@ export default function ChartCard({
     const responsiveHeight = isMobile ? height * 0.85 : (isTablet ? height * 0.95 : height);
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <Box
+            sx={{
+                width: '100%',
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '16px',
+                overflow: 'hidden'
+            }}
+        >
             {/* Header - Simple and clean */}
             <Box
                 sx={{

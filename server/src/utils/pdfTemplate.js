@@ -48,49 +48,18 @@ const escape = (text) => {
 };
 
 /**
- * Generate Avatar as Base64 SVG (No External API)
- * Creates inline SVG avatars that work in PDFs without network requests
+ * Generate Avatar URL using DiceBear API - unique per user
  * @param {string} name - User name
- * @returns {string} Data URI with SVG avatar
+ * @param {string} userId - User ID for uniqueness
+ * @returns {string} Avatar URL
  */
-const getAvatarUrl = (name) => {
-  const safeName = name || 'Unknown';
-  
-  // Generate initials (first letter of each word, max 2)
-  const initials = safeName
-    .trim()
-    .split(' ')
-    .filter(word => word.length > 0)
-    .map(word => word[0].toUpperCase())
-    .slice(0, 2)
-    .join('');
-
-  // Generate consistent color based on name hash
-  const hash = safeName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const hue = hash % 360;
-  const bgColor = `hsl(${hue}, 65%, 50%)`;
-  const textColor = '#ffffff';
-
-  // Create SVG with initials
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-      <rect width="100" height="100" fill="${bgColor}" rx="50"/>
-      <text 
-        x="50" 
-        y="50" 
-        font-family="Arial, sans-serif" 
-        font-size="40" 
-        font-weight="700" 
-        fill="${textColor}" 
-        text-anchor="middle" 
-        dominant-baseline="central"
-      >${initials || '?'}</text>
-    </svg>
-  `.trim();
-
-  // Convert to base64 data URI
-  const base64 = Buffer.from(svg).toString('base64');
-  return `data:image/svg+xml;base64,${base64}`;
+const getAvatarUrl = (name, userId = '') => {
+  const seed = userId || name || 'Unknown';
+  const safeName = encodeURIComponent(seed);
+  const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const colors = ['b6e3f4', 'c0aede', 'd1d4f9', 'ffd5dc', 'ffdfbf', 'feca57', 'ff6b6b', 'ee5a6f', '4ecdc4', '45b7d1', '96ceb4', 'dfe6e9', 'fab1a0', 'fdcb6e', '6c5ce7', 'a29bfe', 'fd79a8', '55efc4', '81ecec'];
+  const bgColor = colors[hash % colors.length];
+  return `https://api.dicebear.com/7.x/notionists/svg?seed=${safeName}&backgroundColor=${bgColor}`;
 };
 
 /**
@@ -198,7 +167,7 @@ const renderPaymentDetails = (group, balances) => {
     
     return `
       <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:10px 14px; display:flex; align-items:center; gap:10px;">
-        <img src="${getAvatarUrl(m.name)}" width="28" height="28" style="border-radius:50%;">
+        <img src="${getAvatarUrl(m.name, getMemberId(m))}" width="28" height="28" style="border-radius:50%;">
         <div>
           <div style="font-size:11px; font-weight:700; color:#166534;">Pay to ${escape(m.name)}</div>
           <div style="font-size:10px; color:#15803d;">${escape(phone)}</div>
@@ -264,7 +233,7 @@ const renderParticipants = (group, balances, expenses) => {
     return `
       <div style="background:${boxColor}; border:1px solid ${borderColor}; border-radius:12px; padding:12px; display:flex; align-items:flex-start; gap:10px;">
         <div style="flex-shrink:0; margin-top: 4px;">
-          <img src="${getAvatarUrl(m.name)}" width="36" height="36" style="border-radius:50%; display:block">
+          <img src="${getAvatarUrl(m.name, memberId)}" width="36" height="36" style="border-radius:50%; display:block">
         </div>
         <div style="flex:1;">
           <div style="font-weight:700; font-size:12px; color:#0f172a; margin-bottom:2px">${escape(m.name)}</div>
@@ -300,15 +269,18 @@ const renderSettlements = (instructions, group) => {
   if (!instructions.length) return '';
 
   const cards = instructions.map(inst => {
-    // Lookup payee for phone
+    // Lookup members for userId
+    const fromMember = group.members.find(m => m.name === inst.from.name) || inst.from;
     const toMember = group.members.find(m => m.name === inst.to.name) || inst.to;
     const phone = toMember.phoneNumber || toMember.phone || toMember.mobile || '';
+    const fromId = inst.from.userId || getMemberId(fromMember);
+    const toId = inst.to.userId || getMemberId(toMember);
 
     return `
       <div class="settlement-card">
         <!-- Payer -->
         <div class="settlement-user">
-          <img class="settlement-avatar" src="${getAvatarUrl(inst.from.name)}" width="36" height="36">
+          <img class="settlement-avatar" src="${getAvatarUrl(inst.from.name, fromId)}" width="36" height="36">
           <div class="settlement-name">${escape(inst.from.name)}</div>
         </div>
         
@@ -326,7 +298,7 @@ const renderSettlements = (instructions, group) => {
         
         <!-- Payee -->
         <div class="settlement-user">
-          <img class="settlement-avatar" src="${getAvatarUrl(inst.to.name)}" width="36" height="36">
+          <img class="settlement-avatar" src="${getAvatarUrl(inst.to.name, toId)}" width="36" height="36">
           <div class="settlement-name">${escape(inst.to.name)}</div>
         </div>
       </div>

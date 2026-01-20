@@ -46,12 +46,10 @@ export default function ConfirmDialog({
       maxWidth="xs"
       PaperProps={{
         sx: {
-          background: 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), var(--active-gradient)',
-          backgroundAttachment: 'fixed',
-          border: '1px solid rgba(255,255,255,0.15)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderRadius: 3
+          bgcolor: '#1E293B',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 3,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
         }
       }}
     >
@@ -59,10 +57,11 @@ export default function ConfirmDialog({
         sx={{
           fontWeight: 700,
           color: colors.title,
-          fontSize: '1.25rem',
+          fontSize: '1.1rem',
           display: 'flex',
           alignItems: 'center',
-          gap: 1
+          gap: 1,
+          pb: 1
         }}
       >
         <IconButton
@@ -71,29 +70,46 @@ export default function ConfirmDialog({
           onClick={onClose}
           aria-label="close"
           size="small"
-          sx={{ mr: 1, color: '#94A3B8' }}
+          sx={{
+            mr: 1,
+            color: '#94A3B8',
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' }
+          }}
         >
           <CloseIcon fontSize="small" />
         </IconButton>
         {title}
       </DialogTitle>
-      <DialogContent sx={{ pt: 1, pb: 2 }}>
-        <p style={{ color: '#E2E8F0', marginTop: '8px', marginBottom: 0 }}>
+      <DialogContent sx={{ pt: 0, pb: 2 }}>
+        <p style={{ color: '#CBD5E1', margin: 0, fontSize: '0.9rem', lineHeight: 1.6 }}>
           {message}
         </p>
       </DialogContent>
-      <DialogActions sx={{ p: 2, gap: 1 }}>
-
+      <DialogActions sx={{ p: 2, pt: 1.5, gap: 1.5 }}>
+        <Button
+          onClick={onClose}
+          variant="outlined"
+          sx={{
+            borderColor: 'rgba(255,255,255,0.2)',
+            color: '#94A3B8',
+            '&:hover': {
+              borderColor: 'rgba(255,255,255,0.3)',
+              bgcolor: 'rgba(255,255,255,0.05)'
+            }
+          }}
+        >
+          {cancelText}
+        </Button>
         <Button
           onClick={handleConfirm}
           variant="contained"
           disabled={loading}
-          loading={loading}
           sx={{
-            background: colors.button,
+            bgcolor: colors.button,
             color: '#FFF',
-            '&:hover': { background: colors.button, opacity: 0.9 },
-            '&:disabled': { background: '#64748B', color: '#94A3B8' }
+            fontWeight: 600,
+            '&:hover': { bgcolor: colors.button, opacity: 0.85 },
+            '&:disabled': { bgcolor: '#475569', color: '#94A3B8' }
           }}
         >
           {loading ? 'Processing...' : confirmText}

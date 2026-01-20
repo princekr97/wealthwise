@@ -120,42 +120,37 @@ const CATEGORY_ICONS = {
 // Styled Components to match User's HTML/CSS
 const StyledDialog = styled(Dialog)(({ theme }) => ({
     '& .MuiDialog-paper': {
-        borderRadius: '28px',
-        background: 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), var(--active-gradient)',
-        backgroundAttachment: 'fixed',
-        boxShadow: '0 25px 80px rgba(0, 0, 0, 0.6)',
-        overflow: 'hidden',
+        borderRadius: '16px',
+        bgcolor: '#1E293B',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
         maxWidth: '460px',
         width: '100%',
-        margin: 16,
-        border: '1px solid rgba(255, 255, 255, 0.08)'
+        margin: 16
     }
 }));
 
 const HeaderBox = styled(Box)({
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', // Matching dark theme
-    padding: '1.5rem 1.75rem',
-    position: 'relative',
-    color: 'white',
+    bgcolor: '#1E293B',
+    padding: '1.25rem 1.5rem',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+    justifyContent: 'space-between'
 });
 
 const CloseButton = styled(IconButton)({
-    width: '32px', // Smaller
+    width: '32px',
     height: '32px',
-    background: 'rgba(255, 255, 255, 0.15)',
+    bgcolor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: '50%',
-    color: 'white',
-    transition: 'all 0.3s ease',
+    color: '#94A3B8',
     '&:hover': {
-        background: 'rgba(255, 255, 255, 0.25)',
-        transform: 'rotate(90deg)'
+        bgcolor: 'rgba(255, 255, 255, 0.1)',
+        color: 'white'
     },
     '& svg': {
-        fontSize: '1.2rem'
+        fontSize: '1.1rem'
     }
 });
 
@@ -510,31 +505,28 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
             TransitionComponent={Fade}
             transitionDuration={300}
         >
-            <HeaderBox sx={{ position: 'relative', justifyContent: 'center', textAlign: 'center', py: 2.5 }}>
+            <HeaderBox>
                 <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.15rem', letterSpacing: '0.02em' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: 'white' }}>
                         Add New Expense
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.75rem', mt: 0.5, color: '#94a3b8' }}>
+                    <Typography variant="body2" sx={{ fontSize: '0.75rem', mt: 0.3, color: '#94a3b8' }}>
                         Enter details to split costs
                     </Typography>
                 </Box>
                 <IconButton
                     onClick={onClose}
                     sx={{
-                        position: 'absolute',
-                        right: 12,
-                        top: 12,
-                        color: '#64748b',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        '&:hover': { color: 'white', background: 'rgba(255,255,255,0.1)' }
+                        bgcolor: 'rgba(255, 255, 255, 0.05)',
+                        color: '#94A3B8',
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }
                     }}
                 >
                     <CloseIcon sx={{ fontSize: '1.1rem' }} />
                 </IconButton>
             </HeaderBox>
 
-            <DialogContent sx={{ p: '1.25rem !important' }}>
+            <DialogContent sx={{ p: '1.5rem !important', bgcolor: '#1E293B' }}>
                 <Stack spacing={2.5}>
                     {/* Description */}
                     <Box>
@@ -724,11 +716,12 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                         <Box sx={{ mb: 2 }}>
                             <FormLabel sx={{ fontSize: '0.75rem', mb: 0.5 }}>Split Method</FormLabel>
                             <Box sx={{
-                                background: '#f1f5f9',
+                                background: 'rgba(255, 255, 255, 0.05)',
                                 borderRadius: '12px',
-                                p: 0.3,
+                                p: 0.4,
                                 display: 'flex',
-                                width: '100%'
+                                width: '100%',
+                                position: 'relative'
                             }}>
                                 {['equal', 'custom'].map((type) => (
                                     <Button
@@ -747,16 +740,16 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                             flex: 1,
                                             borderRadius: '10px',
                                             textTransform: 'none',
-                                            fontSize: '0.75rem',
+                                            fontSize: '0.8rem',
                                             fontWeight: 600,
-                                            py: 0.5,
+                                            py: 0.7,
                                             minHeight: 0,
-                                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                            color: splitType === type ? 'white' : '#64748b',
-                                            background: splitType === type ? '#4f46e5' : 'transparent',
-                                            boxShadow: splitType === type ? '0 1px 3px rgba(79, 70, 229, 0.2)' : 'none',
+                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            color: splitType === type ? 'white' : '#94a3b8',
+                                            background: splitType === type ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'transparent',
+                                            boxShadow: splitType === type ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none',
                                             '&:hover': {
-                                                background: splitType === type ? '#4338ca' : 'rgba(0,0,0,0.02)'
+                                                background: splitType === type ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'rgba(255,255,255,0.03)'
                                             }
                                         }}
                                     >
@@ -959,14 +952,14 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             fullWidth
                             onClick={onClose}
                             sx={{
-                                py: 0.8,
+                                py: 1,
                                 borderRadius: '10px',
-                                background: 'rgba(255, 255, 255, 0.05)',
+                                bgcolor: 'rgba(255, 255, 255, 0.05)',
                                 color: '#cbd5e1',
                                 fontWeight: 600,
-                                fontSize: '0.85rem',
-                                '&:hover': { background: 'rgba(255, 255, 255, 0.1)' },
-                                textTransform: 'none'
+                                fontSize: '0.9rem',
+                                textTransform: 'none',
+                                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' }
                             }}
                         >
                             Cancel
@@ -976,26 +969,22 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             disabled={loading}
                             onClick={handleSubmit(onSubmit)}
                             sx={{
-                                py: 0.8,
+                                py: 1,
                                 borderRadius: '10px',
                                 background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                                 color: 'white',
                                 fontWeight: 600,
-                                fontSize: '0.85rem',
+                                fontSize: '0.75rem',
+                                textTransform: 'none',
                                 boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)',
                                 '&:hover': {
                                     boxShadow: '0 6px 16px rgba(37, 99, 235, 0.3)',
                                     transform: 'translateY(-1px)'
                                 },
                                 '&:disabled': {
-                                    background: '#1e293b',
-                                    color: '#475569',
-                                    boxShadow: 'none',
-                                    cursor: 'not-allowed'
-                                },
-                                textTransform: 'none',
-                                transition: 'all 0.2s ease',
-                                fontSize: '0.85rem'
+                                    bgcolor: '#1e293b',
+                                    color: '#475569'
+                                }
                             }}
                         >
                             {loading ? (initialExpense ? 'Updating...' : 'Adding...') : (initialExpense ? 'Update Expense' : 'Add Expense')}
