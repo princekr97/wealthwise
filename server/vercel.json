@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "npm install && echo 'CACHE_BUST_V1'",
-  "installCommand": "npm install",
   "env": {
     "NODE_ENV": "production",
     "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
