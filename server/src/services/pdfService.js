@@ -28,8 +28,20 @@ export class PDFService {
       if (!this.browserInstance || !this.browserInstance.isConnected()) {
         const isDev = process.env.NODE_ENV === 'development' || !process.env.VERCEL;
         
+        // OPTION 1: Connect to Remote Browser (Best for Vercel/Serverless)
+        // Solves 50MB limit and version mismatch issues completely
+        if (process.env.BROWSER_WS_ENDPOINT) {
+          console.log('[PDF Service] Connecting to Remote Browser...');
+          this.browserInstance = await puppeteer.connect({
+            browserWSEndpoint: process.env.BROWSER_WS_ENDPOINT,
+            ignoreHTTPSErrors: true
+          });
+          console.log('[PDF Service] ✓ Connected to Remote Browser successfully');
+          return this.browserInstance;
+        }
+
+        // OPTION 2: Local/Bundled Chromium (Fallback)
         let options;
-        
         if (isDev) {
           // Local development
           options = {
@@ -42,34 +54,14 @@ export class PDFService {
           // Production (Vercel) - Use @sparticuz/chromium
           console.log('[PDF Service] PROD mode - Configuring Chromium v110...');
           
-          // v110 stable needs graphics mode disabled explicitly
           try {
              if (chromiumPkg.setGraphicsMode) {
                await chromiumPkg.setGraphicsMode(false);
              }
-          } catch (e) {
-             console.log('[PDF Service] Note: setGraphicsMode not needed/supported');
-          }
+          } catch (e) {}
           
-          let executablePath;
-          try {
-            if (process.env.CHROMIUM_EXECUTABLE_PATH) {
-              executablePath = process.env.CHROMIUM_EXECUTABLE_PATH;
-            } else {
-              // Standard resolution for v110
-              executablePath = await chromiumPkg.executablePath();
-            }
-            
-            console.log('[PDF Service] ✓ Chromium path resolved:', executablePath);
-          } catch (pathError) {
-            console.error('[PDF Service] ✗ Chromium path resolution failed:', pathError.message);
-            throw new Error(`Chromium setup failed: ${pathError.message}`);
-          }
-          
-          // Validate path
-          if (!executablePath) {
-            throw new Error('Chromium executablePath is empty');
-          }
+          let executablePath = await chromiumPkg.executablePath();
+          console.log('[PDF Service] ✓ Chromium path resolved:', executablePath);
           
           options = {
             args: chromiumPkg.args,
@@ -78,12 +70,6 @@ export class PDFService {
             headless: chromiumPkg.headless,
             ignoreHTTPSErrors: true,
           };
-          
-          console.log('[PDF Service] Launch config:', {
-            headless: options.headless,
-            argsCount: options.args.length,
-            hasExecPath: !!options.executablePath,
-          });
         }
 
         console.log(`[PDF Service] Launching browser...`);
@@ -94,7 +80,6 @@ export class PDFService {
     } catch (error) {
       console.error('[PDF Service] ✗ Browser launch FAILED');
       console.error('[PDF Service] Error:', error.message);
-      console.error('[PDF Service] Stack:', error.stack);
       throw new Error(`Failed to launch browser: ${error.message}`);
     }
   }
