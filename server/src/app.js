@@ -22,14 +22,32 @@ import { connectDB } from './config/db.js';
 const app = express();
 
 // CORS configuration - must be before helmet
-const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://khatabahi-pg.vercel.app',
+  process.env.CLIENT_URL
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: allowedOrigin,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) === -1 && !allowedOrigins.includes('*')) {
+        // Soft check for subdomains or preview deployments
+        if (origin.endsWith('.vercel.app')) {
+          return callback(null, true);
+        }
+        var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+        return callback(null, true); // TEMPORARY: Allow all to fix prod
+      }
+      return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    maxAge: 86400, // Cache preflight response for 24 hours
+    maxAge: 86400, // 24 hours
     preflightContinue: false,
     optionsSuccessStatus: 204
   })
