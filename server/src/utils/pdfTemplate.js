@@ -468,20 +468,29 @@ export const generateTripReportHTML = (data) => {
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trip Report - ${escape(group.name)}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <style>
     /* RESET & BASE */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       padding: 0;
       color: #1e293b;
       line-height: 1.4;
-      font-size: 13px; 
+      font-size: 12px;
+      width: 100%;
+      background: #fff;
     }
     
     /* LAYOUT UTILS */
-    .container { max-width: 800px; margin: 0 auto; padding: 24px; }
+    .container { 
+      width: 100%;
+      max-width: 210mm; /* Force A4 Width */
+      margin: 0 auto; 
+      padding: 20px; 
+    }
     
     /* HEADER STYLES */
     .header-banner {
@@ -489,7 +498,7 @@ export const generateTripReportHTML = (data) => {
       background-position: center;
       background-repeat: no-repeat;
       color: white;
-      padding: 10px 24px 30px;
+      padding: 20px;
       text-align: center;
       position: relative;
       overflow: hidden;
@@ -497,23 +506,21 @@ export const generateTripReportHTML = (data) => {
     .header-banner::before {
       content: '';
       position: absolute;
-      bottom: 0; left: 0; right: 0; height: 40%;
-      background: linear-gradient(to top, rgba(0,0,0,0.3), transparent);
+      bottom: 0; left: 0; right: 0; height: 50%;
+      background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
     }
     .header-banner h1 {
-      font-size: 36px;
+      font-size: 32px;
       margin: 0 0 10px 0;
-      font-weight: 900;
+      font-weight: 800;
       position: relative;
       z-index: 1;
-      letter-spacing: 3px;
+      letter-spacing: 1px;
       text-transform: uppercase;
-      background: linear-gradient(to bottom, #ffffff 0%, #fcd34d 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+      color: #ffffff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3); /* Solid text for copying */
       display: inline-block;
-      padding-bottom: 12px;
+      padding-bottom: 10px;
       border-bottom: 2px solid rgba(255, 255, 255, 0.4);
     }
     .header-banner .subtitle {
