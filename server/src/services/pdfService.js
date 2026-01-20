@@ -50,9 +50,19 @@ export class PDFService {
             executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
           };
           console.log('[PDF Service] DEV mode - Using local Chrome');
+        // OPTION 3: Docker Container (Render/Fly.io)
+        // Best for full backend hosting
+        } else if (process.env.RENDER || process.env.DOCKER_CONTAINER) {
+           console.log('[PDF Service] DOCKER mode - Using system Chrome...');
+           options = {
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+            headless: true,
+            executablePath: '/usr/bin/google-chrome-stable', // Standard in puppeteer images
+            ignoreHTTPSErrors: true
+          };
         } else {
           // Production (Vercel) - Use @sparticuz/chromium
-          console.log('[PDF Service] PROD mode - Configuring Chromium v110...');
+          console.log('[PDF Service] VERCEL mode - Configuring Chromium v110...');
           
           try {
              if (chromiumPkg.setGraphicsMode) {
