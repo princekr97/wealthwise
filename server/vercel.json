@@ -6,7 +6,7 @@
     "FONTCONFIG_PATH": "/tmp"
   },
   "functions": {
-    "api/index.js": {
+    "api/handler.js": {
       "memory": 3008,
       "maxDuration": 60
     }
@@ -14,7 +14,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "api/index.js"
+      "dest": "api/handler.js"
     }
   ]
 }
