@@ -728,7 +728,10 @@ export default function Expenses() {
             <Controller
               name="amount"
               control={control}
-              rules={{ required: 'Amount is required' }}
+              rules={{
+                required: 'Amount is required',
+                min: { value: 0.01, message: 'Amount must be greater than 0' }
+              }}
               render={({ field, fieldState: { error } }) => (
                 <Box>
                   <Typography
@@ -783,7 +786,8 @@ export default function Expenses() {
             <Controller
               name="category"
               control={control}
-              render={({ field }) => (
+              rules={{ required: 'Category is required' }}
+              render={({ field, fieldState: { error } }) => (
                 <Box>
                   <Typography
                     component="label"
@@ -797,9 +801,9 @@ export default function Expenses() {
                       display: 'block'
                     }}
                   >
-                    Category
+                    Category *
                   </Typography>
-                  <FormControl fullWidth>
+                  <FormControl fullWidth error={!!error}>
                     <Select
                       {...field}
                       sx={{
@@ -829,6 +833,7 @@ export default function Expenses() {
                         </MenuItem>
                       ))}
                     </Select>
+                    {error && <FormHelperText>{error.message}</FormHelperText>}
                   </FormControl>
                 </Box>
               )}
@@ -838,7 +843,8 @@ export default function Expenses() {
             <Controller
               name="date"
               control={control}
-              render={({ field }) => (
+              rules={{ required: 'Date is required' }}
+              render={({ field, fieldState: { error } }) => (
                 <Box>
                   <Typography
                     component="label"
@@ -852,12 +858,14 @@ export default function Expenses() {
                       display: 'block'
                     }}
                   >
-                    Date
+                    Date *
                   </Typography>
                   <TextField
                     {...field}
                     type="date"
                     fullWidth
+                    error={!!error}
+                    helperText={error?.message}
                     InputLabelProps={{ shrink: true }}
                     sx={{
                       '& .MuiInputBase-root': {

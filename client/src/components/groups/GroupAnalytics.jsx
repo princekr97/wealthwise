@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, useTheme, useMediaQuery, Tooltip as MuiTooltip } from '@mui/material';
+import { Box, Typography, useTheme, useMediaQuery, Tooltip as MuiTooltip, alpha } from '@mui/material';
 import {
     PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
     BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList
@@ -49,6 +49,91 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
+// Creative Metric Card Component
+const MetricCard = ({ title, value, icon, theme, color, children }) => (
+    <Box
+        sx={{
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: '24px',
+            p: 3,
+            height: '100%',
+            background: theme.palette.mode === 'dark'
+                ? `linear-gradient(135deg, ${alpha(color, 0.1)} 0%, ${alpha(color, 0.02)} 100%)`
+                : `linear-gradient(135deg, #FFFFFF 0%, ${alpha(color, 0.05)} 100%)`,
+            backdropFilter: 'blur(20px)',
+            border: `1px solid ${alpha(color, 0.15)}`,
+            boxShadow: theme.palette.mode === 'dark' ? 'none' : `0 10px 30px -10px ${alpha(color, 0.15)}`,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: theme.palette.mode === 'dark'
+                    ? `0 10px 30px -10px ${alpha(color, 0.3)}`
+                    : `0 20px 40px -12px ${alpha(color, 0.2)}`,
+                border: `1px solid ${alpha(color, 0.3)}`,
+            }
+        }}
+    >
+        {/* Decorative Background Glow */}
+        <Box sx={{
+            position: 'absolute',
+            top: -40,
+            right: -40,
+            width: 140,
+            height: 140,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${alpha(color, 0.2)} 0%, transparent 70%)`,
+            zIndex: 0,
+            opacity: 0.6
+        }} />
+
+        <Box sx={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <Box>
+                {/* Icon */}
+                <Box sx={{
+                    p: 1.25,
+                    borderRadius: '14px',
+                    bgcolor: alpha(color, 0.1),
+                    color: color,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mb: 1.5
+                }}>
+                    {React.cloneElement(icon, { width: 24, height: 24, strokeWidth: 2.5 })}
+                </Box>
+
+                {/* Title */}
+                <Typography sx={{
+                    color: theme.palette.text.secondary,
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase',
+                    mb: 0.5
+                }}>
+                    {title}
+                </Typography>
+            </Box>
+
+            {/* Content: Value or Custom Children */}
+            <Box sx={{ width: '100%' }}>
+                {children ? children : (
+                    <Typography sx={{
+                        fontSize: { xs: '1.8rem', md: '2.2rem' },
+                        fontWeight: 800,
+                        color: theme.palette.text.primary,
+                        letterSpacing: '-1px',
+                        lineHeight: 1
+                    }}>
+                        {value}
+                    </Typography>
+                )}
+            </Box>
+        </Box>
+    </Box>
+);
+
 // Wrap component in React.memo for performance (prevent unnecessary re-renders)
 const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
     const theme = useTheme();
@@ -57,6 +142,8 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
     const stats = React.useMemo(() => {
         let totalGroupSpend = 0;
         let myTotalSpend = 0;
+        let mySettlementPaid = 0;
+        let mySettlementReceived = 0;
         let myNetBalance = 0;
 
         if (!currentUser) return { totalGroupSpend: 0, myTotalSpend: 0, myNetBalance: 0 };
@@ -71,10 +158,12 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
         const currentUserId = getSafeId(currentUser);
 
         expenses.forEach(exp => {
-            if (exp.category === 'Settlement') return;
+            const isSettlement = exp.category === 'Settlement';
 
-            // Total Spend
-            totalGroupSpend += exp.amount;
+            // Total Spend (Exclude settlements)
+            if (!isSettlement) {
+                totalGroupSpend += exp.amount;
+            }
 
             // My Spend (Paid By Me)
             const payerId = getSafeId(exp.paidBy);
@@ -86,11 +175,15 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                 payerName.trim().toLowerCase() === currentUser.name.trim().toLowerCase();
 
             if (isIdMatch || isNameMatch) {
-                myTotalSpend += exp.amount;
-                myNetBalance += exp.amount; // + Credit (Paid)
+                if (isSettlement) {
+                    mySettlementPaid += exp.amount;
+                } else {
+                    myTotalSpend += exp.amount;
+                    myNetBalance += exp.amount; // + Credit (Paid)
+                }
             }
 
-            // My consumption (Split)
+            // My consumption (Split) - Exclude settlements from Net Balance logic
             if (exp.splits) {
                 exp.splits.forEach(split => {
                     const splitUserId = getSafeId(split.user);
@@ -101,13 +194,17 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                         splitUserName.trim().toLowerCase() === currentUser.name.trim().toLowerCase();
 
                     if (isSplitIdMatch || isSplitNameMatch) {
-                        myNetBalance -= split.amount; // - Debit (Consumed)
+                        if (isSettlement) {
+                            mySettlementReceived += split.amount;
+                        } else {
+                            myNetBalance -= split.amount; // - Debit (Consumed)
+                        }
                     }
                 });
             }
         });
 
-        return { totalGroupSpend, myTotalSpend, myNetBalance };
+        return { totalGroupSpend, myTotalSpend, mySettlementPaid, mySettlementReceived, myNetBalance };
     }, [expenses, currentUser]);
     const categoryData = React.useMemo(() => {
         const map = {};
@@ -156,136 +253,108 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
 
     return (
         <Box sx={{ mt: 1 }}>
-            {/* Minimalist Glass Metric Cards */}
+            {/* Minimalist Glass Metric Cards - Unified 2x2 Grid */}
             <Box
                 sx={{
                     display: 'grid',
-                    gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+                    gridTemplateColumns: 'repeat(2, 1fr)',
                     gap: 3,
+                    gridAutoRows: '1fr', // Ensure all cards have the same height
                     mb: 5
                 }}
             >
-                {/* Total Group Spend */}
-                <Box
-                    sx={{
-                        background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF',
-                        backdropFilter: theme.palette.mode === 'dark' ? 'blur(10px)' : 'none',
-                        border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                        borderRadius: '20px',
-                        p: 3,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.3s',
-                        boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                        '&:hover': {
-                            background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
-                            transform: 'translateY(-4px)',
-                            boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                        }
-                    }}
-                >
-                    <Box sx={{ mb: 1.5 }}>
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="3" y="7" width="18" height="12" rx="2" stroke="#3b82f6" strokeWidth="2" fill="rgba(59, 130, 246, 0.1)" />
-                            <circle cx="12" cy="13" r="3" stroke="#3b82f6" strokeWidth="2" fill="rgba(59, 130, 246, 0.2)" />
-                            <path d="M3 11h18" stroke="#3b82f6" strokeWidth="2" />
+                {/* 1. Total Spending */}
+                <MetricCard
+                    title="Total Spending"
+                    value={formatCurrency(stats.totalGroupSpend)}
+                    theme={theme}
+                    color="#3b82f6"
+                    icon={
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="7" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+                            <circle cx="12" cy="13" r="3" stroke="currentColor" strokeWidth="2" />
+                            <path d="M3 11h18" stroke="currentColor" strokeWidth="2" />
                         </svg>
-                    </Box>
-                    <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 1, textAlign: 'center' }}>
-                        Total Spending
-                    </Typography>
-                    <Typography sx={{ fontSize: { xs: '1.4rem', sm: '1.75rem' }, fontWeight: 700, color: theme.palette.text.primary, letterSpacing: '-0.5px', textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>
-                        {formatCurrency(stats.totalGroupSpend)}
-                    </Typography>
-                </Box>
+                    }
+                />
 
-                {/* You Paid */}
-                <Box
-                    sx={{
-                        background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF',
-                        backdropFilter: theme.palette.mode === 'dark' ? 'blur(10px)' : 'none',
-                        border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                        borderRadius: '20px',
-                        p: 3,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.3s',
-                        boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                        '&:hover': {
-                            background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
-                            transform: 'translateY(-4px)',
-                            boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                        }
-                    }}
-                >
-                    <Box sx={{ mb: 1.5 }}>
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="3" y="6" width="18" height="14" rx="2" stroke="#10b981" strokeWidth="2" fill="rgba(16, 185, 129, 0.1)" />
-                            <path d="M3 10h18M7 14h2M7 17h4" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
+                {/* 2. Expenses Paid */}
+                <MetricCard
+                    title="Expenses Paid"
+                    value={formatCurrency(stats.myTotalSpend)}
+                    theme={theme}
+                    color="#10b981"
+                    icon={
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="6" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
+                            <path d="M3 10h18M7 14h2M7 17h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                         </svg>
-                    </Box>
-                    <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 1, textAlign: 'center' }}>
-                        You Paid
-                    </Typography>
-                    <Typography sx={{ fontSize: { xs: '1.4rem', sm: '1.75rem' }, fontWeight: 700, color: theme.palette.text.primary, letterSpacing: '-0.5px', textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>
-                        {formatCurrency(stats.myTotalSpend)}
-                    </Typography>
-                </Box>
+                    }
+                />
 
-                {/* Average Spend Per Person */}
-                <Box
-                    sx={{
-                        gridColumn: { xs: '1 / -1', md: 'auto' },
-                        background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF',
-                        backdropFilter: theme.palette.mode === 'dark' ? 'blur(10px)' : 'none',
-                        border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                        borderRadius: '20px',
-                        p: 3,
+                {/* 3. Settlements */}
+                <MetricCard
+                    title="Settlements"
+                    theme={theme}
+                    color="#8b5cf6"
+                    icon={
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M17 9V7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7V9M7 9H17M7 9H5C3.89543 9 3 9.89543 3 11V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V11C21 9.89543 20.1046 9 19 9H17M12 14V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                    }
+                >
+                    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 0.5, mt: 0 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', minWidth: 0 }}>
+                            <Typography noWrap sx={{ fontSize: '0.7rem', fontWeight: 600, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.5px', mr: 1 }}>
+                                Paid
+                            </Typography>
+                            <Typography noWrap sx={{ fontSize: { xs: '0.95rem', sm: '1.2rem' }, fontWeight: 700, color: theme.palette.text.primary }}>
+                                {formatCurrency(stats.mySettlementPaid)}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ width: '100%', height: '1px', bgcolor: alpha('#8b5cf6', 0.15), my: 0.5 }} />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', minWidth: 0 }}>
+                            <Typography noWrap sx={{ fontSize: '0.7rem', fontWeight: 600, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.5px', mr: 1 }}>
+                                Received
+                            </Typography>
+                            <Typography noWrap sx={{ fontSize: { xs: '0.95rem', sm: '1.2rem' }, fontWeight: 700, color: theme.palette.text.primary }}>
+                                {formatCurrency(stats.mySettlementReceived)}
+                            </Typography>
+                        </Box>
+                    </Box>
+                </MetricCard>
+
+                {/* 4. Average Spend */}
+                <MetricCard
+                    title="Average Spend"
+                    theme={theme}
+                    color="#f59e0b"
+                    icon={
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="9" cy="7" r="3" stroke="currentColor" strokeWidth="2" />
+                            <circle cx="15" cy="7" r="3" stroke="currentColor" strokeWidth="2" />
+                            <path d="M3 20c0-3.5 2.5-6 6-6s6 2.5 6 6M15 20c0-3.5 2.5-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                    }
+                >
+                    <Typography sx={{
+                        fontSize: { xs: '1.8rem', md: '2.2rem' },
+                        fontWeight: 800,
+                        color: theme.palette.text.primary,
+                        letterSpacing: '-1px',
+                        lineHeight: 1,
                         display: 'flex',
                         flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.3s',
-                        boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                        '&:hover': {
-                            background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
-                            transform: 'translateY(-4px)',
-                            boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                        }
-                    }}
-                >
-                    <Box sx={{ mb: 1.5 }}>
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="9" cy="7" r="3" stroke="#f59e0b" strokeWidth="2" fill="rgba(245, 158, 11, 0.1)" />
-                            <circle cx="15" cy="7" r="3" stroke="#f59e0b" strokeWidth="2" fill="rgba(245, 158, 11, 0.1)" />
-                            <path d="M3 20c0-3.5 2.5-6 6-6s6 2.5 6 6M15 20c0-3.5 2.5-6 6-6" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
-                    </Box>
-                    <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 1, textAlign: 'center' }}>
-                        Average Spend
-                    </Typography>
-                    <Typography sx={{ fontSize: { xs: '1.4rem', sm: '1.75rem' }, fontWeight: 700, color: theme.palette.text.primary, letterSpacing: '-0.5px', textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>
+                        alignItems: 'flex-start'
+                    }}>
                         {formatCurrency(stats.totalGroupSpend / (members.length || 1))}
+                        <Typography component="span" sx={{ fontSize: '0.75rem', color: alpha(theme.palette.text.primary, 0.5), fontWeight: 600, mt: 0.5, letterSpacing: '1px', textTransform: 'uppercase' }}>
+                            Per Person
+                        </Typography>
                     </Typography>
-                    <Box
-                        sx={{
-                            mt: 1.5,
-                            px: 1.5, py: 0.5,
-                            borderRadius: '10px',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            bgcolor: 'rgba(129, 140, 248, 0.1)',
-                            color: '#818cf8'
-                        }}
-                    >
-                        Per Person
-                    </Box>
-                </Box>
+                </MetricCard>
             </Box>
+
 
             {/* Charts Grid */}
             <ChartGrid>
@@ -296,6 +365,7 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                     collapsible={true}
                     defaultExpanded={true}
                     height={380}
+                    color="#ec4899" // Pink - Unique
                     footer={
                         <CategoryLegend
                             data={categoryData}
@@ -333,6 +403,7 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                     collapsible={true}
                     height={Math.max(200, memberSpendingData.length * 50)}
                     defaultExpanded={true}
+                    color="#06b6d4" // Cyan - Unique
                 >
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
@@ -366,7 +437,7 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                                     dataKey="value"
                                     position="right"
                                     formatter={(v) => formatCurrency(v)}
-                                    style={{ fill: theme.palette.text.primary, fontSize: '11px', fontWeight: 600 }}
+                                    style={{ fill: theme.palette.text.primary, fontSize: '11px', fontWeight: 800 }}
                                 />
                             </Bar>
                         </BarChart>

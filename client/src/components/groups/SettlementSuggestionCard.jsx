@@ -213,7 +213,7 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                             mb: 0.3
                         }}
                     >
-                        ₹{amount.toFixed(0)}
+                        {formatCurrency(amount)}
                     </Typography>
                     <Typography
                         variant="caption"
@@ -288,8 +288,8 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                     startIcon={
                         !loading && (
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/>
-                                <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" />
+                                <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                         )
                     }
@@ -382,8 +382,8 @@ export function SettlementSuggestionsList({ settlements, onSettle, onSettleAll, 
                         }}>
                             {/* Sparkles Icon - Represents Success/Celebration */}
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                <path d="M19 3L19.5 5.5L22 6L19.5 6.5L19 9L18.5 6.5L16 6L18.5 5.5L19 3Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M19 3L19.5 5.5L22 6L19.5 6.5L19 9L18.5 6.5L16 6L18.5 5.5L19 3Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                         </Box>
                         <Box>
@@ -483,7 +483,7 @@ export function SettlementSuggestionsList({ settlements, onSettle, onSettleAll, 
                                 boxShadow: '0 8px 24px rgba(139, 92, 246, 0.4)'
                             }}>
                                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                                    <path d="M9 11L12 14L22 4M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M9 11L12 14L22 4M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </Box>
                             <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, color: '#F1F5F9', mb: 1 }}>

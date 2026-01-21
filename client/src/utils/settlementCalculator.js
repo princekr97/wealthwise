@@ -43,8 +43,8 @@ export const calculateSettlements = (balances, members) => {
         const debtors = [];   // People who should pay money
 
         Object.entries(balances).forEach(([userId, balance]) => {
-            // Skip negligible amounts (< ₹1 due to rounding)
-            if (Math.abs(balance) < 1) return;
+            // Skip negligible amounts (< ₹0.01 due to rounding)
+            if (Math.abs(balance) < 0.01) return;
 
             if (balance > 0) {
                 creditors.push({
@@ -82,7 +82,7 @@ export const calculateSettlements = (balances, members) => {
             const paymentAmount = Math.min(creditor.amount, debtor.amount);
 
             // Only record if payment is significant
-            if (paymentAmount >= 1) {
+            if (paymentAmount >= 0.01) {
                 settlements.push({
                     from: {
                         userId: debtor.userId,
@@ -105,8 +105,8 @@ export const calculateSettlements = (balances, members) => {
             debtor.amount -= paymentAmount;
 
             // Move to next if current is settled
-            if (creditor.amount < 1) i++;
-            if (debtor.amount < 1) j++;
+            if (creditor.amount < 0.01) i++;
+            if (debtor.amount < 0.01) j++;
         }
 
         return settlements;

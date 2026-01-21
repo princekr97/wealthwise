@@ -39,6 +39,7 @@ import {
     LocalGasStation as FuelIcon,
     Hotel as HotelIcon
 } from '@mui/icons-material';
+import { formatCurrency } from '../../utils/formatters';
 
 // Transition for the dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -252,7 +253,7 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
                     </Stack>
 
                     <Typography variant="h3" sx={{ fontWeight: 900, color: 'white', fontSize: '2.5rem', mb: 2.5 }}> {/* Reduced font size from 3.2rem and mb from 3.5 */}
-                        ₹{expense.amount}
+                        {formatCurrency(expense.amount)}
                     </Typography>
 
                     <Stack direction="row" spacing={1.5}> {/* Reduced spacing from 2 */}
@@ -303,7 +304,7 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
                             </Typography>
                         </Stack>
                         <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: 'white' }}> {/* Reduced font size */}
-                            ₹{expense.amount}
+                            {formatCurrency(expense.amount)}
                         </Typography>
                     </Stack>
                 </Box>
@@ -366,7 +367,7 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
                                         </Typography>
                                     </Stack>
                                     <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: 'white' }}> {/* Reduced font size */}
-                                        ₹{split.amount}
+                                        {formatCurrency(split.amount)}
                                     </Typography>
                                 </Stack>
                             );

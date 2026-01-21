@@ -7,6 +7,7 @@ import {
     updateGroup,
     deleteGroup,
     addMemberToGroup,
+    addMembersToGroupBulk,
     removeMember
 } from '../controllers/groupController.js';
 import {
@@ -32,6 +33,9 @@ router.route('/:id')
 
 router.route('/:id/members')
     .post(addMemberToGroup);
+
+router.route('/:id/members/bulk')
+    .post(addMembersToGroupBulk);
 
 router.route('/:id/members/:memberId')
     .delete(removeMember);

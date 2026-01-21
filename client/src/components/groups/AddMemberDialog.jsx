@@ -150,9 +150,24 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
 
         setIsDone(true);
         try {
-            for (const member of pendingMembers) {
-                await groupService.addMemberToGroup(groupId, { name: member.name, email: member.email, phone: member.phone });
+            if (pendingMembers.length === 1) {
+                // Single member - use single API endpoint
+                const member = pendingMembers[0];
+                await groupService.addMemberToGroup(groupId, {
+                    name: member.name,
+                    email: member.email,
+                    phone: member.phone
+                });
+            } else {
+                // Multiple members - use bulk API endpoint
+                const membersPayload = pendingMembers.map(m => ({
+                    name: m.name,
+                    email: m.email,
+                    phone: m.phone
+                }));
+                await groupService.addMembersToGroupBulk(groupId, membersPayload);
             }
+
             toast.success(`${pendingMembers.length} member(s) added successfully!`);
             setPendingMembers([]);
             onClose();

@@ -292,10 +292,10 @@ const addMemberToGroup = async (req, res) => {
                 phone: user.phoneNumber || phone
             };
         } else {
-            // Shadow member
+             // Shadow member
              const identifier = email || phone;
              const shadowUserId = crypto.createHash('sha256')
-                        .update(identifier)
+                        .update(identifier + req.params.id) // Scope to group to avoid cross-group ID collisions
                         .digest('hex')
                         .substring(0, 24);
 
@@ -365,27 +365,40 @@ const removeMember = async (req, res) => {
         }
 
         const memberToRemove = group.members[memberIndex];
-        const targetUserId = memberToRemove.userId?._id?.toString() || memberToRemove.userId || memberToRemove._id?.toString();
+        // Helper for robust ID extraction
+        const getSafeId = (obj) => {
+            if (!obj) return null;
+            if (typeof obj === 'string') return obj;
+            if (obj._id) return obj._id.toString();
+            return obj.toString();
+        };
+
+        const targetUserId = getSafeId(memberToRemove.userId) || getSafeId(memberToRemove._id);
 
         // ============================================
         // CRITICAL: Calculate member's balance
         // ============================================
-        const allExpenses = await GroupExpense.find({ group: group._id });
+        // FIX: Exclude deleted expenses! phantom debt shouldn't block removal
+        const allExpenses = await GroupExpense.find({ 
+            group: group._id,
+            isDeleted: { $ne: true } 
+        });
+        
         let memberBalance = 0;
 
         for (const exp of allExpenses) {
-            const payerId = String(exp.paidBy?._id || exp.paidBy);
+            const payerId = getSafeId(exp.paidBy);
             
-            // If this member paid the expense, they are owed
-            if (payerId === String(targetUserId)) {
+            // If this member paid the expense, they are owed (+)
+            if (payerId === targetUserId) {
                 memberBalance += exp.amount;
             }
 
-            // If this member is in splits, they owe
+            // If this member is in splits, they owe (-)
             if (exp.splits) {
                 exp.splits.forEach(split => {
-                    const splitUserId = String(split.user?._id || split.user);
-                    if (splitUserId === String(targetUserId)) {
+                    const splitUserId = getSafeId(split.user);
+                    if (splitUserId === targetUserId) {
                         memberBalance -= split.amount;
                     }
                 });
@@ -393,8 +406,6 @@ const removeMember = async (req, res) => {
         }
 
         // BLOCK removal if unsettled balance (with ₹1 tolerance for rounding)
-        // BLOCK removal if unsettled balance (with ₹1 tolerance for rounding)
-        /* 
         if (Math.abs(memberBalance) > 1) {
             res.status(400);
             const owesOrOwed = memberBalance > 0 ? 'is owed' : 'owes';
@@ -402,7 +413,6 @@ const removeMember = async (req, res) => {
                 `Cannot remove member with unsettled balance. ${memberToRemove.name} ${owesOrOwed} ₹${Math.abs(memberBalance).toFixed(2)}. Please settle all debts first.`
             );
         }
-        */
 
         // Safe to remove: Balance is settled
         // Remove member from array
@@ -419,4 +429,103 @@ const removeMember = async (req, res) => {
     }
 };
 
-export { createGroup, getGroups, getGroupDetails, updateGroup, deleteGroup, addMemberToGroup, removeMember };
+// @desc    Add multiple members to group
+// @route   POST /api/groups/:id/members/bulk
+// @access  Private
+const addMembersToGroupBulk = async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id);
+
+        if (!group) {
+            res.status(404);
+            throw new Error('Group not found');
+        }
+
+        const { members } = req.body; // Expect array of { name, email, phone }
+
+        if (!Array.isArray(members) || members.length === 0) {
+            res.status(400);
+            throw new Error('Members array is required');
+        }
+
+        const addedMembers = [];
+        const errors = [];
+
+        for (const memberData of members) {
+            const { name, email, phone } = memberData;
+
+            if (!name || !phone) {
+                errors.push({ name, error: 'Name and Phone required' });
+                continue;
+            }
+
+            // Check if user exists
+            let user;
+            if (email) user = await User.findOne({ email });
+            if (!user && phone) user = await User.findOne({ phoneNumber: phone });
+
+            let newMember;
+            if (user) {
+                newMember = {
+                    userId: user._id,
+                    name: user.name,
+                    email: user.email || email,
+                    phone: user.phoneNumber || phone
+                };
+            } else {
+                // Shadow member
+                const identifier = email || phone;
+                const shadowUserId = crypto.createHash('sha256')
+                    .update(identifier + req.params.id)
+                    .digest('hex')
+                    .substring(0, 24);
+
+                newMember = {
+                    userId: shadowUserId,
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    isShadowUser: true
+                };
+            }
+
+            // Check duplicates in current group state
+            const exists = group.members.some(m => 
+                (m.userId && m.userId.toString() === newMember.userId.toString()) ||
+                (m.phone === phone)
+            );
+
+            if (!exists) {
+                group.members.push(newMember);
+                addedMembers.push(newMember);
+            } else {
+                errors.push({ name, error: 'Member already in group' });
+            }
+        }
+
+        if (addedMembers.length > 0) {
+            await group.save();
+        }
+
+        res.json({
+            message: `Successfully added ${addedMembers.length} members`,
+            added: addedMembers,
+            errors: errors.length > 0 ? errors : undefined,
+            group
+        });
+
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+export { 
+    createGroup, 
+    getGroups, 
+    getGroupDetails, 
+    updateGroup, 
+    deleteGroup, 
+    addMemberToGroup, 
+    addMembersToGroupBulk,
+    removeMember 
+};

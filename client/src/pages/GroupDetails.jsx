@@ -587,8 +587,8 @@ export default function GroupDetails() {
 
     return (
         <PageContainer>
-            {/* 1. Custom Header & Navigation - Compact Design */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            {/* 1. Custom Header & Navigation - Creative Fintech Layout */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, pt: 2, px: { xs: 0, sm: 2 } }}>
                 <Box
                     onClick={() => navigate('/app/groups')}
                     sx={{
@@ -597,34 +597,40 @@ export default function GroupDetails() {
                         justifyContent: 'center',
                         width: 40,
                         height: 40,
-                        borderRadius: '50%',
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '12px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                        backdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
                         cursor: 'pointer',
-                        color: 'text.secondary',
-                        transition: 'all 0.2s',
+                        color: '#94A3B8',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                         '&:hover': {
-                            color: 'text.primary',
                             backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                            borderColor: 'rgba(255, 255, 255, 0.15)'
+                            borderColor: 'rgba(255, 255, 255, 0.15)',
+                            color: 'white',
+                            transform: 'translateX(-3px)'
                         }
                     }}
                 >
-                    <ArrowBackIcon sx={{ fontSize: 20 }} />
+                    <ArrowBackIcon sx={{ fontSize: 18 }} />
                 </Box>
 
-                {/* Top Action Icons - Compact */}
+                {/* Header Action Icons - Minimalist Premium Design */}
                 <Stack direction="row" spacing={1} alignItems="center">
                     <Box
                         title="Add Expense"
                         onClick={() => setIsExpenseDialogOpen(true)}
-                        className="glass-card-clean"
                         sx={{
                             width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', borderRadius: '10px',
-                            background: 'rgba(20, 184, 166, 0.12)', border: '1px solid rgba(20, 184, 166, 0.25)',
-                            color: '#2DD4BF', transition: 'all 0.2s',
-                            '&:hover': { transform: 'scale(1.05)', boxShadow: '0 4px 12px rgba(20, 184, 166, 0.25)' }
+                            cursor: 'pointer', borderRadius: '12px',
+                            background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                            color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            '&:hover': {
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                color: 'white',
+                                transform: 'translateY(-2px)'
+                            }
                         }}
                     >
                         <AddExpenseIcon sx={{ fontSize: 20 }} />
@@ -633,13 +639,17 @@ export default function GroupDetails() {
                     <Box
                         title="Add Member"
                         onClick={() => setIsAddMemberDialogOpen(true)}
-                        className="glass-card-clean"
                         sx={{
                             width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', borderRadius: '10px',
-                            background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.25)',
-                            color: '#FBBF24', transition: 'all 0.2s',
-                            '&:hover': { transform: 'scale(1.05)', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.25)' }
+                            cursor: 'pointer', borderRadius: '12px',
+                            background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                            color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            '&:hover': {
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                color: 'white',
+                                transform: 'translateY(-2px)'
+                            }
                         }}
                     >
                         <AddMemberIcon sx={{ fontSize: 20 }} />
@@ -648,240 +658,280 @@ export default function GroupDetails() {
                     <Box
                         title="Trip Report & Export"
                         onClick={() => !previewLoading && handlePreviewReport()}
-                        className="glass-card-clean"
                         sx={{
                             width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: previewLoading ? 'wait' : 'pointer', borderRadius: '10px',
-                            background: 'rgba(236, 72, 153, 0.12)', border: '1px solid rgba(236, 72, 153, 0.25)',
-                            color: '#EC4899', transition: 'all 0.2s',
-                            '&:hover': { transform: 'scale(1.05)', boxShadow: '0 4px 12px rgba(236, 72, 153, 0.25)' }
+                            cursor: previewLoading ? 'wait' : 'pointer', borderRadius: '12px',
+                            background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                            color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            '&:hover': {
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                color: 'white',
+                                transform: 'translateY(-2px)'
+                            }
                         }}
                     >
-                        {previewLoading ? <CircularProgress size={18} color="inherit" /> : <ReportIcon sx={{ fontSize: 20 }} />}
+                        {previewLoading ? <CircularProgress size={16} color="inherit" /> : <ReportIcon sx={{ fontSize: 20 }} />}
                     </Box>
 
                     <Box
                         title="More Options"
                         onClick={handleMenuClick}
-                        className="glass-card-clean"
                         sx={{
                             width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', borderRadius: '10px',
-                            background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)',
-                            color: 'text.secondary', transition: 'all 0.2s',
-                            '&:hover': { background: 'rgba(255, 255, 255, 0.08)', color: 'white', transform: 'scale(1.05)' }
+                            cursor: 'pointer', borderRadius: '12px',
+                            background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                            color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            '&:hover': {
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                color: 'white',
+                                transform: 'translateY(-2px)'
+                            }
                         }}
                     >
                         <MoreVertIcon sx={{ fontSize: 20 }} />
                     </Box>
-
-                    <Menu
-                        anchorEl={anchorEl}
-                        open={openMenu}
-                        onClose={handleMenuClose}
-                        PaperProps={{
-                            sx: {
-                                mt: 1.5,
-                                background: 'rgba(15, 23, 42, 0.85)', // Deep slate with opacity
-                                backdropFilter: 'blur(20px)', // Strong blur for glass effect
-                                border: '1px solid rgba(255, 255, 255, 0.1)', // Subtle light border
-                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05)', // Deep shadow + slight inner glow
-                                borderRadius: '16px',
-                                minWidth: '220px',
-                                padding: '8px',
-                                overflow: 'visible', // For any potential pop-outs (if needed later)
-                                '&:before': { // Small arrow pointer
-                                    content: '""',
-                                    display: 'block',
-                                    position: 'absolute',
-                                    top: 0,
-                                    right: 14,
-                                    width: 10,
-                                    height: 10,
-                                    bgcolor: 'rgba(15, 23, 42, 0.85)',
-                                    transform: 'translateY(-50%) rotate(45deg)',
-                                    zIndex: 0,
-                                    borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
-                                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                                }
-                            }
-                        }}
-                        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                    >
-                        <Typography variant="overline" sx={{ px: 2, py: 1, color: '#64748b', fontWeight: 700, letterSpacing: '1px', fontSize: '0.7rem' }}>
-                            ACTIONS
-                        </Typography>
-
-                        <MenuItem
-                            onClick={() => { handleMenuClose(); setIsEditDialogOpen(true); }}
-                            sx={{
-                                py: 1.5,
-                                px: 2,
-                                borderRadius: '10px',
-                                mb: 0.5,
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                    background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)',
-                                    borderLeft: '3px solid #3b82f6',
-                                    paddingLeft: '13px' // Compensate for border
-                                }
-                            }}
-                        >
-                            <ListItemIcon sx={{ color: '#60a5fa', minWidth: '36px !important' }}>
-                                <EditIcon fontSize="small" />
-                            </ListItemIcon>
-                            <Box>
-                                <Typography variant="body2" fontWeight={600} sx={{ color: '#e2e8f0' }}>Edit Group</Typography>
-                                <Typography variant="caption" sx={{ color: '#64748b' }}>Rename or change icon</Typography>
-                            </Box>
-                        </MenuItem>
-
-                        <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', my: 1 }} />
-
-                        <MenuItem
-                            onClick={() => {
-                                handleMenuClose(); setConfirmDialog({
-                                    open: true,
-                                    title: 'Delete Group',
-                                    message: 'Are you sure you want to delete this group? This action cannot be undone.',
-                                    onConfirm: handleDeleteGroup
-                                });
-                            }}
-                            sx={{
-                                py: 1.5,
-                                px: 2,
-                                borderRadius: '10px',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                    background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
-                                    borderLeft: '3px solid #ef4444',
-                                    paddingLeft: '13px'
-                                }
-                            }}
-                        >
-                            <ListItemIcon sx={{ color: '#f87171', minWidth: '36px !important' }}>
-                                <DeleteIcon fontSize="small" />
-                            </ListItemIcon>
-                            <Box>
-                                <Typography variant="body2" fontWeight={600} sx={{ color: '#f87171' }}>Delete Group</Typography>
-                                <Typography variant="caption" sx={{ color: 'rgba(248, 113, 113, 0.6)' }}>Irreversible action</Typography>
-                            </Box>
-                        </MenuItem>
-                    </Menu>
                 </Stack>
             </Box>
 
-            {/* 2. Group Summary Card - Ultra Clean Glass - Reduced Sizes */}
-            <Box sx={{ px: { xs: 0, sm: 2 }, mb: 3 }}> {/* mb: 4 -> 3 */}
-                <Box
-                    className="glass-card-clean"
-                    onClick={() => setExpandedBalance(!expandedBalance)}
+            <Menu
+                anchorEl={anchorEl}
+                open={openMenu}
+                onClose={handleMenuClose}
+                PaperProps={{
+                    sx: {
+                        mt: 1.5,
+                        background: 'rgba(15, 23, 42, 0.85)', // Deep slate with opacity
+                        backdropFilter: 'blur(20px)', // Strong blur for glass effect
+                        border: '1px solid rgba(255, 255, 255, 0.1)', // Subtle light border
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05)', // Deep shadow + slight inner glow
+                        borderRadius: '16px',
+                        minWidth: '220px',
+                        padding: '8px',
+                        overflow: 'visible', // For any potential pop-outs (if needed later)
+                        '&:before': { // Small arrow pointer
+                            content: '""',
+                            display: 'block',
+                            position: 'absolute',
+                            top: 0,
+                            right: 14,
+                            width: 10,
+                            height: 10,
+                            bgcolor: 'rgba(15, 23, 42, 0.85)',
+                            transform: 'translateY(-50%) rotate(45deg)',
+                            zIndex: 0,
+                            borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                        }
+                    }
+                }}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+                <Typography variant="overline" sx={{ px: 2, py: 1, color: '#64748b', fontWeight: 700, letterSpacing: '1px', fontSize: '0.7rem' }}>
+                    ACTIONS
+                </Typography>
+
+                <MenuItem
+                    onClick={() => { handleMenuClose(); setIsEditDialogOpen(true); }}
                     sx={{
-                        p: 2.5, // Reduced from 3
-                        borderRadius: '20px', // Reduced from 24px
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease',
+                        py: 1.5,
+                        px: 2,
+                        borderRadius: '10px',
+                        mb: 0.5,
+                        transition: 'all 0.2s ease',
                         '&:hover': {
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+                            background: 'linear-gradient(90deg, rgba(163, 230, 53, 0.1) 0%, rgba(163, 230, 53, 0.05) 100%)',
+                            borderLeft: '3px solid #a3e635',
+                            paddingLeft: '13px' // Compensate for border
                         }
                     }}
                 >
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <ListItemIcon sx={{ color: '#a3e635', minWidth: '36px !important' }}>
+                        <EditIcon fontSize="small" />
+                    </ListItemIcon>
+                    <Box>
+                        <Typography variant="body2" fontWeight={600} sx={{ color: '#e2e8f0' }}>Edit Group</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748b' }}>Rename or change icon</Typography>
+                    </Box>
+                </MenuItem>
+
+                <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', my: 1 }} />
+
+                <MenuItem
+                    onClick={() => {
+                        handleMenuClose(); setConfirmDialog({
+                            open: true,
+                            title: 'Delete Group',
+                            message: 'Are you sure you want to delete this group? This action cannot be undone.',
+                            onConfirm: handleDeleteGroup
+                        });
+                    }}
+                    sx={{
+                        py: 1.5,
+                        px: 2,
+                        borderRadius: '10px',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                            background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
+                            borderLeft: '3px solid #ef4444',
+                            paddingLeft: '13px'
+                        }
+                    }}
+                >
+                    <ListItemIcon sx={{ color: '#f87171', minWidth: '36px !important' }}>
+                        <DeleteIcon fontSize="small" />
+                    </ListItemIcon>
+                    <Box>
+                        <Typography variant="body2" fontWeight={600} sx={{ color: '#f87171' }}>Delete Group</Typography>
+                        <Typography variant="caption" sx={{ color: 'rgba(248, 113, 113, 0.6)' }}>Irreversible action</Typography>
+                    </Box>
+                </MenuItem>
+            </Menu>
+
+            {/* 2. Group Summary Card - Creative Premium Glass */}
+            <Box sx={{ px: { xs: 0, sm: 2 }, mb: 3 }}>
+                <Box
+                    onClick={() => setExpandedBalance(!expandedBalance)}
+                    sx={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                        p: 3,
+                        borderRadius: '24px',
+                        cursor: 'pointer',
+                        background: 'linear-gradient(135deg, rgba(164, 127, 98, 0.36) 0%, rgba(28, 28, 67, 0.45) 100%)', // Deep Slate Glass
+                        backdropFilter: 'blur(20px)',
+                        // border: '1px solid rgba(246, 244, 249, 0.06)',
+                        boxShadow: '0 20px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.05)',
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }
+                    }}
+                >
+                    {/* Decorative Glow */}
+                    <Box sx={{
+                        position: 'absolute',
+                        top: -50,
+                        right: -50,
+                        width: 180,
+                        height: 180,
+                        borderRadius: '50%',
+                        background: 'radial-gradient(circle, rgba(78, 69, 138, 0.03) 0%, transparent 70%)', // Neutral Glow
+                        zIndex: 0,
+                        opacity: 0.8
+                    }} />
+
+                    <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                         <Box>
-                            <Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '1.5rem', sm: '1.75rem' }, mb: 0.75, color: 'white' }}> {/* Reduced font */}
+                            <Typography variant="h3" sx={{ fontWeight: 800, fontSize: { xs: '1.75rem', sm: '2rem' }, color: '#F8FAFC', letterSpacing: '-0.5px', lineHeight: 1.1, mb: 1 }}>
                                 {group.name}
                             </Typography>
                             <Box sx={{
                                 display: 'inline-flex',
-                                px: 1.25, // Reduced
-                                py: 0.4,  // Reduced
-                                borderRadius: '99px',
-                                background: 'rgba(45, 212, 191, 0.15)',
-                                border: '1px solid rgba(45, 212, 191, 0.3)',
-                                color: '#5EEAD4', // Teal 300
-                                fontSize: '0.65rem', // Reduced
-                                fontWeight: 600
+                                px: 1.5,
+                                py: 0.5,
+                                borderRadius: '10px',
+                                background: 'rgba(255, 255, 255, 0.03)',
+                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                color: '#94A3B8',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '1px'
                             }}>
                                 {group.members.length} members
                             </Box>
                         </Box>
 
+
                         <Box sx={{ textAlign: 'right' }}>
-                            <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8', mb: 0.4 }}> {/* Reduced */}
+                            <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#94A3B8', mb: 0.5, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                 {myBalance >= 0 ? 'You are owed' : 'You owe'}
                             </Typography>
                             <Typography sx={{
-                                fontSize: { xs: '1.35rem', sm: '1.75rem' }, // Reduced
-                                fontWeight: 700,
+                                fontSize: { xs: '1.5rem', sm: '2rem' },
+                                fontWeight: 800,
                                 color: myBalance >= 0 ? '#34D399' : '#F87171',
-                                lineHeight: 1
+                                lineHeight: 1,
+                                letterSpacing: '-1px'
                             }}>
                                 {formatCurrency(Math.abs(myBalance))}
                             </Typography>
 
                             {expandedBalance ? (
-                                <ExpandMoreIcon sx={{ color: 'white', ml: 'auto', mt: 0.5, fontSize: '1.25rem', transform: 'rotate(180deg)', transition: 'transform 0.3s' }} />
+                                <ExpandMoreIcon sx={{ color: '#94A3B8', ml: 'auto', mt: 0.5, fontSize: '1.5rem', transform: 'rotate(180deg)', transition: 'transform 0.3s' }} />
                             ) : (
-                                <ExpandMoreIcon sx={{ color: 'white', ml: 'auto', mt: 0.5, fontSize: '1.25rem', transition: 'transform 0.3s' }} />
+                                <ExpandMoreIcon sx={{ color: '#94A3B8', ml: 'auto', mt: 0.5, fontSize: '1.5rem', transition: 'transform 0.3s' }} />
                             )}
                         </Box>
                     </Box>
 
                     {/* Expanded Balance Details */}
                     {expandedBalance && (
-                        <Box sx={{ mt: 2.5, pt: 2.5, borderTop: '1px solid rgba(255,255,255,0.1)' }}> {/* Reduced spacing */}
-                            <Stack spacing={1.25}> {/* Reduced spacing */}
-                                {Object.entries(balances)
-                                    .filter(([id, val]) => Math.abs(val) > 0.1) // Hide zero balances
-                                    .map(([memberId, bal]) => {
-                                        // Find member name logic
+                        <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid rgba(255,255,255,0.1)', position: 'relative', zIndex: 1 }}>
+                            <Stack spacing={1.5}>
+                                {(() => {
+                                    // Convert balances to array and sort: Receivers (Positive) first, then Payers (Negative)
+                                    const sortedBalances = Object.entries(balances)
+                                        .filter(([_, val]) => Math.abs(val) > 0.01) // Hide zero balances
+                                        .sort(([, a], [, b]) => b - a); // Descending (Positives -> Negatives)
+
+                                    return sortedBalances.map(([memberId, bal]) => {
+                                        // Find member details
                                         const member = group.members.find(m => {
                                             const mId = (m.userId && typeof m.userId === 'object' && m.userId._id)
                                                 ? String(m.userId._id) : String(m.userId || m.email || m.name);
                                             return mId === memberId;
                                         });
-                                        const name = member?.name || 'Unknown';
+                                        const originalName = member?.name || 'Unknown';
 
-                                        // Don't show my own entry in "expanded" - logic check
+                                        // Check if this row is Me
                                         const isMe = member && (
                                             (member.userId && String(member.userId._id || member.userId) === String(user?._id)) ||
                                             (member.email && user?.email && member.email.toLowerCase() === user.email.toLowerCase())
                                         );
-                                        if (isMe) return null;
+
+                                        const name = isMe ? 'You' : originalName;
+                                        const isReceiver = bal >= 0;
 
                                         return (
-                                            <Box key={memberId} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', color: '#CBD5E1' }}> {/* Reduced font */}
+                                            <Box key={memberId} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', color: '#CBD5E1' }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
                                                     <Box
                                                         sx={{
-                                                            width: 24, // Slightly larger to show background
-                                                            height: 24,
+                                                            width: 28,
+                                                            height: 28,
                                                             borderRadius: '50%',
-                                                            marginRight: 1,
+                                                            marginRight: 1.5,
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             justifyContent: 'center',
-                                                            background: `linear-gradient(135deg, ${getAvatarColor(name)}, ${alpha(getAvatarColor(name), 0.7)})`,
+                                                            background: `linear-gradient(135deg, ${getAvatarColor(originalName)}, ${alpha(getAvatarColor(originalName), 0.7)})`,
                                                             overflow: 'hidden',
-                                                            boxShadow: `0 2px 8px ${alpha(getAvatarColor(name), 0.25)}`
+                                                            boxShadow: `0 2px 8px ${alpha(getAvatarColor(originalName), 0.25)}`
                                                         }}
                                                     >
                                                         <img
-                                                            src={`https://api.dicebear.com/7.x/notionists/svg?seed=${name}`}
-                                                            alt={name}
+                                                            src={`https://api.dicebear.com/7.x/notionists/svg?seed=${originalName}`}
+                                                            alt={originalName}
                                                             style={{ width: '100%', height: '100%' }}
                                                         />
                                                     </Box>
-                                                    <Typography sx={{ fontSize: '0.85rem' }}>{name} <span style={{ opacity: 0.6 }}>{bal >= 0 ? 'you owe' : 'owes you'}</span></Typography>
+                                                    <Typography sx={{ fontSize: '0.9rem', fontWeight: 500 }}>
+                                                        {name} <span style={{ opacity: 0.6, fontSize: '0.8rem', marginLeft: '4px' }}>{isReceiver ? 'gets back' : 'pays'}</span>
+                                                    </Typography>
                                                 </Box>
-                                                <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: bal >= 0 ? '#F87171' : '#34D399' }}>
+                                                <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: isReceiver ? '#34D399' : '#F87171' }}>
                                                     {formatCurrency(Math.abs(bal))}
                                                 </Typography>
                                             </Box>
                                         );
-                                    })}
+                                    });
+                                })()}
                             </Stack>
                         </Box>
                     )}
@@ -890,16 +940,17 @@ export default function GroupDetails() {
 
 
 
-            {/* 4. Tabs Navigation - Modern Pill Design */}
+            {/* 4. Tabs Navigation - Creative Pill Design */}
             <Box sx={{ mb: 3, px: { xs: 0, sm: 2 } }}>
                 <Stack
                     direction="row"
                     spacing={1}
                     sx={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                        borderRadius: '12px',
-                        p: 0.4,
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        background: 'rgba(15, 23, 42, 0.4)', // Muted Slate
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: '16px',
+                        p: 0.5,
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
                         display: 'flex',
                         width: '100%',
                         position: 'relative'
@@ -912,21 +963,23 @@ export default function GroupDetails() {
                             sx={{
                                 flex: 1,
                                 px: 2.5,
-                                py: 1,
+                                py: 1.25,
                                 cursor: 'pointer',
-                                color: tabValue === index ? 'white' : 'rgba(255,255,255,0.6)',
-                                fontWeight: 600,
-                                fontSize: '0.85rem',
-                                borderRadius: '10px',
-                                background: tabValue === index ? 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' : 'transparent',
-                                boxShadow: tabValue === index ? '0 4px 12px rgba(20, 184, 166, 0.3)' : 'none',
-                                transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-                                willChange: 'background, color, box-shadow',
+                                color: tabValue === index ? 'white' : 'rgba(255,255,255,0.5)',
+                                fontWeight: tabValue === index ? 700 : 600,
+                                fontSize: '0.9rem',
+                                borderRadius: '12px',
+                                background: tabValue === index ? 'rgba(30, 41, 59, 0.8)' : 'transparent',
+                                boxShadow: tabValue === index ? '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1)' : 'none',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                willChange: 'background, color, box-shadow, transform',
                                 whiteSpace: 'nowrap',
                                 textAlign: 'center',
+                                border: tabValue === index ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid transparent',
                                 '&:hover': {
                                     color: 'white',
-                                    background: tabValue === index ? 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' : 'rgba(255, 255, 255, 0.05)'
+                                    background: tabValue === index ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.03)',
+                                    transform: tabValue === index ? 'none' : 'translateY(-1px)'
                                 }
                             }}
                         >
@@ -1135,7 +1188,7 @@ export default function GroupDetails() {
             </Box>
 
             {/* --- Dialogs (Hidden) --- */}
-            <AddGroupExpenseDialog
+            < AddGroupExpenseDialog
                 open={isExpenseDialogOpen}
                 onClose={handleExpenseDialogClose}
                 group={group}
@@ -1216,12 +1269,10 @@ export default function GroupDetails() {
             >
                 <Box sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Box sx={{ width: 40, height: 40, borderRadius: '10px', background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
-                                <DeleteIcon sx={{ color: 'white', fontSize: 20 }} />
-                            </Box>
-                            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#F1F5F9' }}>Remove Member</Typography>
+                        <Box sx={{ width: 40, height: 40, borderRadius: '10px', background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
+                            <DeleteIcon sx={{ color: 'white', fontSize: 20 }} />
                         </Box>
+                        <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#F1F5F9' }}>Remove Member</Typography>
                         <IconButton onClick={() => setMemberToDelete(null)} size="small" sx={{ color: '#94A3B8', '&:hover': { color: '#F1F5F9', background: 'rgba(255,255,255,0.08)' } }}>
                             <CloseIcon fontSize="small" />
                         </IconButton>
@@ -1363,6 +1414,6 @@ export default function GroupDetails() {
                     )}
                 </Box>
             </Dialog>
-        </PageContainer>
+        </PageContainer >
     );
 }

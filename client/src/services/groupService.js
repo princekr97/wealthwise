@@ -37,6 +37,12 @@ export const groupService = {
         return response.data;
     },
 
+    // Bulk add members to group
+    addMembersToGroupBulk: async (groupId, members) => {
+        const response = await api.post(`/groups/${groupId}/members/bulk`, { members });
+        return response.data;
+    },
+
     // Remove member from group
     removeMember: async (groupId, memberId) => {
         const response = await api.delete(`/groups/${groupId}/members/${memberId}`);

@@ -6,18 +6,19 @@
  */
 
 import React from 'react';
-import { Box, Card, CardContent, Typography, useTheme, useMediaQuery, Collapse } from '@mui/material';
+import { Box, Typography, useTheme, useMediaQuery, Collapse, alpha } from '@mui/material';
 import { KeyboardArrowDown as KeyboardArrowDownIcon } from '@mui/icons-material';
 
 /**
  * ChartCard provides a consistent wrapper for chart visualizations
  * 
- * @param {string} title - Chart title (with emoji prefix)
+ * @param {string} title - Chart title
  * @param {string} subtitle - Optional subtitle/description
- * @param {number} height - Chart height (will be responsive)
+ * @param {number} height - Chart height
  * @param {React.ReactNode} children - Chart content
- * @param {React.ReactNode} footer - Optional footer content (legend, stats)
+ * @param {React.ReactNode} footer - Optional footer content
  * @param {boolean} noPadding - Remove content padding
+ * @param {string} color - Theme color accent for the card (hex)
  */
 export default function ChartCard({
     title,
@@ -27,7 +28,8 @@ export default function ChartCard({
     footer,
     noPadding = false,
     collapsible = false,
-    defaultExpanded = true
+    defaultExpanded = true,
+    color = '#3b82f6' // Default blue accent
 }) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -41,50 +43,64 @@ export default function ChartCard({
         <Box
             sx={{
                 width: '100%',
-                background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : '#FFFFFF',
-                border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                borderRadius: '16px',
+                position: 'relative',
                 overflow: 'hidden',
-                boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                borderRadius: '24px',
+                height: expanded ? 'auto' : 'fit-content',
+                background: theme.palette.mode === 'dark'
+                    ? `linear-gradient(135deg, ${alpha(color, 0.08)} 0%, ${alpha(color, 0.01)} 100%)`
+                    : `linear-gradient(135deg, #FFFFFF 0%, ${alpha(color, 0.03)} 100%)`,
+                backdropFilter: 'blur(20px)',
+                border: theme.palette.mode === 'dark' ? `1px solid ${alpha(color, 0.15)}` : `1px solid ${alpha(color, 0.1)}`,
+                boxShadow: theme.palette.mode === 'dark' ? 'none' : `0 10px 30px -10px ${alpha(color, 0.1)}`,
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
         >
-            {/* Header - Simple and clean */}
+            {/* Header */}
             <Box
                 sx={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    mb: expanded ? 2 : 0,
                     cursor: collapsible ? 'pointer' : 'default',
                     minHeight: '48px',
-                    p: 1.5,
-                    borderRadius: '12px',
-                    transition: 'background 0.2s',
-                    '&:hover': collapsible ? { bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } : {}
+                    p: 2.5,
+                    pb: expanded && (children || footer) ? 1 : 2.5,
+                    transition: 'opacity 0.2s',
+                    '&:hover': collapsible ? { opacity: 0.8 } : {}
                 }}
                 onClick={() => collapsible && setExpanded(!expanded)}
             >
                 <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <Typography
-                        variant="h6"
-                        sx={{
-                            fontWeight: 700,
-                            fontSize: { xs: '1rem', sm: '1.1rem' },
-                            letterSpacing: '-0.01em',
-                            lineHeight: 1.2,
-                            color: theme.palette.text.primary
-                        }}
-                    >
-                        {title}
-                    </Typography>
+                    {/* Title Label Style */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <Box sx={{
+                            width: 3,
+                            height: 14,
+                            borderRadius: 4,
+                            bgcolor: color,
+                        }} />
+                        <Typography
+                            sx={{
+                                fontWeight: 700,
+                                fontSize: { xs: '0.9rem', sm: '1rem' },
+                                letterSpacing: '0.2px',
+                                color: theme.palette.text.primary,
+                                textTransform: 'uppercase',
+                                lineHeight: 1
+                            }}
+                        >
+                            {title}
+                        </Typography>
+                    </Box>
                     {subtitle && expanded && (
                         <Typography
                             variant="caption"
                             sx={{
                                 fontSize: { xs: '0.75rem', sm: '0.8rem' },
                                 fontWeight: 500,
-                                mt: 0.5,
-                                color: theme.palette.text.secondary
+                                color: theme.palette.text.secondary,
+                                ml: 1.5 // Align with text start
                             }}
                         >
                             {subtitle}
@@ -92,21 +108,27 @@ export default function ChartCard({
                     )}
                 </Box>
                 {collapsible && (
-                    <KeyboardArrowDownIcon
-                        fontSize="medium"
-                        sx={{
-                            color: theme.palette.text.secondary,
-                            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                            transition: 'transform 0.3s ease',
-                            opacity: 0.7
-                        }}
-                    />
+                    <Box sx={{
+                        p: 0.5,
+                        borderRadius: '50%',
+                        bgcolor: alpha(color, 0.1),
+                        color: color,
+                        display: 'flex'
+                    }}>
+                        <KeyboardArrowDownIcon
+                            fontSize="small"
+                            sx={{
+                                transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                transition: 'transform 0.3s ease',
+                            }}
+                        />
+                    </Box>
                 )}
             </Box>
 
             <Collapse in={expanded}>
                 {/* Content wrapper */}
-                <Box sx={{ px: noPadding ? 0 : 1.5, pb: footer ? 0 : 2 }}>
+                <Box sx={{ px: noPadding ? 0 : 2.5, pb: footer ? 0 : 2.5 }}>
                     <Box
                         sx={{
                             width: '100%',
@@ -122,7 +144,7 @@ export default function ChartCard({
 
                 {/* Optional Footer */}
                 {footer && (
-                    <Box sx={{ pt: 1, px: 1.5, pb: 2 }}>
+                    <Box sx={{ px: 2.5, pb: 3 }}>
                         {footer}
                     </Box>
                 )}
@@ -214,7 +236,7 @@ export function CategoryLegend({ data, colors, formatter = (v) => v }) {
                                     {percentage}%
                                 </Typography>
                             </Box>
-                            <Typography sx={{ fontSize: '0.85rem', color: theme.palette.text.primary, fontWeight: 600 }}>
+                            <Typography sx={{ fontSize: '0.85rem', color: theme.palette.text.primary, fontWeight: 800 }}>
                                 {formatter(val)}
                             </Typography>
                         </Box>
