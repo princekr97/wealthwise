@@ -12,6 +12,7 @@ import {
 import {
     addExpense,
     settleDebt,
+    bulkSettleDebts,
     updateExpense,
     deleteExpense
 } from '../controllers/groupExpenseController.js';
@@ -44,5 +45,8 @@ router.route('/:groupId/expenses/:expenseId')
 
 router.route('/:groupId/settle')
     .post(settleDebt);
+
+router.route('/:groupId/settle/bulk')
+    .post(bulkSettleDebts);
 
 export default router;

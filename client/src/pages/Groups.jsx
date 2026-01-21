@@ -67,10 +67,23 @@ export default function Groups() {
         return ids;
     }, [user?._id, user?.email, user?.name]);
 
+    // Fetch groups on mount
     useEffect(() => {
         if (user) {
             fetchGroups();
         }
+    }, [user]);
+
+    // Refresh data when user returns to this page (e.g., navigating back from group details)
+    useEffect(() => {
+        const handleFocus = () => {
+            if (user) {
+                fetchGroups();
+            }
+        };
+
+        window.addEventListener('focus', handleFocus);
+        return () => window.removeEventListener('focus', handleFocus);
     }, [user]);
 
     const fetchGroups = async () => {
@@ -318,9 +331,9 @@ export default function Groups() {
                             }}
                         >
                             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                <circle cx="9" cy="7" r="4" stroke="white" strokeWidth="2"/>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <circle cx="9" cy="7" r="4" stroke="white" strokeWidth="2" />
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                         </Box>
                         <Box sx={{ flex: 1 }}>

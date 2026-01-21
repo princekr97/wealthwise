@@ -261,4 +261,59 @@ const settleDebt = async (req, res) => {
     }
 };
 
-export { addExpense, updateExpense, deleteExpense, settleDebt };
+export { addExpense, updateExpense, deleteExpense, settleDebt, bulkSettleDebts };
+
+// @desc    Bulk settle multiple debts
+// @route   POST /api/groups/:groupId/settle/bulk
+// @access  Private
+const bulkSettleDebts = async (req, res) => {
+    try {
+        const { settlements } = req.body; // Array of { payerId, receiverId, amount, payerName, receiverName }
+        const { groupId } = req.params;
+
+        if (!Array.isArray(settlements) || settlements.length === 0) {
+            res.status(400);
+            throw new Error('Settlements array is required and must not be empty');
+        }
+
+        // Verify group exists
+        const group = await Group.findById(groupId);
+        if (!group) {
+            res.status(404);
+            throw new Error('Group not found');
+        }
+
+        const expensePromises = settlements.map(async (settlement) => {
+            const { payerId, receiverId, amount, payerName, receiverName } = settlement;
+            
+            // Create settlement expense for each
+            return GroupExpense.create({
+                group: groupId,
+                description: 'Settlement',
+                amount,
+                date: Date.now(),
+                category: 'Settlement',
+                paidBy: payerId,
+                paidByName: payerName,
+                splits: [
+                    { 
+                        user: receiverId, 
+                        userName: receiverName,
+                        amount: amount, 
+                        owed: amount 
+                    }
+                ]
+            });
+        });
+
+        const expenses = await Promise.all(expensePromises);
+
+        res.status(201).json({ 
+            message: `Successfully processed ${expenses.length} settlements`,
+            settlements: expenses 
+        });
+
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};

@@ -30,13 +30,11 @@ const ThemeWrapper = ({ children }) => {
 };
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <ThemeContextProvider>
-      <ThemeWrapper>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </ThemeWrapper>
-    </ThemeContextProvider>
-  </React.StrictMode>
+  <ThemeContextProvider>
+    <ThemeWrapper>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ThemeWrapper>
+  </ThemeContextProvider>
 );

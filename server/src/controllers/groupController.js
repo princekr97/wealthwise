@@ -393,6 +393,8 @@ const removeMember = async (req, res) => {
         }
 
         // BLOCK removal if unsettled balance (with ₹1 tolerance for rounding)
+        // BLOCK removal if unsettled balance (with ₹1 tolerance for rounding)
+        /* 
         if (Math.abs(memberBalance) > 1) {
             res.status(400);
             const owesOrOwed = memberBalance > 0 ? 'is owed' : 'owes';
@@ -400,6 +402,7 @@ const removeMember = async (req, res) => {
                 `Cannot remove member with unsettled balance. ${memberToRemove.name} ${owesOrOwed} ₹${Math.abs(memberBalance).toFixed(2)}. Please settle all debts first.`
             );
         }
+        */
 
         // Safe to remove: Balance is settled
         // Remove member from array

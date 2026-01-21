@@ -55,6 +55,12 @@ export const groupService = {
         return response.data;
     },
 
+    // Bulk settle debts
+    bulkSettleDebts: async (groupId, settlements) => {
+        const response = await api.post(`/groups/${groupId}/settle/bulk`, { settlements });
+        return response.data;
+    },
+
     // Update expense
     updateExpense: async (groupId, expenseId, expenseData) => {
         const response = await api.put(`/groups/${groupId}/expenses/${expenseId}`, expenseData);

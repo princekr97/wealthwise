@@ -97,10 +97,10 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
     };
 
     return (
-        <StyledDialog 
-            open={open} 
-            onClose={onClose} 
-            maxWidth="sm" 
+        <StyledDialog
+            open={open}
+            onClose={onClose}
+            maxWidth="sm"
             fullWidth
             disableScrollLock={false}
             scroll="body"
@@ -116,14 +116,14 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
                     <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.25rem', color: '#F1F5F9' }}>
                         {isEditMode ? 'Edit Group' : 'Create New Group'}
                     </Typography>
-                    <IconButton 
-                        onClick={onClose} 
+                    <IconButton
+                        onClick={onClose}
                         size="small"
-                        sx={{ 
+                        sx={{
                             color: '#94A3B8',
-                            '&:hover': { 
-                                color: '#F1F5F9', 
-                                background: 'rgba(255,255,255,0.08)' 
+                            '&:hover': {
+                                color: '#F1F5F9',
+                                background: 'rgba(255,255,255,0.08)'
                             }
                         }}
                     >
@@ -156,6 +156,13 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
                                         },
                                         '&.Mui-focused fieldset': {
                                             borderColor: '#14b8a6'
+                                        }
+                                    },
+                                    '& .MuiInputBase-input': {
+                                        color: '#F1F5F9',
+                                        '&::placeholder': {
+                                            color: '#64748B',
+                                            opacity: 1
                                         }
                                     },
                                     '& .MuiInputLabel-root': {
@@ -193,7 +200,7 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
                                                 borderRadius: '16px',
                                                 border: '2px solid',
                                                 borderColor: field.value === item.type ? '#14b8a6' : 'rgba(255, 255, 255, 0.1)',
-                                                background: field.value === item.type 
+                                                background: field.value === item.type
                                                     ? 'linear-gradient(135deg, rgba(20, 184, 166, 0.2) 0%, rgba(20, 184, 166, 0.05) 100%)'
                                                     : 'rgba(255, 255, 255, 0.03)',
                                                 display: 'flex',
@@ -204,7 +211,7 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
                                                 transition: 'all 0.2s ease',
                                                 boxShadow: field.value === item.type ? '0 4px 16px rgba(20, 184, 166, 0.3)' : 'none',
                                                 '&:hover': {
-                                                    background: field.value === item.type 
+                                                    background: field.value === item.type
                                                         ? 'linear-gradient(135deg, rgba(20, 184, 166, 0.25) 0%, rgba(20, 184, 166, 0.1) 100%)'
                                                         : 'rgba(255, 255, 255, 0.06)',
                                                     transform: 'translateY(-2px)',
@@ -213,10 +220,10 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
                                             }}
                                         >
                                             <Typography sx={{ fontSize: '2rem', mb: 0.5 }}>{item.icon}</Typography>
-                                            <Typography 
-                                                variant="caption" 
-                                                fontWeight={600} 
-                                                sx={{ 
+                                            <Typography
+                                                variant="caption"
+                                                fontWeight={600}
+                                                sx={{
                                                     color: field.value === item.type ? '#5EEAD4' : '#94A3B8',
                                                     fontSize: '0.75rem'
                                                 }}
@@ -233,8 +240,8 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
 
                 {/* Actions */}
                 <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(0, 0, 0, 0.2)' }}>
-                    <Button 
-                        onClick={handleSubmit(onSubmit)} 
+                    <Button
+                        onClick={handleSubmit(onSubmit)}
                         variant="contained"
                         fullWidth
                         sx={{

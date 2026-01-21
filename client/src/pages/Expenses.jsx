@@ -226,33 +226,142 @@ export default function Expenses() {
     return filteredExpenses?.reduce((sum, e) => sum + e.amount, 0) || 0;
   }, [filteredExpenses]);
 
+  // Group expenses by date (Today, Yesterday, etc.)
+  const groupedExpenses = useMemo(() => {
+    if (!paginatedExpenses) return [];
+
+    // Helper to normalize date to midnight for comparison
+    const normalizeDate = (date) => {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
+
+    const today = normalizeDate(new Date());
+    const yesterday = normalizeDate(new Date());
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const groups = [];
+
+    paginatedExpenses.forEach(expense => {
+      const expenseDate = new Date(expense.date);
+      const normalizedExpenseDate = normalizeDate(expenseDate);
+
+      let label = formatDate(expense.date);
+
+      if (normalizedExpenseDate.getTime() === today.getTime()) {
+        label = 'Today, ' + expenseDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+      } else if (normalizedExpenseDate.getTime() === yesterday.getTime()) {
+        label = 'Yesterday, ' + expenseDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+      } else {
+        // Format: "12 Jan 2026" or similar
+        label = expenseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+
+      const lastGroup = groups[groups.length - 1];
+
+      if (lastGroup && lastGroup.label === label) {
+        lastGroup.items.push(expense);
+      } else {
+        groups.push({
+          label: label,
+          date: normalizedExpenseDate,
+          items: [expense]
+        });
+      }
+    });
+
+    return groups;
+  }, [paginatedExpenses]);
+
   return (
     <PageContainer>
-      <PageHeader
-        title="💰 Expenses"
-        subtitle="Track and visualize your spending patterns"
-        actionLabel="Add Expense"
-        onAction={() => setOpen(true)}
-        leftContent={
-          <IconButton
-            onClick={() => {
-              setTempFromDate(fromDate);
-              setTempToDate(toDate);
-              setFilterModalOpen(true);
-            }}
-            sx={{
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              color: 'primary.main',
-              '&:hover': { backgroundColor: 'rgba(59, 130, 246, 0.2)' }
-            }}
-            title="Filter by date range"
-          >
-            <FilterListIcon />
-          </IconButton>
-        }
-      />
+      {/* Modern Hero Section */}
+      <Box sx={{ mb: 4, mt: 1 }}>
+        <Box
+          sx={{
+            background: 'linear-gradient(135deg, #7C3AED 0%, #2c2748 100%)',
+            borderRadius: '24px',
+            p: { xs: 3, sm: 4 },
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: '0 20px 40px -10px rgba(124, 58, 237, 0.4)',
+            border: '1px solid rgba(255,255,255,0.1)'
+          }}
+        >
+          {/* Abstract Background Shapes */}
+          <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0.15, pointerEvents: 'none' }}>
+            <svg width="100%" height="100%" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="10%" cy="20%" r="100" fill="white" />
+              <circle cx="90%" cy="80%" r="150" fill="white" />
+              <path d="M0,200 Q400,0 800,200" stroke="white" strokeWidth="2" fill="none" opacity="0.5" />
+            </svg>
+          </Box>
 
-      {/* Summary Cards */}
+          <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'flex-start', md: 'center' }, justifyContent: 'space-between', gap: 3 }}>
+
+            {/* Left Content */}
+            <Box>
+              <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: '0.9rem', mb: 1, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                Total Spending
+              </Typography>
+              <Typography variant="h2" sx={{ color: '#fff', fontWeight: 800, fontSize: { xs: '2.5rem', md: '3.5rem' }, letterSpacing: '-1px', lineHeight: 1 }}>
+                {formatCurrency(totalExpenses)}
+              </Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.8)', mt: 1, fontSize: '0.95rem' }}>
+                Track and visualize your spending habits
+              </Typography>
+            </Box>
+
+            {/* Right Actions */}
+            <Stack direction="row" spacing={2} alignItems="center">
+              <IconButton
+                onClick={() => setFilterModalOpen(true)}
+                sx={{
+                  bgcolor: 'rgba(255,255,255,0.15)',
+                  color: 'white',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  width: 48,
+                  height: 48,
+                  borderRadius: '16px',
+                  transition: 'all 0.2s',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.25)', transform: 'translateY(-2px)' }
+                }}
+              >
+                <FilterListIcon />
+              </IconButton>
+
+              <Button
+                onClick={() => setOpen(true)}
+                variant="contained"
+                startIcon={<AddIcon />}
+                size="large"
+                sx={{
+                  bgcolor: '#807a7aff',
+                  color: '#white',
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  py: 1.5,
+                  px: 3,
+                  borderRadius: '16px',
+                  textTransform: 'none',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                  '&:hover': {
+                    bgcolor: '#f8fafc',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 15px 30px rgba(0,0,0,0.3)'
+                  }
+                }}
+              >
+                Add Expense
+              </Button>
+            </Stack>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Summary Stats Grid */}
       <SummaryCardGrid columns={4}>
         <SummaryCard
           icon="💸"
@@ -265,7 +374,7 @@ export default function Expenses() {
           label="Transactions"
           value={(filteredExpenses?.length || 0).toString()}
           valueColor="primary"
-          subtitle={expenses?.length !== filteredExpenses?.length ? `${expenses?.length || 0} total` : undefined}
+          subtitle={`${expenses?.length || 0} total records`}
         />
         <SummaryCard
           icon="📁"
@@ -281,7 +390,7 @@ export default function Expenses() {
         />
       </SummaryCardGrid>
 
-      {/* Charts section */}
+      {/* Charts Section */}
       <ChartGrid>
         {/* Category Breakdown */}
         <ChartCard
@@ -292,7 +401,7 @@ export default function Expenses() {
           ) : undefined}
         >
           {categoryData.length === 0 ? (
-            <EmptyChartState message="Add expenses to see category breakdown" />
+            <EmptyChartState message="Add expenses to see breakdown" />
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -301,57 +410,28 @@ export default function Expenses() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  innerRadius={isMobile ? 50 : (isTablet ? 70 : 100)}  // Larger inner radius
-                  outerRadius={isMobile ? 80 : (isTablet ? 110 : 140)} // Larger outer radius (28-40px stroke)
-                  paddingAngle={2}
-                  stroke="transparent"
+                  innerRadius={isMobile ? 60 : 80}
+                  outerRadius={isMobile ? 85 : 120}
+                  paddingAngle={3}
+                  stroke="none"
                   dataKey="value"
                 >
                   {categoryData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip
                   formatter={(value) => formatCurrency(value)}
                   contentStyle={{
-                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: 8,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    padding: '10px 14px'
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    border: 'none',
+                    borderRadius: 12,
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+                    color: '#fff',
+                    padding: '12px 16px'
                   }}
+                  itemStyle={{ color: '#fff' }}
                 />
-                {/* Center Label */}
-                <text
-                  x="50%"
-                  y="48%"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  style={{
-                    fontSize: isMobile ? '18px' : '24px',
-                    fontWeight: 700,
-                    fill: theme.palette.text.primary
-                  }}
-                >
-                  {formatCurrency(totalExpenses)}
-                </text>
-                <text
-                  x="50%"
-                  y="56%"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  style={{
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    fill: theme.palette.text.secondary
-                  }}
-                >
-                  Total Spent
-                </text>
               </PieChart>
             </ResponsiveContainer>
           )}
@@ -360,50 +440,53 @@ export default function Expenses() {
         {/* Expense Trend */}
         <ChartCard
           title="📈 Expense Trend"
-          subtitle="Total spending trend"
+          subtitle="Spending by category"
         >
           {expenses?.length === 0 ? (
             <EmptyChartState message="Add transactions to see trends" />
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={categoryData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-                <XAxis
-                  dataKey="name"
-                  stroke="rgba(255,255,255,0.5)"
-                  tickLine={false}
-                  fontSize={11}
-                  tick={{ fill: 'rgba(255,255,255,0.7)' }}
-                />
-                <YAxis
-                  stroke="rgba(255,255,255,0.5)"
-                  tickLine={false}
-                  fontSize={11}
-                  tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
-                  tick={{ fill: 'rgba(255,255,255,0.7)' }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    borderRadius: 8,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    padding: '10px 14px'
-                  }}
-                  formatter={(value) => formatCurrency(value)}
-                />
                 <defs>
                   <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3B82F6" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#06B6D4" stopOpacity={1} />
+                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#EC4899" stopOpacity={1} />
                   </linearGradient>
                 </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  stroke="rgba(255,255,255,0.3)"
+                  tickLine={false}
+                  axisLine={false}
+                  fontSize={11}
+                  tick={{ fill: 'rgba(255,255,255,0.5)' }}
+                />
+                <YAxis
+                  stroke="rgba(255,255,255,0.3)"
+                  tickLine={false}
+                  axisLine={false}
+                  fontSize={11}
+                  tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                  tick={{ fill: 'rgba(255,255,255,0.5)' }}
+                />
+                <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  contentStyle={{
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    border: 'none',
+                    borderRadius: 12,
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+                    color: '#fff'
+                  }}
+                  formatter={(value) => [formatCurrency(value), 'Spent']}
+                />
                 <Bar
                   dataKey="value"
                   fill="url(#barGradient)"
-                  radius={[8, 8, 0, 0]}  // Larger radius for premium feel
-                  maxBarSize={60}
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={50}
+                  animationDuration={1500}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -411,82 +494,148 @@ export default function Expenses() {
         </ChartCard>
       </ChartGrid>
 
-      {/* Clean Expenses List */}
-      <Card sx={{ overflow: 'hidden' }}>
-        <CardContent sx={{ p: 0 }}>
-          {/* Header */}
-          <Box sx={{ px: 3, py: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.125rem', color: theme.palette.text.primary }}>
-              📋 Recent Expenses
-            </Typography>
+      {/* Modern Transaction List */}
+      <Card sx={{
+        boxShadow: 'none',
+        bgcolor: 'transparent',
+        mt: 3
+      }}>
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.text.primary, display: 'flex', alignItems: 'center', gap: 1 }}>
+            📋 Recent Transactions
+          </Typography>
+        </Box>
+
+        {groupedExpenses.length > 0 ? (
+          <Stack spacing={3}>
+            {groupedExpenses.map((group, groupIndex) => (
+              <Box key={group.label}>
+                {/* Date Header */}
+                <Typography
+                  sx={{
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    color: theme.palette.text.secondary,
+                    mb: 1.5,
+                    ml: 1,
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px'
+                  }}
+                >
+                  {group.label}
+                </Typography>
+
+                {/* Group Items */}
+                <Card sx={{
+                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.5)' : '#fff',
+                  backdropFilter: 'blur(10px)',
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 3,
+                  overflow: 'hidden'
+                }}>
+                  {group.items.map((expense, index) => {
+                    const categoryColor = COLORS[CATEGORIES.indexOf(expense.category) % COLORS.length];
+
+                    return (
+                      <Box
+                        key={expense._id}
+                        sx={{
+                          p: 2,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 2,
+                          borderBottom: index < group.items.length - 1 ? `1px solid ${theme.palette.divider}` : 'none',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: theme.palette.action.hover,
+                            transform: 'translateX(4px)'
+                          }
+                        }}
+                      >
+                        {/* Icon */}
+                        <Box
+                          sx={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: '16px',
+                            bgcolor: `${categoryColor}20`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.5rem',
+                            color: categoryColor
+                          }}
+                        >
+                          {CATEGORY_ICONS[expense.category] || '📌'}
+                        </Box>
+
+                        {/* Details */}
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <Typography sx={{ fontWeight: 600, fontSize: '1rem', color: theme.palette.text.primary }}>
+                              {expense.category}
+                            </Typography>
+                            {expense.isRecurring && (
+                              <Chip
+                                label="Recurring"
+                                size="small"
+                                sx={{
+                                  height: 20,
+                                  fontSize: '0.65rem',
+                                  bgcolor: 'rgba(6, 182, 212, 0.15)',
+                                  color: '#06B6D4',
+                                  fontWeight: 700
+                                }}
+                              />
+                            )}
+                          </Box>
+                          <Typography sx={{ fontSize: '0.85rem', color: theme.palette.text.secondary, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            {expense.paymentMethod || 'Cash'}
+                            {expense.description && (
+                              <>
+                                <span>•</span>
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '150px' }}>
+                                  {expense.description}
+                                </span>
+                              </>
+                            )}
+                          </Typography>
+                        </Box>
+
+                        {/* Amount */}
+                        <Box sx={{ textAlign: 'right' }}>
+                          <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: theme.palette.text.primary }}>
+                            -{formatCurrency(expense.amount)}
+                          </Typography>
+                        </Box>
+
+                        {/* Actions (Hover only) */}
+                        <Box sx={{ display: 'flex', opacity: 0, transition: 'opacity 0.2s', '.MuiBox-root:hover > &': { opacity: 1 } }}>
+                          <IconButton size="small" onClick={() => handleEdit(expense)}>
+                            <EditIcon fontSize="small" sx={{ color: '#3B82F6' }} />
+                          </IconButton>
+                          <IconButton size="small" onClick={() => handleDelete(expense._id)}>
+                            <DeleteIcon fontSize="small" sx={{ color: '#EF4444' }} />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Card>
+              </Box>
+            ))}
+          </Stack>
+        ) : (
+          <Box sx={{ py: 8, textAlign: 'center', border: '2px dashed rgba(255,255,255,0.1)', borderRadius: 4 }}>
+            <Typography sx={{ fontSize: '3rem', mb: 2, opacity: 0.5 }}>💸</Typography>
+            <Typography variant="h6" sx={{ color: theme.palette.text.primary, mb: 1 }}>No expenses found</Typography>
+            <Typography color="textSecondary">Start by adding a new expense</Typography>
           </Box>
+        )}
 
-          {/* Expense List */}
-          {paginatedExpenses.length > 0 ? (
-            <Box>
-              {paginatedExpenses.map((expense, index) => {
-                const categoryColor = COLORS[CATEGORIES.indexOf(expense.category) % COLORS.length];
-                const priorityColor = expense.priority === 'high' ? '#EF4444' : expense.priority === 'medium' ? '#F59E0B' : '#10B981';
-
-                return (
-                  <Box
-                    key={expense._id}
-                    sx={{
-                      px: 2.5,
-                      py: 1.25,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1.5,
-                      borderBottom: index < paginatedExpenses.length - 1 ? `1px solid ${theme.palette.divider}` : 'none',
-                      transition: 'background-color 0.15s ease',
-                      '&:hover': { backgroundColor: theme.palette.action.hover }
-                    }}
-                  >
-                    {/* Icon */}
-                    <Box sx={{ width: 36, height: 36, borderRadius: 1.5, backgroundColor: `${categoryColor}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.125rem' }}>
-                      {CATEGORY_ICONS[expense.category] || '📌'}
-                    </Box>
-
-                    {/* Details */}
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontSize: '0.875rem', color: '#94A3B8' }}>
-                        <Box component="span" sx={{ fontWeight: 600, color: theme.palette.text.primary, mr: 1 }}>{expense.category}</Box>
-                        {formatDate(expense.date)} · {expense.paymentMethod || 'Cash'}
-                        {expense.description && ` · ${expense.description.substring(0, 25)}${expense.description.length > 25 ? '...' : ''}`}
-                      </Typography>
-                    </Box>
-
-                    {/* Amount & Priority */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: priorityColor, flexShrink: 0 }} />
-                      <Typography sx={{ fontWeight: 700, fontSize: '0.9375rem', color: '#FF6B6B', minWidth: 70, textAlign: 'right' }}>
-                        -{formatCurrency(expense.amount)}
-                      </Typography>
-                    </Box>
-
-                    {/* Actions */}
-                    <Box sx={{ display: 'flex', gap: 0.5, opacity: { xs: 1, sm: 0 }, transition: 'opacity 0.2s', 'div:hover &': { opacity: 1 } }}>
-                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleEdit(expense); }} sx={{ color: '#3B82F6', '&:hover': { backgroundColor: 'rgba(59, 130, 246, 0.1)' } }}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDelete(expense._id); }} sx={{ color: '#EF4444', '&:hover': { backgroundColor: 'rgba(239, 68, 68, 0.1)' } }}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  </Box>
-                );
-              })}
-            </Box>
-          ) : (
-            <Box sx={{ py: 8, textAlign: 'center' }}>
-              <Typography sx={{ fontSize: '3rem', mb: 2, opacity: 0.4 }}>💸</Typography>
-              <Typography sx={{ fontSize: '1.125rem', fontWeight: 600, color: theme.palette.text.primary, mb: 1 }}>No expenses yet</Typography>
-              <Typography sx={{ fontSize: '0.875rem', color: '#94A3B8' }}>Start tracking your spending</Typography>
-            </Box>
-          )}
-
-          {/* Pagination */}
-          {filteredExpenses && filteredExpenses.length > rowsPerPage && (
+        {/* Pagination */}
+        {filteredExpenses && filteredExpenses.length > rowsPerPage && (
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
             <TablePagination
               rowsPerPageOptions={[5, 10, 25]}
               component="div"
@@ -495,9 +644,10 @@ export default function Expenses() {
               page={page}
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
+              sx={{ color: theme.palette.text.secondary }}
             />
-          )}
-        </CardContent>
+          </Box>
+        )}
       </Card>
 
       {/* Premium Add Expense Dialog - Frosted Glass */}
@@ -508,15 +658,15 @@ export default function Expenses() {
         maxWidth="sm"
         PaperProps={{
           sx: {
-            borderRadius: '24px 24px 16px 16px',
+            borderRadius: '24px 16px 24px 16px',
             background: theme.palette.mode === 'dark'
-              ? 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), var(--active-gradient)'
+              ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
               : '#FFFFFF',
             backgroundAttachment: 'fixed',
-            backdropFilter: theme.palette.mode === 'dark' ? 'blur(24px)' : 'none',
-            WebkitBackdropFilter: theme.palette.mode === 'dark' ? 'blur(24px)' : 'none',
-            border: `1px solid ${theme.palette.divider}`,
-            boxShadow: theme.palette.mode === 'dark' ? '0px 24px 48px rgba(0, 0, 0, 0.6)' : '0px 24px 48px rgba(0, 0, 0, 0.1)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.1)' : `1px solid ${theme.palette.divider}`,
+            boxShadow: theme.palette.mode === 'dark' ? '0px 24px 48px rgba(0, 0, 0, 0.7)' : '0px 24px 48px rgba(0, 0, 0, 0.1)',
             overflow: 'hidden'
           }
         }}
@@ -566,7 +716,7 @@ export default function Expenses() {
           >
             <CloseIcon />
           </IconButton>
-          <Box component="span" sx={{ fontSize: '1.25rem' }}>💸</Box>
+          <Box component="span" sx={{ fontSize: '20px' }}>💸</Box>
           {editMode ? 'Edit Expense' : 'Add New Expense'}
         </DialogTitle>
 
@@ -588,7 +738,7 @@ export default function Expenses() {
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      color: theme.palette.text.secondary,
+                      color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.85)' : theme.palette.text.secondary,
                       mb: 1,
                       display: 'block'
                     }}
@@ -605,9 +755,23 @@ export default function Expenses() {
                     helperText={error?.message}
                     sx={{
                       '& .MuiInputBase-root': {
-                        height: '56px',  // Larger for primary field
+                        height: '52px',
                         fontSize: '1.25rem',
-                        fontWeight: 600
+                        fontWeight: 600,
+                        color: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.text.primary,
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#F9FAFB'
+                      },
+                      '& .MuiInputBase-input': {
+                        color: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.text.primary,
+                        '&:-webkit-autofill': {
+                          WebkitBoxShadow: theme.palette.mode === 'dark' ? '0 0 0 100px #1E293B inset' : '0 0 0 100px #F9FAFB inset',
+                          WebkitTextFillColor: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.text.primary,
+                          caretColor: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.text.primary,
+                          borderRadius: 'inherit'
+                        }
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(255, 255, 255, 0.2)'
                       }
                     }}
                   />
@@ -628,7 +792,7 @@ export default function Expenses() {
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      color: theme.palette.text.secondary,
+                      color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.85)' : theme.palette.text.secondary,
                       mb: 1,
                       display: 'block'
                     }}
@@ -645,7 +809,14 @@ export default function Expenses() {
                           alignItems: 'center',
                           fontSize: '1rem',
                           fontWeight: 500,
-                          py: 0
+                          py: 0,
+                          color: theme.palette.text.primary
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(255, 255, 255, 0.2)'
+                        },
+                        '& .MuiSvgIcon-root': {
+                          color: 'rgba(255, 255, 255, 0.7)'
                         }
                       }}
                     >
@@ -676,7 +847,7 @@ export default function Expenses() {
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      color: theme.palette.text.secondary,
+                      color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.85)' : theme.palette.text.secondary,
                       mb: 1,
                       display: 'block'
                     }}
@@ -692,7 +863,24 @@ export default function Expenses() {
                       '& .MuiInputBase-root': {
                         height: '52px',
                         fontSize: '1rem',
-                        fontWeight: 500
+                        fontWeight: 500,
+                        color: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.text.primary,
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#F9FAFB'
+                      },
+                      '& .MuiInputBase-input': {
+                        color: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.text.primary,
+                        '&:-webkit-autofill': {
+                          WebkitBoxShadow: theme.palette.mode === 'dark' ? '0 0 0 100px #1E293B inset' : '0 0 0 100px #F9FAFB inset',
+                          WebkitTextFillColor: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.text.primary,
+                          caretColor: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.text.primary,
+                          borderRadius: 'inherit'
+                        }
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(255, 255, 255, 0.2)'
+                      },
+                      '& ::-webkit-calendar-picker-indicator': {
+                        filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none'
                       }
                     }}
                   />
@@ -713,7 +901,7 @@ export default function Expenses() {
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      color: theme.palette.text.secondary,
+                      color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.85)' : theme.palette.text.secondary,
                       mb: 1,
                       display: 'block'
                     }}
@@ -730,7 +918,21 @@ export default function Expenses() {
                       '& .MuiInputBase-root': {
                         fontSize: '0.9375rem',
                         fontWeight: 400,
-                        py: 1.5
+                        py: 1.5,
+                        color: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.text.primary,
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#F9FAFB'
+                      },
+                      '& .MuiInputBase-input': {
+                        color: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.text.primary,
+                        '&:-webkit-autofill': {
+                          WebkitBoxShadow: theme.palette.mode === 'dark' ? '0 0 0 100px #1E293B inset' : '0 0 0 100px #F9FAFB inset',
+                          WebkitTextFillColor: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.text.primary,
+                          caretColor: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.text.primary,
+                          borderRadius: 'inherit'
+                        }
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(255, 255, 255, 0.2)'
                       }
                     }}
                   />
@@ -751,7 +953,7 @@ export default function Expenses() {
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      color: theme.palette.text.secondary,
+                      color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.85)' : theme.palette.text.secondary,
                       mb: 1,
                       display: 'block'
                     }}
@@ -768,7 +970,14 @@ export default function Expenses() {
                           alignItems: 'center',
                           fontSize: '1rem',
                           fontWeight: 500,
-                          py: 0
+                          py: 0,
+                          color: theme.palette.text.primary
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(255, 255, 255, 0.2)'
+                        },
+                        '& .MuiSvgIcon-root': {
+                          color: 'rgba(255, 255, 255, 0.7)'
                         }
                       }}
                     >
@@ -806,7 +1015,7 @@ export default function Expenses() {
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      color: theme.palette.text.secondary,
+                      color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.85)' : theme.palette.text.secondary,
                       mb: 1,
                       display: 'block'
                     }}
@@ -823,7 +1032,14 @@ export default function Expenses() {
                           alignItems: 'center',
                           fontSize: '1rem',
                           fontWeight: 500,
-                          py: 0
+                          py: 0,
+                          color: theme.palette.text.primary
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(255, 255, 255, 0.2)'
+                        },
+                        '& .MuiSvgIcon-root': {
+                          color: 'rgba(255, 255, 255, 0.7)'
                         }
                       }}
                     >
