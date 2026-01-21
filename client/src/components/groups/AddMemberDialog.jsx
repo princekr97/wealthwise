@@ -86,6 +86,38 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
         setContactPickerSupported('contacts' in navigator && 'ContactsManager' in window);
     }, []);
 
+    // Strict scroll locking for mobile with scroll position preservation
+    React.useEffect(() => {
+        if (open) {
+            const scrollY = window.scrollY;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+        } else {
+            const scrollY = document.body.style.top;
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+            window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        }
+
+        return () => {
+            if (open) { // Cleanup if unmounting while open
+                const scrollY = document.body.style.top;
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+                window.scrollTo(0, parseInt(scrollY || '0') * -1);
+            }
+        };
+    }, [open]);
+
     const getAvatarColor = (name) => {
         if (!name) return '#666';
         const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -97,7 +129,7 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
             const props = ['name', 'tel'];
             const opts = { multiple: false };
             const contacts = await navigator.contacts.select(props, opts);
-            
+
             if (contacts && contacts.length > 0) {
                 const contact = contacts[0];
                 if (contact.name && contact.name[0]) {
@@ -146,7 +178,20 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
     };
 
     return (
-        <StyledDialog open={open} onClose={onClose} TransitionComponent={Fade} TransitionProps={{ timeout: 400 }}>
+        <StyledDialog 
+            open={open} 
+            onClose={onClose} 
+            TransitionComponent={Fade} 
+            TransitionProps={{ timeout: 400 }}
+            disableScrollLock={false}
+            keepMounted={false}
+            scroll="body"
+            sx={{
+                '& .MuiBackdrop-root': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)'
+                }
+            }}
+        >
             <HeaderBox>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
                     <Box sx={{ width: 36, height: 36, borderRadius: '9px', background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)', flexShrink: 0 }}>

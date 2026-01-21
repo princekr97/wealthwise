@@ -140,13 +140,20 @@ export default function SettleDebtDialog({ open, onClose, group, currentUser, ba
             onClose={onClose}
             maxWidth="xs"
             fullWidth
+            disableScrollLock={false}
+            scroll="body"
             PaperProps={{
                 sx: {
                     borderRadius: '24px',
                     p: 1,
                     backgroundImage: 'none',
-                    bgcolor: '#1E293B', // Deep slate background
+                    bgcolor: '#1E293B',
                     border: '1px solid rgba(255, 255, 255, 0.1)'
+                }
+            }}
+            sx={{
+                '& .MuiBackdrop-root': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)'
                 }
             }}
         >

@@ -177,9 +177,7 @@ export default function GroupDetails() {
         setExporting(true);
         try {
             toast.info('Generating PDF Report...');
-            // Filter out Settlement expenses for the report
-            const reportExpenses = expenses.filter(exp => exp.category !== 'Settlement');
-            await generateGroupReport(group, reportExpenses, balances);
+            await generateGroupReport(group, expenses, balances);
             toast.success('Report downloaded successfully');
         } catch (error) {
             console.error('Download error:', error);
@@ -193,9 +191,7 @@ export default function GroupDetails() {
         if (!group) return;
         setPreviewLoading(true);
         try {
-            // Filter out Settlement expenses for the report
-            const reportExpenses = expenses.filter(exp => exp.category !== 'Settlement');
-            const url = await generateGroupReport(group, reportExpenses, balances, true);
+            const url = await generateGroupReport(group, expenses, balances, true);
             setPdfUrl(url);
             setPreviewOpen(true);
         } catch (error) {
@@ -219,10 +215,8 @@ export default function GroupDetails() {
         setShareLoading(true);
         try {
             toast.info('Preparing to share...');
-            // Filter out Settlement expenses for the report
-            const reportExpenses = expenses.filter(exp => exp.category !== 'Settlement');
             // Generate PDF Blob URL
-            const url = await generateGroupReport(group, reportExpenses, balances, true);
+            const url = await generateGroupReport(group, expenses, balances, true);
 
             // Fetch blob from URL
             const response = await fetch(url);

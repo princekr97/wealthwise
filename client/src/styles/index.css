@@ -7,14 +7,23 @@
 html {
   scroll-behavior: smooth;
   touch-action: pan-x pan-y;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
 }
 
 body {
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: contain;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   user-select: none;
   -webkit-user-select: none;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
 }
 
 /* Allow text selection only on inputs and specific areas */

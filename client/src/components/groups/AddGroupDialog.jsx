@@ -97,7 +97,19 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
     };
 
     return (
-        <StyledDialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <StyledDialog 
+            open={open} 
+            onClose={onClose} 
+            maxWidth="sm" 
+            fullWidth
+            disableScrollLock={false}
+            scroll="body"
+            sx={{
+                '& .MuiBackdrop-root': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)'
+                }
+            }}
+        >
             <Box sx={{ p: 3 }}>
                 {/* Header */}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>

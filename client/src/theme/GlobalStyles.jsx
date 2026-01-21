@@ -10,7 +10,7 @@ import { gradients } from './gradients';
 
 export default function GlobalStyles() {
   const { currentGradient } = useThemeContext();
-  const activeGradient = gradients[currentGradient]?.gradient || gradients.sophisticatedNavy.gradient;
+  const activeGradient = gradients[currentGradient]?.gradient || gradients.emeraldFinance.gradient;
 
   // Apply gradient to document root immediately
   React.useEffect(() => {
@@ -43,15 +43,31 @@ export default function GlobalStyles() {
         'body': {
           minHeight: '100vh',
           minHeight: '-webkit-fill-available',
-          background: 'var(--active-gradient)',
-          backgroundAttachment: 'fixed',
           backgroundColor: '#0F172A',
+          color: '#F9FAFB',
+          margin: 0,
+          padding: 0,
+          position: 'relative',
+          overflowX: 'hidden',
+          overscrollBehavior: 'contain'
+        },
+
+        'body::before': {
+          content: '""',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          minHeight: '100vh',
+          minHeight: '-webkit-fill-available',
+          background: 'var(--active-gradient)',
           backgroundRepeat: 'no-repeat',
           backgroundSize: 'cover',
-          color: '#F9FAFB',
+          backgroundAttachment: 'fixed',
+          zIndex: -1,
+          pointerEvents: 'none',
           transition: 'background 0.5s ease-in-out',
-          margin: 0,
-          padding: 0
         },
 
         '#root': {

@@ -455,11 +455,10 @@ export function Layout({ children }) {
           component="main"
           sx={{
             flex: 1,
-            // Removed overflow: 'auto' to fix scrolling lag/double scrollbars. 
-            // Now relies on native body scroll.
             bgcolor: 'transparent',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            minHeight: '100vh'
           }}
         >
           {children}

@@ -325,6 +325,16 @@ const renderCategories = (expenses, totalSpending) => {
     }
   });
 
+  // Handle empty categories
+  if (Object.keys(totals).length === 0) {
+    return `
+      <h2>Category-wise Breakdown</h2>
+      <div style="text-align:center; padding:20px; color:#94a3b8; font-size:11px;">
+        No expense categories to display
+      </div>
+    `;
+  }
+
   const cards = Object.entries(totals)
     .sort(([, a], [, b]) => b - a)
     .map(([cat, amt]) => {
@@ -357,7 +367,20 @@ const renderCategories = (expenses, totalSpending) => {
  * @returns {string} HTML string for transaction history
  */
 const renderTransactions = (expenses) => {
-  const list = expenses.map(e => {
+  // Filter out Settlement expenses
+  const nonSettlementExpenses = expenses.filter(e => e.category !== 'Settlement');
+  
+  // Handle empty transactions
+  if (nonSettlementExpenses.length === 0) {
+    return `
+      <h2>Transaction History</h2>
+      <div style="text-align:center; padding:20px; color:#94a3b8; font-size:11px;">
+        No transactions to display
+      </div>
+    `;
+  }
+  
+  const list = nonSettlementExpenses.map(e => {
     const catColor = getCategoryColor(e.category);
     const dateObj = new Date(e.date);
     const day = dateObj.getDate();

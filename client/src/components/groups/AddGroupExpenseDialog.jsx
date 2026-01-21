@@ -504,6 +504,20 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
             onClose={onClose}
             TransitionComponent={Fade}
             transitionDuration={300}
+            disableScrollLock={false}
+            scroll="paper"
+            maxWidth="sm"
+            fullWidth
+            fullScreen={false}
+            sx={{
+                '& .MuiBackdrop-root': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)'
+                },
+                '& .MuiDialog-paper': {
+                    maxHeight: { xs: '90vh', sm: '85vh' },
+                    m: { xs: 2, sm: 3 }
+                }
+            }}
         >
             <HeaderBox>
                 <Box>
@@ -526,7 +540,13 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                 </IconButton>
             </HeaderBox>
 
-            <DialogContent sx={{ p: '1.5rem !important', bgcolor: '#1E293B' }}>
+            <DialogContent sx={{ 
+                p: '1.5rem !important', 
+                bgcolor: '#1E293B',
+                maxHeight: { xs: '70vh', sm: '80vh' },
+                overflowY: 'auto',
+                overflowX: 'hidden'
+            }}>
                 <Stack spacing={2.5}>
                     {/* Description */}
                     <Box>

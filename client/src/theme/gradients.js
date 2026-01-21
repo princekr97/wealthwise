@@ -220,7 +220,7 @@ export const gradientCategories = {
  * @returns {object} Gradient object
  */
 export const getGradient = (name) => {
-  return gradients[name] || gradients.sophisticatedNavy;
+  return gradients[name] || gradients.emeraldFinance;
 };
 
 /**

@@ -6,17 +6,19 @@
  */
 
 import React from 'react';
-import { Box } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 
 export default function PageContainer({ children, maxWidth = 'xl' }) {
     return (
         <Box
             sx={{
                 width: '100%',
-                minHeight: '100%',
+                minHeight: '100vh',
+                minHeight: '-webkit-fill-available',
                 py: 2,
                 px: 2,
-                position: 'relative' // Added for gradient background containment
+                position: 'relative',
+                bgcolor: 'transparent'
             }}
         >
             <Box
