@@ -124,7 +124,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
         bgcolor: '#1E293B',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-        maxWidth: '460px',
+        maxWidth: '690px',
         width: '100%',
         margin: 16
     }

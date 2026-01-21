@@ -5,7 +5,7 @@
  * Uses MUI components for consistency with the rest of the app.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Box, Drawer, IconButton, Typography, useTheme, useMediaQuery, alpha, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { Logout as LogoutIcon, DeleteForever as DeleteIcon } from '@mui/icons-material';
@@ -13,6 +13,7 @@ import { useAuthStore } from '../../store/authStore';
 import { toast } from 'sonner';
 import ConfirmDialog from '../common/ConfirmDialog';
 import logo from '../../assets/images/khatabahi-logo.png';
+import { getMenuItems } from '../../config/menuConfig';
 import {
   Menu as MenuIcon,
   Close as CloseIcon,
@@ -27,17 +28,18 @@ import {
   Groups as GroupsIcon
 } from '@mui/icons-material';
 
-const navItems = [
-  { to: '/app/dashboard', label: 'Dashboard', icon: DashboardIcon },
-  { to: '/app/groups', label: 'Groups', icon: GroupsIcon },
-  { to: '/app/expenses', label: 'Expenses', icon: ExpensesIcon },
-  { to: '/app/income', label: 'Income', icon: IncomeIcon },
-  { to: '/app/loans', label: 'Loans & EMIs', icon: LoansIcon },
-  { to: '/app/investments', label: 'Investments', icon: InvestmentsIcon },
-  { to: '/app/lending', label: 'Lending', icon: LendingIcon },
-  { to: '/app/budget', label: 'Budget & Goals', icon: BudgetIcon },
-  { to: '/app/settings', label: 'Settings', icon: SettingsIcon }
-];
+// Icon mapping
+const iconMap = {
+  Dashboard: DashboardIcon,
+  Groups: GroupsIcon,
+  Receipt: ExpensesIcon,
+  AccountBalance: IncomeIcon,
+  CreditCard: LoansIcon,
+  TrendingUp: InvestmentsIcon,
+  Handshake: LendingIcon,
+  Flag: BudgetIcon,
+  Settings: SettingsIcon
+};
 
 const SIDEBAR_WIDTH = 260;
 
@@ -63,6 +65,15 @@ export function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, deleteAccount } = useAuthStore();
+
+  // Get menu items from config based on user role
+  const navItems = useMemo(() => {
+    const userRole = user?.role || 'user';
+    return getMenuItems(userRole).map(item => ({
+      ...item,
+      icon: iconMap[item.icon] || DashboardIcon
+    }));
+  }, [user?.role]);
 
   // Get user initials
   const getUserInitials = () => {
@@ -252,6 +263,7 @@ export function Layout({ children }) {
     <Box sx={{
       display: 'flex',
       minHeight: '100vh',
+      minHeight: '-webkit-fill-available',
       bgcolor: 'transparent',
       position: 'relative',
     }}>
@@ -433,13 +445,6 @@ export function Layout({ children }) {
                   <LogoutIcon fontSize="small" sx={{ color: '#FFA500' }} />
                 </ListItemIcon>
                 <ListItemText>Logout</ListItemText>
-              </MenuItem>
-              <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)', my: 0.5 }} />
-              <MenuItem onClick={handleDeleteAccount}>
-                <ListItemIcon>
-                  <DeleteIcon fontSize="small" sx={{ color: '#EF4444' }} />
-                </ListItemIcon>
-                <ListItemText>Delete Account</ListItemText>
               </MenuItem>
             </Menu>
           </Box>

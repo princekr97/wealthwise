@@ -4,18 +4,16 @@
 
 /* Global Styles - WealthWise Mobile-First Design */
 
-html,
-body,
-#root {
-  height: 100%;
+html {
+  scroll-behavior: smooth;
+  touch-action: pan-x pan-y;
+}
+
+body {
   overscroll-behavior-y: none;
-  /* Disables pull-to-refresh / rubber-banding */
   -webkit-tap-highlight-color: transparent;
-  /* Removes blue tap highlight */
   -webkit-touch-callout: none;
-  /* Disables long-press context menu */
   user-select: none;
-  /* Disables text selection by default */
   -webkit-user-select: none;
 }
 
@@ -26,12 +24,6 @@ textarea,
 .selectable-text {
   user-select: text;
   -webkit-user-select: text;
-}
-
-html {
-  scroll-behavior: smooth;
-  touch-action: pan-x pan-y;
-  /* Improves scroll performance */
 }
 
 /* Mobile-optimized scrollbar */

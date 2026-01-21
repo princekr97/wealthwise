@@ -118,10 +118,23 @@ const getGroupDetails = async (req, res) => {
             throw new Error('Group not found');
         }
 
-        // Check if user is a member
-        const isMember = group.members.some(
-            (member) => member.userId && member.userId.toString() === req.user._id.toString()
-        ) || group.createdBy.toString() === req.user._id.toString();
+        // Check if user is a member (including shadow user matching)
+        const user = await User.findById(req.user._id);
+        const isMember = group.members.some((member) => {
+            // Direct userId match
+            if (member.userId && member.userId.toString() === req.user._id.toString()) {
+                return true;
+            }
+            // Shadow user match by email
+            if (user.email && member.email && member.email.toLowerCase() === user.email.toLowerCase()) {
+                return true;
+            }
+            // Shadow user match by phone
+            if (user.phoneNumber && member.phone && member.phone === user.phoneNumber) {
+                return true;
+            }
+            return false;
+        }) || group.createdBy.toString() === req.user._id.toString();
 
         if (!isMember) {
             res.status(403);
@@ -327,8 +340,12 @@ const removeMember = async (req, res) => {
             throw new Error('Group not found');
         }
 
-        // Only creator can remove members
-        if (group.createdBy.toString() !== req.user._id.toString()) {
+        // Check if user is a member of the group
+        const isMember = group.members.some(
+            (member) => member.userId && member.userId.toString() === req.user._id.toString()
+        ) || group.createdBy.toString() === req.user._id.toString();
+
+        if (!isMember) {
             res.status(403);
             throw new Error('Not authorized to remove members');
         }
@@ -385,28 +402,14 @@ const removeMember = async (req, res) => {
         }
 
         // Safe to remove: Balance is settled
-        // Soft delete member (keeps data for audit)
-        if (!memberToRemove.isActive === undefined) {
-            // Add soft delete fields if not present (backward compatibility)
-            memberToRemove.isActive = false;
-            memberToRemove.removedAt = new Date();
-            memberToRemove.removedBy = req.user._id;
-        } else {
-            memberToRemove.isActive = false;
-            memberToRemove.removedAt = new Date();
-            memberToRemove.removedBy = req.user._id;
-        }
-
+        // Remove member from array
+        group.members.splice(memberIndex, 1);
         await group.save();
-
-        // Note: We do NOT delete expenses anymore
-        // All historical data is preserved for audit trail
 
         res.json({ 
             message: 'Member removed successfully', 
             removedMemberId: targetUserId,
-            finalBalance: memberBalance.toFixed(2),
-            expensesPreserved: true
+            finalBalance: memberBalance.toFixed(2)
         });
     } catch (error) {
         res.status(400).json({ message: error.message });

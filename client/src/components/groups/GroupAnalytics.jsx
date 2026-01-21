@@ -180,15 +180,15 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                 >
                     <Box sx={{ mb: 1.5 }}>
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="3" y="7" width="18" height="12" rx="2" stroke="#3b82f6" strokeWidth="2" fill="rgba(59, 130, 246, 0.1)"/>
-                            <circle cx="12" cy="13" r="3" stroke="#3b82f6" strokeWidth="2" fill="rgba(59, 130, 246, 0.2)"/>
-                            <path d="M3 11h18" stroke="#3b82f6" strokeWidth="2"/>
+                            <rect x="3" y="7" width="18" height="12" rx="2" stroke="#3b82f6" strokeWidth="2" fill="rgba(59, 130, 246, 0.1)" />
+                            <circle cx="12" cy="13" r="3" stroke="#3b82f6" strokeWidth="2" fill="rgba(59, 130, 246, 0.2)" />
+                            <path d="M3 11h18" stroke="#3b82f6" strokeWidth="2" />
                         </svg>
                     </Box>
                     <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 1, textAlign: 'center' }}>
                         Total Spending
                     </Typography>
-                    <Typography sx={{ fontSize: '1.75rem', fontWeight: 700, color: 'white', letterSpacing: '-0.5px', textAlign: 'center' }}>
+                    <Typography sx={{ fontSize: { xs: '1.4rem', sm: '1.75rem' }, fontWeight: 700, color: 'white', letterSpacing: '-0.5px', textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>
                         {formatCurrency(stats.totalGroupSpend)}
                     </Typography>
                 </Box>
@@ -211,14 +211,14 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                 >
                     <Box sx={{ mb: 1.5 }}>
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="3" y="6" width="18" height="14" rx="2" stroke="#10b981" strokeWidth="2" fill="rgba(16, 185, 129, 0.1)"/>
-                            <path d="M3 10h18M7 14h2M7 17h4" stroke="#10b981" strokeWidth="2" strokeLinecap="round"/>
+                            <rect x="3" y="6" width="18" height="14" rx="2" stroke="#10b981" strokeWidth="2" fill="rgba(16, 185, 129, 0.1)" />
+                            <path d="M3 10h18M7 14h2M7 17h4" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                     </Box>
                     <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 1, textAlign: 'center' }}>
                         You Paid
                     </Typography>
-                    <Typography sx={{ fontSize: '1.75rem', fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px', textAlign: 'center' }}>
+                    <Typography sx={{ fontSize: { xs: '1.4rem', sm: '1.75rem' }, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px', textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>
                         {formatCurrency(stats.myTotalSpend)}
                     </Typography>
                 </Box>
@@ -242,15 +242,15 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                 >
                     <Box sx={{ mb: 1.5 }}>
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="9" cy="7" r="3" stroke="#f59e0b" strokeWidth="2" fill="rgba(245, 158, 11, 0.1)"/>
-                            <circle cx="15" cy="7" r="3" stroke="#f59e0b" strokeWidth="2" fill="rgba(245, 158, 11, 0.1)"/>
-                            <path d="M3 20c0-3.5 2.5-6 6-6s6 2.5 6 6M15 20c0-3.5 2.5-6 6-6" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round"/>
+                            <circle cx="9" cy="7" r="3" stroke="#f59e0b" strokeWidth="2" fill="rgba(245, 158, 11, 0.1)" />
+                            <circle cx="15" cy="7" r="3" stroke="#f59e0b" strokeWidth="2" fill="rgba(245, 158, 11, 0.1)" />
+                            <path d="M3 20c0-3.5 2.5-6 6-6s6 2.5 6 6M15 20c0-3.5 2.5-6 6-6" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                     </Box>
                     <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 1, textAlign: 'center' }}>
                         Average Spend
                     </Typography>
-                    <Typography sx={{ fontSize: '1.75rem', fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px', textAlign: 'center' }}>
+                    <Typography sx={{ fontSize: { xs: '1.4rem', sm: '1.75rem' }, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px', textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>
                         {formatCurrency(stats.totalGroupSpend / (members.length || 1))}
                     </Typography>
                     <Box
@@ -296,7 +296,7 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                                 innerRadius={isMobile ? 50 : 70}
                                 outerRadius={isMobile ? 90 : 115}
                                 paddingAngle={2}
-                                fill="#8884d8"
+                                stroke="transparent"
                                 dataKey="value"
                             >
                                 {categoryData.map((entry, index) => (
@@ -313,16 +313,23 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                     title="Spending by Member"
                     subtitle="Who spent the most?"
                     collapsible={true}
-                    height={380}
+                    height={Math.max(200, memberSpendingData.length * 50)}
                     defaultExpanded={true}
                 >
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                             data={memberSpendingData}
                             layout="vertical"
-                            margin={{ top: 5, right: 50, left: 0, bottom: 5 }} // Increased right margin for labels
-                            barSize={28}
+                            margin={{ top: 5, right: 50, left: 0, bottom: 5 }}
+                            barSize={Math.min(40, Math.max(20, 280 / Math.max(memberSpendingData.length, 1)))}
+                            barGap={5}
                         >
+                            <defs>
+                                <linearGradient id="barGradient1" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.8} />
+                                    <stop offset="100%" stopColor="#06B6D4" stopOpacity={1} />
+                                </linearGradient>
+                            </defs>
                             <XAxis type="number" hide />
                             <YAxis
                                 dataKey="name"
@@ -332,8 +339,8 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                                 axisLine={false}
                                 tickLine={false}
                             />
-                            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.03)' }} content={<CustomTooltip />} />
-                            <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                            <Tooltip cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }} content={<CustomTooltip />} />
+                            <Bar dataKey="value" radius={[0, 8, 8, 0]}>
                                 {memberSpendingData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}

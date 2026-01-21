@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     Paper,
@@ -8,7 +8,10 @@ import {
     Stack,
     Chip,
     styled,
-    alpha
+    alpha,
+    Dialog,
+    DialogContent,
+    CircularProgress
 } from '@mui/material';
 import { formatCurrency } from '../../utils/formatters';
 import { getAvatarConfig } from '../../utils/avatarHelper';
@@ -311,6 +314,20 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
  * Shows all suggested settlements with a "Settle All" option
  */
 export function SettlementSuggestionsList({ settlements, onSettle, onSettleAll, loading }) {
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [settling, setSettling] = useState(false);
+
+    const handleSettleAll = async () => {
+        setSettling(true);
+        try {
+            await onSettleAll();
+            setConfirmOpen(false);
+        } catch (error) {
+            // Error handled by parent
+        } finally {
+            setSettling(false);
+        }
+    };
     if (!settlements || settlements.length === 0) {
         return (
             <Box
@@ -382,8 +399,8 @@ export function SettlementSuggestionsList({ settlements, onSettle, onSettleAll, 
 
                 {settlements.length > 1 && (
                     <Button
-                        onClick={onSettleAll}
-                        disabled={loading}
+                        onClick={() => setConfirmOpen(true)}
+                        disabled={loading || settling}
                         sx={{
                             borderRadius: '10px',
                             textTransform: 'none',
@@ -399,6 +416,10 @@ export function SettlementSuggestionsList({ settlements, onSettle, onSettleAll, 
                                 background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
                                 transform: 'translateY(-1px)',
                                 boxShadow: '0 6px 16px rgba(139, 92, 246, 0.45)'
+                            },
+                            '&:disabled': {
+                                background: 'rgba(139, 92, 246, 0.3)',
+                                color: 'rgba(255, 255, 255, 0.5)'
                             }
                         }}
                     >
@@ -421,6 +442,103 @@ export function SettlementSuggestionsList({ settlements, onSettle, onSettleAll, 
 
             {/* Info Chip */}
 
+            {/* Confirmation Dialog */}
+            <Dialog
+                open={confirmOpen}
+                onClose={() => !settling && setConfirmOpen(false)}
+                PaperProps={{
+                    sx: {
+                        borderRadius: '20px',
+                        background: '#1E293B',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+                        maxWidth: '400px',
+                        width: '100%',
+                        color: 'white'
+                    }
+                }}
+            >
+                <DialogContent sx={{ p: 3, textAlign: 'center' }}>
+                    {settling ? (
+                        <Box>
+                            <CircularProgress size={60} sx={{ color: '#8b5cf6', mb: 2 }} />
+                            <Typography sx={{ fontSize: '1.1rem', fontWeight: 600, color: '#F1F5F9', mb: 1 }}>
+                                Settling Payments...
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.85rem', color: '#94A3B8' }}>
+                                Please wait while we process {settlements.length} settlement{settlements.length > 1 ? 's' : ''}
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <Box>
+                            <Box sx={{
+                                width: 80,
+                                height: 80,
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 20px',
+                                boxShadow: '0 8px 24px rgba(139, 92, 246, 0.4)'
+                            }}>
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                                    <path d="M9 11L12 14L22 4M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </Box>
+                            <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, color: '#F1F5F9', mb: 1 }}>
+                                Mark All as Settled?
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.9rem', color: '#94A3B8', mb: 3 }}>
+                                This will record {settlements.length} settlement{settlements.length > 1 ? 's' : ''} and update all balances
+                            </Typography>
+                            <Stack direction="row" spacing={2}>
+                                <Button
+                                    onClick={() => setConfirmOpen(false)}
+                                    fullWidth
+                                    sx={{
+                                        py: 1.2,
+                                        borderRadius: '12px',
+                                        background: 'rgba(255, 255, 255, 0.05)',
+                                        color: '#94A3B8',
+                                        fontWeight: 600,
+                                        fontSize: '0.9rem',
+                                        textTransform: 'none',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        '&:hover': {
+                                            background: 'rgba(255, 255, 255, 0.08)',
+                                            color: '#F1F5F9'
+                                        }
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleSettleAll}
+                                    fullWidth
+                                    sx={{
+                                        py: 1.2,
+                                        borderRadius: '12px',
+                                        background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                                        color: '#FFFFFF',
+                                        fontWeight: 700,
+                                        fontSize: '0.9rem',
+                                        textTransform: 'none',
+                                        boxShadow: '0 4px 12px rgba(139, 92, 246, 0.35)',
+                                        '&:hover': {
+                                            background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+                                            transform: 'translateY(-1px)',
+                                            boxShadow: '0 6px 16px rgba(139, 92, 246, 0.45)'
+                                        }
+                                    }}
+                                >
+                                    Confirm
+                                </Button>
+                            </Stack>
+                        </Box>
+                    )}
+                </DialogContent>
+            </Dialog>
         </Box>
     );
 }

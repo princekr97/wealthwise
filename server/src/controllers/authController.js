@@ -28,7 +28,7 @@ const registerSchema = Joi.object({
 });
 
 const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
+  identifier: Joi.string().required(),
   password: Joi.string().required()
 });
 
@@ -103,18 +103,25 @@ export const loginUser = async (req, res, next) => {
       throw new Error(error.details[0].message);
     }
 
-    const { email, password } = value;
+    const { identifier, password } = value;
 
-    const user = await User.findOne({ email });
+    // Find user by email or phone
+    const user = await User.findOne({
+      $or: [
+        { email: identifier },
+        { phoneNumber: identifier }
+      ]
+    });
+
     if (!user) {
       res.status(401);
-      throw new Error('Invalid email or password');
+      throw new Error('Invalid credentials');
     }
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       res.status(401);
-      throw new Error('Invalid email or password');
+      throw new Error('Invalid credentials');
     }
 
     const token = generateToken(user._id);
@@ -125,6 +132,7 @@ export const loginUser = async (req, res, next) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         currency: user.currency,
         avatar: user.avatar
       }
@@ -164,17 +172,38 @@ export const updateProfile = async (req, res, next) => {
       avatar: req.body.avatar
     };
 
-    const user = await User.findByIdAndUpdate(req.user.id, updates, {
+    // Allow email/phone to be added only if they don't exist
+    const user = await User.findById(req.user.id);
+    if (!user.email && req.body.email) {
+      // Check if email already exists
+      const existingEmail = await User.findOne({ email: req.body.email });
+      if (existingEmail) {
+        res.status(409);
+        throw new Error('Email already in use');
+      }
+      updates.email = req.body.email;
+    }
+    if (!user.phoneNumber && req.body.phoneNumber) {
+      // Check if phone already exists
+      const existingPhone = await User.findOne({ phoneNumber: req.body.phoneNumber });
+      if (existingPhone) {
+        res.status(409);
+        throw new Error('Phone number already in use');
+      }
+      updates.phoneNumber = req.body.phoneNumber;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, {
       new: true,
       runValidators: true
     }).select('-password');
 
-    if (!user) {
+    if (!updatedUser) {
       res.status(404);
       throw new Error('User not found');
     }
 
-    res.json(user);
+    res.json(updatedUser);
   } catch (err) {
     next(err);
   }
@@ -298,12 +327,19 @@ export const verifyOTP = async (req, res, next) => {
  */
 export const forgotPassword = async (req, res, next) => {
   try {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
+    const { identifier } = req.body;
+    
+    // Find user by email or phone
+    const user = await User.findOne({
+      $or: [
+        { email: identifier },
+        { phoneNumber: identifier }
+      ]
+    });
 
     if (!user) {
       res.status(404);
-      throw new Error('No account found with this email address. Please register or check the spelling.');
+      throw new Error('No account found with this email or phone number.');
     }
 
     // Generate mock token (simple string for now, hash it in prod)
@@ -317,7 +353,7 @@ export const forgotPassword = async (req, res, next) => {
     const resetLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
 
     // Log for dev
-    console.log(`[AUTH] Reset Link for ${email}: ${resetLink}`);
+    console.log(`[AUTH] Reset Link for ${identifier}: ${resetLink}`);
 
     // In production, you would send this via email and NOT return it in the response
     // But for this dev/demo environment, we return it to help the user test flow.

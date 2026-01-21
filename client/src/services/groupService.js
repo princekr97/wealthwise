@@ -19,6 +19,12 @@ export const groupService = {
         return response.data;
     },
 
+    // Update group
+    updateGroup: async (id, groupData) => {
+        const response = await api.put(`/groups/${id}`, groupData);
+        return response.data;
+    },
+
     // Delete a group
     deleteGroup: async (id) => {
         const response = await api.delete(`/groups/${id}`);

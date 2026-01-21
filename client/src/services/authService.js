@@ -32,10 +32,18 @@ export const authService = {
   },
 
   /**
+   * Update user profile.
+   */
+  updateProfile: async (payload) => {
+    const { data } = await apiClient.put('/auth/profile', payload);
+    return data;
+  },
+
+  /**
    * Request password reset.
    */
-  forgotPassword: async (email) => {
-    const { data } = await apiClient.post('/auth/forgot-password', { email });
+  forgotPassword: async (identifier) => {
+    const { data } = await apiClient.post('/auth/forgot-password', { identifier });
     return data;
   },
 

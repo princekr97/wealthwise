@@ -411,12 +411,12 @@ export default function Expenses() {
         </ChartCard>
       </ChartGrid>
 
-      {/* Clean Expenses List - Minimalist Design */}
+      {/* Clean Expenses List */}
       <Card sx={{ overflow: 'hidden' }}>
         <CardContent sx={{ p: 0 }}>
           {/* Header */}
-          <Box sx={{ px: 2.5, py: 2, borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.25rem' }}>
+          <Box sx={{ px: 3, py: 2, borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.125rem', color: '#F1F5F9' }}>
               📋 Recent Expenses
             </Typography>
           </Box>
@@ -433,147 +433,43 @@ export default function Expenses() {
                     key={expense._id}
                     sx={{
                       px: 2.5,
-                      py: 2,
+                      py: 1.25,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 2,
-                      borderBottom: index < paginatedExpenses.length - 1 ? '1px solid rgba(255, 255, 255, 0.06)' : 'none',
-                      cursor: 'pointer',
+                      gap: 1.5,
+                      borderBottom: index < paginatedExpenses.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
                       transition: 'background-color 0.15s ease',
-                      '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.03)'
-                      },
-                      '&:active': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)'
-                      }
+                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.03)' }
                     }}
                   >
-                    {/* Category Icon - 40px circle with 15% opacity background */}
-                    <Box
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: '50%',
-                        backgroundColor: `${categoryColor}26`, // 15% opacity
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        fontSize: '1.5rem'
-                      }}
-                    >
+                    {/* Icon */}
+                    <Box sx={{ width: 36, height: 36, borderRadius: 1.5, backgroundColor: `${categoryColor}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.125rem' }}>
                       {CATEGORY_ICONS[expense.category] || '📌'}
                     </Box>
 
-                    {/* Left Section - Category & Details */}
+                    {/* Details */}
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: '1rem',
-                          color: '#FFFFFF',
-                          mb: 0.25,
-                          lineHeight: 1.3
-                        }}
-                      >
-                        {expense.category}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: '0.8125rem',
-                          color: '#94A3B8',
-                          fontWeight: 400,
-                          lineHeight: 1.3,
-                          mb: expense.description ? 0.25 : 0
-                        }}
-                      >
+                      <Typography sx={{ fontSize: '0.875rem', color: '#94A3B8' }}>
+                        <Box component="span" sx={{ fontWeight: 600, color: '#F1F5F9', mr: 1 }}>{expense.category}</Box>
                         {formatDate(expense.date)} · {expense.paymentMethod || 'Cash'}
+                        {expense.description && ` · ${expense.description.substring(0, 25)}${expense.description.length > 25 ? '...' : ''}`}
                       </Typography>
-                      {/* Description - Truncated to 40 chars */}
-                      {expense.description && (
-                        <Typography
-                          sx={{
-                            fontSize: '0.75rem',
-                            color: '#6B7280',
-                            fontWeight: 400,
-                            lineHeight: 1.2,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          {expense.description.length > 40
-                            ? `${expense.description.substring(0, 40)}...`
-                            : expense.description}
-                        </Typography>
-                      )}
                     </Box>
 
-                    {/* Right Section - Amount & Priority */}
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5, position: 'relative' }}>
-                      {/* Priority Dot - Minimal 8px circle */}
-                      <Box
-                        sx={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          backgroundColor: priorityColor,
-                          position: 'absolute',
-                          top: -2,
-                          right: -2
-                        }}
-                      />
-
-                      {/* Amount */}
-                      <Typography
-                        sx={{
-                          fontWeight: 700,
-                          fontSize: '1.125rem',
-                          color: '#FF6B6B',
-                          letterSpacing: '-0.01em'
-                        }}
-                      >
+                    {/* Amount & Priority */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: priorityColor, flexShrink: 0 }} />
+                      <Typography sx={{ fontWeight: 700, fontSize: '0.9375rem', color: '#FF6B6B', minWidth: 70, textAlign: 'right' }}>
                         -{formatCurrency(expense.amount)}
                       </Typography>
                     </Box>
 
-                    {/* Action Buttons - Edit & Delete */}
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      {/* Edit Button - Ghost style */}
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(expense);
-                        }}
-                        sx={{
-                          color: 'rgba(59, 130, 246, 0.7)',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            color: '#3B82F6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)'
-                          }
-                        }}
-                      >
+                    {/* Actions */}
+                    <Box sx={{ display: 'flex', gap: 0.5, opacity: { xs: 1, sm: 0 }, transition: 'opacity 0.2s', 'div:hover &': { opacity: 1 } }}>
+                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleEdit(expense); }} sx={{ color: '#3B82F6', '&:hover': { backgroundColor: 'rgba(59, 130, 246, 0.1)' } }}>
                         <EditIcon fontSize="small" />
                       </IconButton>
-
-                      {/* Delete Button - Ghost style */}
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(expense._id);
-                        }}
-                        sx={{
-                          color: 'rgba(239, 68, 68, 0.7)',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            color: '#EF4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)'
-                          }
-                        }}
-                      >
+                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDelete(expense._id); }} sx={{ color: '#EF4444', '&:hover': { backgroundColor: 'rgba(239, 68, 68, 0.1)' } }}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>
@@ -582,15 +478,10 @@ export default function Expenses() {
               })}
             </Box>
           ) : (
-            /* Empty State */
             <Box sx={{ py: 8, textAlign: 'center' }}>
-              <Typography sx={{ fontSize: '3rem', mb: 2, opacity: 0.5 }}>💸</Typography>
-              <Typography sx={{ fontSize: '1.25rem', fontWeight: 600, color: '#FFFFFF', mb: 1 }}>
-                No expenses this month
-              </Typography>
-              <Typography sx={{ fontSize: '0.9375rem', color: '#94A3B8' }}>
-                Start tracking by adding an expense
-              </Typography>
+              <Typography sx={{ fontSize: '3rem', mb: 2, opacity: 0.4 }}>💸</Typography>
+              <Typography sx={{ fontSize: '1.125rem', fontWeight: 600, color: '#F1F5F9', mb: 1 }}>No expenses yet</Typography>
+              <Typography sx={{ fontSize: '0.875rem', color: '#94A3B8' }}>Start tracking your spending</Typography>
             </Box>
           )}
 

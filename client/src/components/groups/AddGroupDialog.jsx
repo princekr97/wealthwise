@@ -15,7 +15,8 @@ import {
     Typography,
     Box,
     Avatar,
-    Chip
+    Chip,
+    styled
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -25,16 +26,24 @@ import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { toast } from 'sonner';
 import { groupService } from '../../services/groupService';
 
-const GROUP_TYPES = ['Trip', 'Home', 'Couple', 'Other'];
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+    '& .MuiDialog-paper': {
+        borderRadius: '24px',
+        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+        maxWidth: '690px',
+        width: '100%'
+    }
+}));
 
 export default function AddGroupDialog({ open, onClose, onGroupCreated, group }) {
     const isEditMode = !!group;
 
-    const { control, handleSubmit, reset } = useForm({
+    const { control, handleSubmit, reset, watch } = useForm({
         defaultValues: {
-            // 1. Update defaultValues
             name: '',
-            type: 'Other',
+            type: 'Trip',
             members: [{ name: '', email: '', phone: '' }]
         }
     });
@@ -47,16 +56,16 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
     // Reset/Populate form when opening
     React.useEffect(() => {
         if (open) {
-            if (isEditMode) {
+            if (isEditMode && group) {
                 reset({
-                    name: group.name,
-                    type: group.type,
-                    members: [] // Not editing members for now
+                    name: group.name || '',
+                    type: group.type || 'Trip',
+                    members: []
                 });
             } else {
                 reset({
                     name: '',
-                    type: 'Other',
+                    type: 'Trip',
                     members: [{ name: '', email: '', phone: '' }]
                 });
             }
@@ -88,16 +97,30 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle sx={{ fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {isEditMode ? 'Edit Group' : 'Create New Group'}
-                <IconButton onClick={onClose} size="small">
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
+        <StyledDialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+            <Box sx={{ p: 3 }}>
+                {/* Header */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.25rem', color: '#F1F5F9' }}>
+                        {isEditMode ? 'Edit Group' : 'Create New Group'}
+                    </Typography>
+                    <IconButton 
+                        onClick={onClose} 
+                        size="small"
+                        sx={{ 
+                            color: '#94A3B8',
+                            '&:hover': { 
+                                color: '#F1F5F9', 
+                                background: 'rgba(255,255,255,0.08)' 
+                            }
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </Box>
 
-            <DialogContent>
-                <Stack spacing={3} sx={{ mt: 1 }}>
+                {/* Content */}
+                <Stack spacing={3}>
                     <Controller
                         name="name"
                         control={control}
@@ -110,6 +133,26 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
                                 error={!!error}
                                 helperText={error?.message}
                                 placeholder="e.g. Goa Trip, Apartment 502"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        color: '#F1F5F9',
+                                        '& fieldset': {
+                                            borderColor: 'rgba(255, 255, 255, 0.1)'
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: 'rgba(255, 255, 255, 0.2)'
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: '#14b8a6'
+                                        }
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#94A3B8'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#14b8a6'
+                                    }
+                                }}
                             />
                         )}
                     />
@@ -119,41 +162,53 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
                         control={control}
                         render={({ field }) => (
                             <Box>
-                                <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
+                                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: '#CBD5E1' }}>
                                     Group Category
                                 </Typography>
-                                <Stack direction="row" spacing={2} sx={{ overflowX: 'auto', pb: 1, px: 0.5 }}>
+                                <Stack direction="row" spacing={2} sx={{ overflowX: 'auto', pb: 1 }}>
                                     {[
-                                        { type: 'Home', icon: '🏠', label: 'Home' },
-                                        { type: 'Trip', icon: '✈️', label: 'Trip' },
-                                        { type: 'Personal', icon: '👤', label: 'Personal' }, // Changed 'Couple' to 'Personal' based on user image, or keep logic. Image implies 'Personal' is an option? Let's stick to standard types mapped to UI. 
-                                        { type: 'Other', icon: '📄', label: 'Business' }
+                                        { type: 'Home', icon: '🏠' },
+                                        { type: 'Trip', icon: '✈️' },
+                                        { type: 'Personal', icon: '👤' },
+                                        { type: 'Other', icon: '📄' }
                                     ].map((item) => (
                                         <Box
                                             key={item.type}
                                             onClick={() => field.onChange(item.type)}
                                             sx={{
-                                                minWidth: 80,
-                                                height: 80,
-                                                borderRadius: 3,
+                                                minWidth: 90,
+                                                height: 90,
+                                                borderRadius: '16px',
                                                 border: '2px solid',
-                                                borderColor: field.value === item.type ? 'primary.main' : 'transparent',
-                                                bgcolor: field.value === item.type ? 'primary.lighter' : '#f8fafc',
+                                                borderColor: field.value === item.type ? '#14b8a6' : 'rgba(255, 255, 255, 0.1)',
+                                                background: field.value === item.type 
+                                                    ? 'linear-gradient(135deg, rgba(20, 184, 166, 0.2) 0%, rgba(20, 184, 166, 0.05) 100%)'
+                                                    : 'rgba(255, 255, 255, 0.03)',
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 cursor: 'pointer',
-                                                transition: 'all 0.2s',
-                                                boxShadow: field.value === item.type ? '0 4px 12px rgba(37, 99, 235, 0.2)' : 'none',
+                                                transition: 'all 0.2s ease',
+                                                boxShadow: field.value === item.type ? '0 4px 16px rgba(20, 184, 166, 0.3)' : 'none',
                                                 '&:hover': {
-                                                    bgcolor: field.value === item.type ? 'primary.lighter' : '#f1f5f9',
-                                                    transform: 'translateY(-2px)'
+                                                    background: field.value === item.type 
+                                                        ? 'linear-gradient(135deg, rgba(20, 184, 166, 0.25) 0%, rgba(20, 184, 166, 0.1) 100%)'
+                                                        : 'rgba(255, 255, 255, 0.06)',
+                                                    transform: 'translateY(-2px)',
+                                                    borderColor: field.value === item.type ? '#14b8a6' : 'rgba(255, 255, 255, 0.15)'
                                                 }
                                             }}
                                         >
-                                            <Typography sx={{ fontSize: '1.5rem', mb: 0.5 }}>{item.icon}</Typography>
-                                            <Typography variant="caption" fontWeight={600} color={field.value === item.type ? 'primary.main' : 'text.secondary'}>
+                                            <Typography sx={{ fontSize: '2rem', mb: 0.5 }}>{item.icon}</Typography>
+                                            <Typography 
+                                                variant="caption" 
+                                                fontWeight={600} 
+                                                sx={{ 
+                                                    color: field.value === item.type ? '#5EEAD4' : '#94A3B8',
+                                                    fontSize: '0.75rem'
+                                                }}
+                                            >
                                                 {item.type}
                                             </Typography>
                                         </Box>
@@ -162,17 +217,33 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
                             </Box>
                         )}
                     />
-
-
                 </Stack>
-            </DialogContent>
 
-            <DialogActions sx={{ p: 2 }}>
-                <Button onClick={onClose} color="inherit">Cancel</Button>
-                <Button onClick={handleSubmit(onSubmit)} variant="contained" disabled={false}>
-                    {isEditMode ? 'Update' : 'Create'}
-                </Button>
-            </DialogActions>
-        </Dialog>
+                {/* Actions */}
+                <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(0, 0, 0, 0.2)' }}>
+                    <Button 
+                        onClick={handleSubmit(onSubmit)} 
+                        variant="contained"
+                        fullWidth
+                        sx={{
+                            py: 1.2,
+                            borderRadius: '12px',
+                            background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                            color: '#FFFFFF',
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            boxShadow: '0 4px 12px rgba(20, 184, 166, 0.35)',
+                            '&:hover': {
+                                background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 6px 16px rgba(20, 184, 166, 0.45)'
+                            }
+                        }}
+                    >
+                        {isEditMode ? 'Update Group' : 'Create Group'}
+                    </Button>
+                </Box>
+            </Box>
+        </StyledDialog>
     );
 }

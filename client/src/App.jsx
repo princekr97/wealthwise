@@ -15,6 +15,7 @@ import { Login } from './pages/Login.jsx';
 import { Register } from './pages/Register.jsx';
 import { ProtectedRoute } from './components/common/ProtectedRoute.jsx';
 import PageLoader from './components/common/PageLoader.jsx';
+import ErrorBoundary from './components/common/ErrorBoundary.jsx';
 
 // Lazy load heavy pages (code splitting for performance)
 // Pages still fetch fresh data when mounted - no caching here
@@ -36,7 +37,7 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx').then(m => (
 
 export default function App() {
   return (
-    <>
+    <ErrorBoundary>
       <Toaster richColors position="top-right" duration={2000} />
       <Routes>
         <Route path="/" element={<Landing />} />
@@ -73,6 +74,6 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </ErrorBoundary>
   );
 }

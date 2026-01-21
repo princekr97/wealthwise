@@ -71,7 +71,7 @@ const groupSchema = new mongoose.Schema(
         ],
         type: {
             type: String,
-            enum: ['Trip', 'Home', 'Couple', 'Other'],
+            enum: ['Trip', 'Home', 'Personal', 'Other'],
             default: 'Other'
         },
         currency: {

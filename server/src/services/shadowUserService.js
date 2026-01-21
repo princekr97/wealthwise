@@ -36,8 +36,7 @@ export const linkShadowMembersToUser = async (user) => {
                             $or: [
                                 { userId: { $exists: false } },
                                 { userId: null }
-                            ],
-                            isActive: { $ne: false } // Only active members
+                            ]
                         }
                     }
                 },
@@ -48,8 +47,7 @@ export const linkShadowMembersToUser = async (user) => {
                             $or: [
                                 { userId: { $exists: false } },
                                 { userId: null }
-                            ],
-                            isActive: { $ne: false }
+                            ]
                         }
                     }
                 }
@@ -69,7 +67,7 @@ export const linkShadowMembersToUser = async (user) => {
                 const phoneMatch = phone && member.phone && member.phone === phone;
 
                 // If match found and member is still shadow (no userId)
-                if ((emailMatch || phoneMatch) && !member.userId && member.isActive !== false) {
+                if ((emailMatch || phoneMatch) && !member.userId) {
                     member.userId = userId;
                     groupUpdated = true;
                     console.log(`✅ Linked shadow member "${member.name}" to user ${userId} in group "${group.name}"`);
@@ -125,22 +123,19 @@ export const getUserGroups = async (userId, userEmail, userPhone) => {
                 
                 // User is registered member
                 {
-                    'members.userId': userId,
-                    'members.isActive': { $ne: false }
+                    'members.userId': userId
                 },
                 
                 // User's email matches (for newly linked accounts)
                 userEmail ? {
                     'members.email': userEmail.toLowerCase(),
-                    'members.userId': userId, // Only if already linked
-                    'members.isActive': { $ne: false }
+                    'members.userId': userId // Only if already linked
                 } : null,
                 
                 // User's phone matches (for newly linked accounts)
                 userPhone ? {
                     'members.phone': userPhone,
-                    'members.userId': userId,
-                    'members.isActive': { $ne: false }
+                    'members.userId': userId
                 } : null
             ].filter(Boolean) // Remove null entries
         }).sort({ createdAt: -1 });

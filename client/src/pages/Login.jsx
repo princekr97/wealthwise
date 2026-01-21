@@ -68,7 +68,7 @@ export function Login() {
   } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      identifier: '',
       password: ''
     }
   });
@@ -161,6 +161,7 @@ export function Login() {
             sx={{
               fontWeight: 700,
               fontSize: { xs: '1rem', sm: '1.25rem' },
+              color: '#F1F5F9'
             }}
           >
             Welcome Back
@@ -168,8 +169,12 @@ export function Login() {
         </Box>
         <Typography
           variant="caption"
-          color="textSecondary"
-          sx={{ display: 'block', mb: 2 }}
+          sx={{ 
+            display: 'block', 
+            mb: 2,
+            fontSize: { xs: '0.75rem', sm: '0.8rem' },
+            color: '#94A3B8'
+          }}
         >
           {loginMode === 'email'
             ? 'Access your financial dashboard'
@@ -177,268 +182,335 @@ export function Login() {
         </Typography>
       </Box>
 
-      {/* Login Mode Toggle - Compact Pill Style */}
+      {/* Login Mode Toggle - Modern Pill Style */}
       <Box sx={{
         display: 'flex',
         justifyContent: 'center',
         mb: 3,
         backgroundColor: 'rgba(255, 255, 255, 0.03)',
         p: 0.5,
-        borderRadius: 2,
-        border: '1px solid rgba(255, 255, 255, 0.05)'
+        borderRadius: 2.5,
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        backdropFilter: 'blur(10px)'
       }}>
         <Button
           size="small"
           onClick={() => setLoginMode('email')}
+          startIcon={<EmailIcon sx={{ fontSize: 16 }} />}
           sx={{
             flex: 1,
             textTransform: 'none',
-            borderRadius: 1.5,
-            fontSize: '0.8rem',
-            py: 0.75,
-            backgroundColor: loginMode === 'email' ? 'primary.main' : 'transparent',
-            color: loginMode === 'email' ? '#fff' : 'text.secondary',
+            borderRadius: 2,
+            fontSize: '0.85rem',
+            py: 1,
+            fontWeight: 600,
+            background: loginMode === 'email' 
+              ? 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
+              : 'transparent',
+            color: loginMode === 'email' ? '#fff' : '#94A3B8',
+            boxShadow: loginMode === 'email' ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none',
+            transition: 'all 0.3s ease',
             '&:hover': {
-              backgroundColor: loginMode === 'email' ? 'primary.dark' : 'rgba(255, 255, 255, 0.05)',
+              background: loginMode === 'email' 
+                ? 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)'
+                : 'rgba(255, 255, 255, 0.05)',
+              transform: 'translateY(-1px)',
             }
           }}
         >
           Email
         </Button>
-        <Button
-          size="small"
-          onClick={() => setLoginMode('phone')}
-          sx={{
-            flex: 1,
-            textTransform: 'none',
-            borderRadius: 1.5,
-            fontSize: '0.8rem',
-            py: 0.75,
-            backgroundColor: loginMode === 'phone' ? 'primary.main' : 'transparent',
-            color: loginMode === 'phone' ? '#fff' : 'text.secondary',
-            '&:hover': {
-              backgroundColor: loginMode === 'phone' ? 'primary.dark' : 'rgba(255, 255, 255, 0.05)',
-            }
-          }}
-        >
-          OTP
-        </Button>
+        <Box sx={{ flex: 1, position: 'relative' }}>
+          <Button
+            size="small"
+            onClick={() => toast.info('OTP Login coming soon! 🚀')}
+            startIcon={<PhoneIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              width: '100%',
+              textTransform: 'none',
+              borderRadius: 2,
+              fontSize: '0.85rem',
+              py: 1,
+              fontWeight: 600,
+              background: 'transparent',
+              color: '#64748B',
+              cursor: 'not-allowed',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              }
+            }}
+          >
+            OTP
+          </Button>
+          <Box
+            sx={{
+              position: 'absolute',
+              top: -6,
+              right: 8,
+              background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+              color: '#fff',
+              fontSize: '0.55rem',
+              fontWeight: 700,
+              px: 0.7,
+              py: 0.25,
+              borderRadius: 0.75,
+              boxShadow: '0 2px 8px rgba(245, 158, 11, 0.4)',
+              letterSpacing: '0.5px',
+              pointerEvents: 'none'
+            }}
+          >
+            SOON
+          </Box>
+        </Box>
       </Box>
 
       {/* Form Area */}
-      {loginMode === 'email' ? (
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <Stack spacing={2}>
-            <TextField
-              {...register('email')}
-              label="Email"
-              type="email"
-              fullWidth
-              size="small"
-              placeholder="you@example.com"
-              error={!!errors.email}
-              helperText={errors.email?.message}
-              sx={{
-                '& .MuiInputBase-root': {
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                },
-              }}
-            />
-
-            <TextField
-              {...register('password')}
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              fullWidth
-              size="small"
-              placeholder="••••••••"
-              error={!!errors.password}
-              helperText={errors.password?.message}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                      size="small"
-                      sx={{ color: 'text.secondary' }}
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiInputBase-root': {
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                },
-              }}
-            />
-
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: 1,
-              }}
-            >
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    size="small"
-                    sx={{
-                      color: 'text.secondary',
-                      '&.Mui-checked': { color: 'primary.main' },
-                    }}
-                  />
-                }
-                label={
-                  <Typography
-                    variant="caption"
-                    color="textSecondary"
-                    sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
-                  >
-                    Remember me
-                  </Typography>
-                }
-              />
-              <Link
-                component="button"
-                type="button"
-                variant="caption"
-                color="primary"
-                onClick={() => setForgotPasswordOpen(true)}
-                sx={{
-                  fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                  textDecoration: 'none',
-                  '&:hover': { textDecoration: 'underline' },
-                }}
-              >
-                Forgot password?
-              </Link>
-            </Box>
-
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              fullWidth
-              disabled={loading}
-              sx={{
-                mt: 1,
-                py: { xs: 1.25, sm: 1.5 },
-                borderRadius: 2,
-                fontWeight: 600,
-                fontSize: { xs: '0.875rem', sm: '1rem' },
-                textTransform: 'none',
-                minHeight: { xs: 44, sm: 48 },
-              }}
-            >
-              {loading ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CircularProgress size={18} color="inherit" />
-                  Logging in...
-                </Box>
-              ) : (
-                'Log in'
-              )}
-            </Button>
-          </Stack>
-        </form>
-      ) : (
-        <Stack spacing={{ xs: 2, sm: 2.5 }}>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Stack spacing={2.5}>
           <TextField
-            label="Phone Number"
-            type="tel"
+            {...register('identifier')}
+            label="Email / Phone"
+            type="text"
             fullWidth
             size="small"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
-            placeholder="10-digit mobile number"
-            disabled={otpSent || otpLoading}
+            placeholder="you@example.com or 9876543210"
+            error={!!errors.identifier}
+            helperText={errors.identifier?.message}
+            InputLabelProps={{
+              sx: {
+                color: '#94A3B8',
+                '&.Mui-focused': {
+                  color: '#3B82F6'
+                }
+              }
+            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <PhoneIcon sx={{ fontSize: 20, color: 'primary.main', opacity: 0.7 }} />
+                  <EmailIcon sx={{ fontSize: 20, color: 'primary.main', opacity: 0.7 }} />
                 </InputAdornment>
               ),
             }}
+            sx={{
+              '& .MuiInputBase-root': {
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: 2,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                },
+                '&.Mui-focused': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.2)',
+                }
+              },
+              '& .MuiInputBase-input': {
+                color: '#F1F5F9',
+                '&::placeholder': {
+                  color: '#64748B',
+                  opacity: 1
+                },
+                '&:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
+                  WebkitTextFillColor: '#F1F5F9 !important',
+                  caretColor: '#F1F5F9',
+                  transition: 'background-color 5000s ease-in-out 0s'
+                },
+                '&:-webkit-autofill:hover': {
+                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
+                  WebkitTextFillColor: '#F1F5F9 !important'
+                },
+                '&:-webkit-autofill:focus': {
+                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
+                  WebkitTextFillColor: '#F1F5F9 !important'
+                },
+                '&:-webkit-autofill:active': {
+                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
+                  WebkitTextFillColor: '#F1F5F9 !important'
+                }
+              },
+            }}
           />
 
-          {otpSent && (
-            <TextField
-              label="Enter OTP"
-              type="text"
-              fullWidth
-              size="small"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
-              placeholder="6-digit code"
-              disabled={otpLoading}
-              autoFocus
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <OtpIcon sx={{ fontSize: 20, color: 'primary.main', opacity: 0.7 }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          )}
-
-          <Button
-            onClick={otpSent ? handleVerifyOTP : handleSendOTP}
-            variant="contained"
-            color="primary"
+          <TextField
+            {...register('password')}
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
             fullWidth
-            disabled={otpLoading}
+            size="small"
+            placeholder="••••••••"
+            error={!!errors.password}
+            helperText={errors.password?.message}
+            InputLabelProps={{
+              sx: {
+                color: '#94A3B8',
+                '&.Mui-focused': {
+                  color: '#3B82F6'
+                }
+              }
+            }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                    size="small"
+                    sx={{ 
+                      color: '#94A3B8',
+                      '&:hover': {
+                        color: 'primary.main',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)'
+                      }
+                    }}
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
             sx={{
-              mt: 1,
-              py: { xs: 1.25, sm: 1.5 },
-              borderRadius: 2,
-              fontWeight: 600,
-              fontSize: { xs: '0.875rem', sm: '1rem' },
-              textTransform: 'none',
-              minHeight: { xs: 44, sm: 48 },
+              '& .MuiInputBase-root': {
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: 2,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                },
+                '&.Mui-focused': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.2)',
+                }
+              },
+              '& .MuiInputBase-input': {
+                color: '#F1F5F9',
+                '&::placeholder': {
+                  color: '#64748B',
+                  opacity: 1
+                },
+                '&:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
+                  WebkitTextFillColor: '#F1F5F9 !important',
+                  caretColor: '#F1F5F9',
+                  transition: 'background-color 5000s ease-in-out 0s'
+                },
+                '&:-webkit-autofill:hover': {
+                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
+                  WebkitTextFillColor: '#F1F5F9 !important'
+                },
+                '&:-webkit-autofill:focus': {
+                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
+                  WebkitTextFillColor: '#F1F5F9 !important'
+                },
+                '&:-webkit-autofill:active': {
+                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
+                  WebkitTextFillColor: '#F1F5F9 !important'
+                }
+              },
+            }}
+          />
+
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 1,
             }}
           >
-            {otpLoading ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CircularProgress size={18} color="inherit" />
-                {otpSent ? 'Verifying...' : 'Sending...'}
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  sx={{
+                    color: '#64748B',
+                    '&.Mui-checked': { color: '#3B82F6' },
+                  }}
+                />
+              }
+              label={
+                <Typography
+                  variant="caption"
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' }, color: '#94A3B8' }}
+                >
+                  Remember me
+                </Typography>
+              }
+            />
+            <Link
+              component="button"
+              type="button"
+              variant="caption"
+              onClick={() => setForgotPasswordOpen(true)}
+              sx={{
+                fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                textDecoration: 'none',
+                fontWeight: 600,
+                color: '#3B82F6',
+                '&:hover': { 
+                  textDecoration: 'underline',
+                  color: '#60A5FA'
+                },
+              }}
+            >
+              Forgot password?
+            </Link>
+          </Box>
+
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            disabled={loading}
+            sx={{
+              mt: 1,
+              py: { xs: 1.4, sm: 1.6 },
+              borderRadius: 2.5,
+              fontWeight: 700,
+              fontSize: { xs: '0.9rem', sm: '1rem' },
+              textTransform: 'none',
+              minHeight: { xs: 48, sm: 52 },
+              background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+              boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                boxShadow: '0 12px 28px rgba(59, 130, 246, 0.4)',
+                transform: 'translateY(-2px)',
+              },
+              '&:active': {
+                transform: 'translateY(0px)',
+              },
+              '&:disabled': {
+                background: 'rgba(59, 130, 246, 0.3)',
+                color: 'rgba(255, 255, 255, 0.5)'
+              }
+            }}
+          >
+            {loading ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <CircularProgress size={20} color="inherit" />
+                Logging in...
               </Box>
             ) : (
-              otpSent ? 'Verify & Log in' : 'Send One-Time Password'
+              'Log in'
             )}
           </Button>
-
-          {otpSent && (
-            <Button
-              variant="text"
-              size="small"
-              onClick={() => {
-                setOtpSent(false);
-                setOtp('');
-              }}
-              sx={{ textTransform: 'none', color: 'text.secondary' }}
-            >
-              Change Phone Number
-            </Button>
-          )}
         </Stack>
-      )}
+      </form>
 
       {/* Footer */}
       <Typography
         variant="body2"
-        color="textSecondary"
         sx={{
           mt: { xs: 2.5, sm: 3 },
           textAlign: 'center',
           fontSize: { xs: '0.75rem', sm: '0.875rem' },
+          color: '#94A3B8'
         }}
       >
         Don't have an account?{' '}
@@ -449,7 +521,11 @@ export function Login() {
           sx={{
             fontWeight: 600,
             textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' },
+            color: '#3B82F6',
+            '&:hover': { 
+              textDecoration: 'underline',
+              color: '#60A5FA'
+            },
           }}
         >
           Create one
@@ -492,16 +568,16 @@ export function Login() {
         </DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
-            Don't worry! Enter the email address associated with your account and we'll send you a secure link to reset your password.
+            Enter your email or phone number to receive a password reset link.
           </Typography>
           <TextField
-            label="Email Address"
-            type="email"
+            label="Email or Phone"
+            type="text"
             fullWidth
             size="small"
             value={resetEmail}
             onChange={(e) => setResetEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder="you@example.com or 9876543210"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">

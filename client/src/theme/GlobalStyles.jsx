@@ -4,12 +4,18 @@
  */
 
 import { GlobalStyles as MuiGlobalStyles } from '@mui/material';
+import React from 'react';
 import { useThemeContext } from '../context/ThemeContext';
 import { gradients } from './gradients';
 
 export default function GlobalStyles() {
   const { currentGradient } = useThemeContext();
   const activeGradient = gradients[currentGradient]?.gradient || gradients.sophisticatedNavy.gradient;
+
+  // Apply gradient to document root immediately
+  React.useEffect(() => {
+    document.documentElement.style.setProperty('--active-gradient', activeGradient);
+  }, [activeGradient]);
 
   return (
     <MuiGlobalStyles
@@ -30,23 +36,30 @@ export default function GlobalStyles() {
 
         'html': {
           height: '100%',
-          backgroundColor: 'transparent',
+          minHeight: '-webkit-fill-available',
+          backgroundColor: '#0F172A',
         },
 
         'body': {
           minHeight: '100vh',
+          minHeight: '-webkit-fill-available',
           background: 'var(--active-gradient)',
           backgroundAttachment: 'fixed',
-          backgroundColor: '#0F172A', // Fallback
+          backgroundColor: '#0F172A',
           backgroundRepeat: 'no-repeat',
           backgroundSize: 'cover',
           color: '#F9FAFB',
-          transition: 'background 0.5s ease-in-out' // Smooth transition
+          transition: 'background 0.5s ease-in-out',
+          margin: 0,
+          padding: 0
         },
 
         '#root': {
           minHeight: '100vh',
+          minHeight: '-webkit-fill-available',
           backgroundColor: 'transparent',
+          display: 'flex',
+          flexDirection: 'column'
         },
 
         // Smooth scrolling

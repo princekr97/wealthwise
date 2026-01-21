@@ -73,10 +73,10 @@ export const useAuthStore = create(
       /**
        * Forgot Password request.
        */
-      forgotPassword: async (email) => {
+      forgotPassword: async (identifier) => {
         set({ loading: true });
         try {
-          const res = await authService.forgotPassword(email);
+          const res = await authService.forgotPassword(identifier);
           set({ loading: false });
           return { success: true, message: res.message, debugLink: res.debugLink };
         } catch (error) {

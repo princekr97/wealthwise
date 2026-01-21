@@ -29,6 +29,7 @@ import {
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '../store/authStore';
+import { authService } from '../services/authService';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import PageContainer from '../components/layout/PageContainer';
 import PageHeader from '../components/layout/PageHeader';
@@ -40,7 +41,7 @@ import { gradients, gradientCategories, getGradientsByCategory } from '../theme/
 export default function Settings() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { user, logout, deleteAccount } = useAuthStore();
+  const { user, logout, deleteAccount, fetchProfile } = useAuthStore();
   const { currentGradient, setGradient } = useThemeContext();
   const [activeTab, setActiveTab] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -48,7 +49,24 @@ export default function Settings() {
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
+    phoneNumber: user?.phoneNumber || '',
   });
+
+  // Fetch latest profile on mount
+  React.useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  // Update profileData when user changes
+  React.useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || '',
+        email: user.email || '',
+        phoneNumber: user.phoneNumber || ''
+      });
+    }
+  }, [user]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -100,8 +118,8 @@ export default function Settings() {
           }}
         >
           {[
-            { icon: <PaletteIcon sx={{ fontSize: 18 }} />, label: 'Appearance', index: 0 },
-            { icon: <PersonIcon sx={{ fontSize: 18 }} />, label: 'Profile', index: 1 }
+            { icon: <PersonIcon sx={{ fontSize: 18 }} />, label: 'Profile', index: 0 },
+            { icon: <PaletteIcon sx={{ fontSize: 18 }} />, label: 'Appearance', index: 1 }
           ].map(({ icon, label, index }) => (
             <Box
               key={index}
@@ -137,7 +155,7 @@ export default function Settings() {
       </Box>
 
       {/* Profile Tab */}
-      {activeTab === 1 && (
+      {activeTab === 0 && (
         <Stack spacing={3}>
           <Card>
             <CardContent>
@@ -152,15 +170,87 @@ export default function Settings() {
                   onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
                   fullWidth
                   size="small"
+                  InputProps={{
+                    sx: {
+                      color: '#1E293B',
+                      fontSize: '0.9rem',
+                      fontWeight: 500,
+                      '& input': {
+                        color: '#1E293B !important'
+                      }
+                    }
+                  }}
+                  InputLabelProps={{
+                    sx: {
+                      color: '#94A3B8'
+                    }
+                  }}
                 />
 
                 <TextField
                   label="Email"
                   value={profileData.email}
-                  disabled
+                  onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                  disabled={!!user?.email}
                   fullWidth
                   size="small"
-                  helperText="Email cannot be changed"
+                  type="email"
+                  placeholder={!user?.email ? "Add your email" : ""}
+                  helperText={user?.email ? "Email cannot be changed" : "Add your email (cannot be changed later)"}
+                  InputProps={{
+                    sx: {
+                      color: '#1E293B !important',
+                      fontSize: '0.9rem',
+                      fontWeight: 500,
+                      '& input': {
+                        color: '#1E293B !important',
+                        WebkitTextFillColor: '#1E293B !important'
+                      }
+                    }
+                  }}
+                  InputLabelProps={{
+                    sx: {
+                      color: '#94A3B8 !important'
+                    }
+                  }}
+                  FormHelperTextProps={{
+                    sx: {
+                      color: '#64748B'
+                    }
+                  }}
+                />
+
+                <TextField
+                  label="Phone Number"
+                  value={profileData.phoneNumber}
+                  onChange={(e) => setProfileData({ ...profileData, phoneNumber: e.target.value })}
+                  disabled={!!user?.phoneNumber}
+                  fullWidth
+                  size="small"
+                  type="tel"
+                  placeholder={!user?.phoneNumber ? "Add 10-digit phone" : ""}
+                  helperText={user?.phoneNumber ? "Phone number cannot be changed" : "Add phone number (cannot be changed later)"}
+                  InputProps={{
+                    sx: {
+                      color: '#1E293B !important',
+                      fontSize: '0.9rem',
+                      fontWeight: 500,
+                      '& input': {
+                        color: '#1E293B !important',
+                        WebkitTextFillColor: '#1E293B !important'
+                      }
+                    }
+                  }}
+                  InputLabelProps={{
+                    sx: {
+                      color: '#94A3B8 !important'
+                    }
+                  }}
+                  FormHelperTextProps={{
+                    sx: {
+                      color: '#64748B'
+                    }
+                  }}
                 />
 
                 <Box>
@@ -168,6 +258,20 @@ export default function Settings() {
                     variant="contained"
                     color="primary"
                     sx={{ minWidth: 120 }}
+                    onClick={async () => {
+                      const updates = { name: profileData.name };
+                      if (!user?.email && profileData.email) updates.email = profileData.email;
+                      if (!user?.phoneNumber && profileData.phoneNumber) updates.phoneNumber = profileData.phoneNumber;
+
+                      // Call API to update profile
+                      try {
+                        await authService.updateProfile(updates);
+                        await fetchProfile();
+                        toast.success('Profile updated successfully');
+                      } catch (error) {
+                        toast.error('Failed to update profile');
+                      }
+                    }}
                   >
                     Save Changes
                   </Button>
@@ -176,28 +280,79 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card sx={{
+            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%)',
+            border: '1px solid rgba(239, 68, 68, 0.2)'
+          }}>
             <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontSize: { xs: '1rem', sm: '1.1rem' }, color: 'error.main' }}>
-                Danger Zone
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                <Box sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 2,
+                  background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+                }}>
+                  <Typography sx={{ fontSize: '1.2rem' }}>⚠️</Typography>
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: '1rem', sm: '1.1rem' }, color: '#EF4444' }}>
+                  Account Actions
+                </Typography>
+              </Box>
+
+              <Typography variant="body2" sx={{ color: '#94A3B8', mb: 3, fontSize: '0.85rem' }}>
+                These actions are permanent and cannot be undone. Please proceed with caution.
               </Typography>
 
-              <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+              <Stack spacing={2}>
                 <Button
                   variant="outlined"
-                  color="warning"
+                  fullWidth
                   startIcon={<LogoutIcon />}
                   onClick={handleLogout}
+                  sx={{
+                    borderColor: '#F59E0B',
+                    color: '#F59E0B',
+                    py: 1.5,
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    '&:hover': {
+                      borderColor: '#F59E0B',
+                      backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 12px rgba(245, 158, 11, 0.2)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
                 >
-                  Logout
+                  Logout from Account
                 </Button>
                 <Button
                   variant="contained"
-                  color="error"
+                  fullWidth
                   startIcon={<LogoutIcon sx={{ transform: 'rotate(180deg)' }} />}
                   onClick={handleDeleteAccount}
+                  sx={{
+                    background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+                    color: '#fff',
+                    py: 1.5,
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 6px 16px rgba(239, 68, 68, 0.4)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
                 >
-                  Delete Account
+                  Delete Account Permanently
                 </Button>
               </Stack>
             </CardContent>
@@ -207,7 +362,7 @@ export default function Settings() {
 
 
       {/* Appearance Tab */}
-      {activeTab === 0 && (
+      {activeTab === 1 && (
         <Card>
           <CardContent>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, fontSize: { xs: '1rem', sm: '1.1rem' } }}>

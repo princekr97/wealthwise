@@ -303,11 +303,13 @@ export default function GroupDetails() {
     const handleRemoveMember = async () => {
         if (!memberToDelete) return;
         try {
+            console.log('Removing member:', memberToDelete, 'from group:', id);
             await groupService.removeMember(id, memberToDelete);
             toast.success('Member removed');
             setMemberToDelete(null);
             fetchGroupDetails();
         } catch (err) {
+            console.error('Remove member error:', err);
             toast.error(err.response?.data?.message || 'Failed to remove member');
         }
     };
@@ -819,7 +821,7 @@ export default function GroupDetails() {
 
                                         return (
                                             <Box key={memberId} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', color: '#CBD5E1' }}> {/* Reduced font */}
-                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
                                                     <Box
                                                         sx={{
                                                             width: 24, // Slightly larger to show background
@@ -1108,6 +1110,9 @@ export default function GroupDetails() {
                 onClose={() => setIsAddMemberDialogOpen(false)}
                 groupId={group?._id}
                 onMemberAdded={fetchGroupDetails}
+                group={group}
+                currentUser={user}
+                onRemoveMember={(memberId) => setMemberToDelete(memberId)}
             />
 
             <ExpenseDetailsDialog
@@ -1154,13 +1159,41 @@ export default function GroupDetails() {
                 message="Are you sure you want to delete this group? All expenses and data will be permanently removed."
             />
 
-            <ConfirmDialog
+            <Dialog
                 open={!!memberToDelete}
                 onClose={() => setMemberToDelete(null)}
-                onConfirm={handleRemoveMember}
-                title="Remove Member"
-                message="Are you sure you want to remove this member? ALL expenses paid by them or involving them will be PERMANENTLY DELETED."
-            />
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: '20px',
+                        background: '#1E293B',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+                        overflow: 'hidden'
+                    }
+                }}
+            >
+                <Box sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Box sx={{ width: 40, height: 40, borderRadius: '10px', background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
+                                <DeleteIcon sx={{ color: 'white', fontSize: 20 }} />
+                            </Box>
+                            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#F1F5F9' }}>Remove Member</Typography>
+                        </Box>
+                        <IconButton onClick={() => setMemberToDelete(null)} size="small" sx={{ color: '#94A3B8', '&:hover': { color: '#F1F5F9', background: 'rgba(255,255,255,0.08)' } }}>
+                            <CloseIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+                    <Typography sx={{ color: '#CBD5E1', mb: 3, fontSize: '0.9rem', lineHeight: 1.6 }}>
+                        Are you sure you want to remove this member? ALL expenses paid by them or involving them will be PERMANENTLY DELETED.
+                    </Typography>
+                    <Button onClick={handleRemoveMember} fullWidth sx={{ py: 1.2, borderRadius: '12px', background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)', color: '#FFFFFF', fontWeight: 700, fontSize: '0.9rem', textTransform: 'none', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.35)', '&:hover': { background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)', transform: 'translateY(-1px)', boxShadow: '0 6px 16px rgba(239, 68, 68, 0.45)' } }}>
+                        Remove Member
+                    </Button>
+                </Box>
+            </Dialog>
 
             <ConfirmDialog
                 open={confirmDialog.open}

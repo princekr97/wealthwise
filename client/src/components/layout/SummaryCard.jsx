@@ -1,5 +1,6 @@
 /**
  * SummaryCard Component - Premium Fintech Edition
+ * Memoized to prevent unnecessary re-renders
  * 
  * Features:
  * - Subtle gradient overlays (5% opacity)
@@ -52,7 +53,7 @@ const COLOR_CONFIG = {
     }
 };
 
-export default function SummaryCard({
+const SummaryCard = React.memo(function SummaryCard({
     label,
     value,
     valueColor = 'primary',
@@ -195,4 +196,6 @@ export default function SummaryCard({
             )}
         </Box>
     );
-}
+});
+
+export default SummaryCard;

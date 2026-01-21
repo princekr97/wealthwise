@@ -25,7 +25,19 @@ export class PDFService {
    */
   static async getBrowser() {
     try {
-      if (!this.browserInstance || !this.browserInstance.isConnected()) {
+      // Check if browser is still usable
+      if (this.browserInstance) {
+        try {
+          const version = await this.browserInstance.version();
+          console.log('[PDF Service] Reusing existing browser:', version);
+          return this.browserInstance;
+        } catch (e) {
+          console.warn('[PDF Service] Existing browser unusable, creating new one');
+          this.browserInstance = null;
+        }
+      }
+
+      if (!this.browserInstance) {
         const isDev = process.env.NODE_ENV === 'development' || !process.env.VERCEL;
         
         // OPTION 1: Connect to Remote Browser (Best for Vercel/Serverless)
@@ -168,10 +180,15 @@ export class PDFService {
       console.error('[PDF Service] Error:', error.message);
       console.error('[PDF Service] Stack:', error.stack);
       
-      // If we failed to create a page or browser seems broken, clean up
-      if (!page || error.message.includes('closed') || error.message.includes('not opened')) {
-          console.warn('[PDF Service] Browser/Page issue detected, resetting instance...');
+      // If browser seems broken, clean up for next request
+      if (error.message.includes('closed') || error.message.includes('not opened') || 
+          error.message.includes('disconnected') || error.message.includes('Target closed')) {
+        console.warn('[PDF Service] Browser issue detected, resetting instance...');
+        try {
           await PDFService.cleanup();
+        } catch (cleanupError) {
+          console.error('[PDF Service] Cleanup error:', cleanupError.message);
+        }
       }
       
       throw new Error(`PDF generation failed: ${error.message}`);
@@ -188,8 +205,13 @@ export class PDFService {
    */
   static async cleanup() {
     if (this.browserInstance) {
-      await this.browserInstance.close();
-      this.browserInstance = null;
+      try {
+        await this.browserInstance.close();
+      } catch (e) {
+        console.warn('[PDF Service] Browser close error:', e.message);
+      } finally {
+        this.browserInstance = null;
+      }
     }
   }
 }

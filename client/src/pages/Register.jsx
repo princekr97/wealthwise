@@ -21,7 +21,11 @@ import {
 import {
   PersonAdd as PersonAddIcon,
   Visibility,
-  VisibilityOff
+  VisibilityOff,
+  Email as EmailIcon,
+  Person as PersonIcon,
+  PhoneIphone as PhoneIcon,
+  Lock as LockIcon
 } from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -43,6 +47,7 @@ export function Register() {
     defaultValues: {
       name: '',
       email: '',
+      phoneNumber: '',
       password: ''
     }
   });
@@ -60,31 +65,45 @@ export function Register() {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ mb: { xs: 3, sm: 4 } }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-          <PersonAddIcon sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+          <Box sx={{
+            width: 42,
+            height: 42,
+            borderRadius: 2,
+            background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+          }}>
+            <PersonAddIcon sx={{ color: '#fff', fontSize: 22 }} />
+          </Box>
           <Typography
             variant="h5"
             sx={{
-              fontWeight: 600,
-              fontSize: { xs: '1.125rem', sm: '1.25rem', md: '1.5rem' },
+              fontWeight: 700,
+              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
             }}
           >
-            Create your KhataBahi account
+            Create Account
           </Typography>
         </Box>
         <Typography
           variant="body2"
           color="textSecondary"
-          sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+          sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, color: '#94A3B8' }}
         >
-          It only takes a minute. Start tracking your money smarter.
+          Join KhataBahi and start managing money smarter 🚀
         </Typography>
       </Box>
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Stack spacing={{ xs: 2, sm: 2.5 }}>
+        <Stack spacing={2.5}>
           <TextField
             {...register('name')}
             label="Full Name"
@@ -94,9 +113,47 @@ export function Register() {
             placeholder="Prince Gupta"
             error={!!errors.name}
             helperText={errors.name?.message}
+            InputLabelProps={{
+              sx: {
+                color: '#94A3B8',
+                '&.Mui-focused': {
+                  color: '#10B981'
+                }
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <PersonIcon sx={{ fontSize: 20, color: '#10B981', opacity: 0.7 }} />
+                </InputAdornment>
+              ),
+            }}
             sx={{
               '& .MuiInputBase-root': {
                 fontSize: { xs: '0.875rem', sm: '1rem' },
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: 2,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                },
+                '&.Mui-focused': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
+                }
+              },
+              '& .MuiInputBase-input': {
+                color: '#F1F5F9',
+                '&::placeholder': {
+                  color: '#64748B',
+                  opacity: 1
+                },
+                '&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus, &:-webkit-autofill:active': {
+                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
+                  WebkitTextFillColor: '#F1F5F9 !important',
+                  caretColor: '#F1F5F9',
+                  transition: 'background-color 5000s ease-in-out 0s'
+                }
               },
             }}
           />
@@ -110,25 +167,107 @@ export function Register() {
             placeholder="you@example.com"
             error={!!errors.email}
             helperText={errors.email?.message}
+            InputLabelProps={{
+              sx: {
+                color: '#94A3B8',
+                '&.Mui-focused': {
+                  color: '#10B981'
+                }
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <EmailIcon sx={{ fontSize: 20, color: '#10B981', opacity: 0.7 }} />
+                </InputAdornment>
+              ),
+            }}
             sx={{
               '& .MuiInputBase-root': {
                 fontSize: { xs: '0.875rem', sm: '1rem' },
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: 2,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                },
+                '&.Mui-focused': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
+                }
+              },
+              '& .MuiInputBase-input': {
+                color: '#F1F5F9',
+                '&::placeholder': {
+                  color: '#64748B',
+                  opacity: 1
+                },
+                '&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus, &:-webkit-autofill:active': {
+                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
+                  WebkitTextFillColor: '#F1F5F9 !important',
+                  caretColor: '#F1F5F9',
+                  transition: 'background-color 5000s ease-in-out 0s'
+                }
               },
             }}
           />
 
           <TextField
             {...register('phoneNumber')}
-            label="Phone Number (Optional)"
+            label="Phone Number"
             type="tel"
             fullWidth
             size="small"
             placeholder="10-digit mobile number"
             error={!!errors.phoneNumber}
-            helperText={errors.phoneNumber?.message}
+            helperText={errors.phoneNumber?.message || "Required for group member syncing"}
+            InputLabelProps={{
+              sx: {
+                color: '#94A3B8',
+                '&.Mui-focused': {
+                  color: '#10B981'
+                }
+              }
+            }}
+            FormHelperTextProps={{
+              sx: {
+                color: '#64748B',
+                fontSize: '0.7rem'
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <PhoneIcon sx={{ fontSize: 20, color: '#10B981', opacity: 0.7 }} />
+                </InputAdornment>
+              ),
+            }}
             sx={{
               '& .MuiInputBase-root': {
                 fontSize: { xs: '0.875rem', sm: '1rem' },
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: 2,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                },
+                '&.Mui-focused': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
+                }
+              },
+              '& .MuiInputBase-input': {
+                color: '#F1F5F9',
+                '&::placeholder': {
+                  color: '#64748B',
+                  opacity: 1
+                },
+                '&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus, &:-webkit-autofill:active': {
+                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
+                  WebkitTextFillColor: '#F1F5F9 !important',
+                  caretColor: '#F1F5F9',
+                  transition: 'background-color 5000s ease-in-out 0s'
+                }
               },
             }}
           />
@@ -143,7 +282,20 @@ export function Register() {
               placeholder="At least 6 characters"
               error={!!errors.password}
               helperText={errors.password?.message}
+              InputLabelProps={{
+                sx: {
+                  color: '#94A3B8',
+                  '&.Mui-focused': {
+                    color: '#10B981'
+                  }
+                }
+              }}
               InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon sx={{ fontSize: 20, color: '#10B981', opacity: 0.7 }} />
+                  </InputAdornment>
+                ),
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
@@ -151,6 +303,13 @@ export function Register() {
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
                       size="small"
+                      sx={{ 
+                        color: '#94A3B8',
+                        '&:hover': {
+                          color: '#10B981',
+                          backgroundColor: 'rgba(16, 185, 129, 0.1)'
+                        }
+                      }}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -160,20 +319,46 @@ export function Register() {
               sx={{
                 '& .MuiInputBase-root': {
                   fontSize: { xs: '0.875rem', sm: '1rem' },
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  borderRadius: 2,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  },
+                  '&.Mui-focused': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
+                  }
+                },
+                '& .MuiInputBase-input': {
+                  color: '#F1F5F9',
+                  '&::placeholder': {
+                    color: '#64748B',
+                    opacity: 1
+                  },
+                  '&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus, &:-webkit-autofill:active': {
+                    WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
+                    WebkitTextFillColor: '#F1F5F9 !important',
+                    caretColor: '#F1F5F9',
+                    transition: 'background-color 5000s ease-in-out 0s'
+                  }
                 },
               }}
             />
             {!errors.password && (
               <Typography
                 variant="caption"
-                color="textSecondary"
                 sx={{
                   display: 'block',
-                  mt: 0.5,
-                  fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                  mt: 0.75,
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                  color: '#64748B',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5
                 }}
               >
-                Use a mix of letters, numbers, and symbols for better security.
+                🔒 Use letters, numbers & symbols for security
               </Typography>
             )}
           </Box>
@@ -181,22 +366,36 @@ export function Register() {
           <Button
             type="submit"
             variant="contained"
-            color="primary"
             fullWidth
             disabled={loading}
             sx={{
-              mt: 1,
-              py: { xs: 1.25, sm: 1.5 },
-              borderRadius: 2,
-              fontWeight: 600,
-              fontSize: { xs: '0.875rem', sm: '1rem' },
+              mt: 1.5,
+              py: { xs: 1.4, sm: 1.6 },
+              borderRadius: 2.5,
+              fontWeight: 700,
+              fontSize: { xs: '0.9rem', sm: '1rem' },
               textTransform: 'none',
-              minHeight: { xs: 44, sm: 48 },
+              minHeight: { xs: 48, sm: 52 },
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                boxShadow: '0 12px 28px rgba(16, 185, 129, 0.4)',
+                transform: 'translateY(-2px)',
+              },
+              '&:active': {
+                transform: 'translateY(0px)',
+              },
+              '&:disabled': {
+                background: 'rgba(16, 185, 129, 0.3)',
+                color: 'rgba(255, 255, 255, 0.5)'
+              }
             }}
           >
             {loading ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CircularProgress size={18} color="inherit" />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <CircularProgress size={20} color="inherit" />
                 Creating account...
               </Box>
             ) : (
@@ -209,22 +408,25 @@ export function Register() {
       {/* Footer */}
       <Typography
         variant="body2"
-        color="textSecondary"
         sx={{
           mt: { xs: 2.5, sm: 3 },
           textAlign: 'center',
           fontSize: { xs: '0.75rem', sm: '0.875rem' },
+          color: '#94A3B8'
         }}
       >
         Already have an account?{' '}
         <Link
           component={RouterLink}
           to="/login"
-          color="primary"
           sx={{
             fontWeight: 600,
             textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' },
+            color: '#10B981',
+            '&:hover': { 
+              textDecoration: 'underline',
+              color: '#34D399'
+            },
           }}
         >
           Log in
