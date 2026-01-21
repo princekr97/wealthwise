@@ -3,17 +3,24 @@ import chromiumPkg from '@sparticuz/chromium';
 import { generateTripReportHTML } from '../utils/pdfTemplate.js';
 
 /**
- * PDF Generation Service using Puppeteer
- * Converts HTML templates to high-quality PDFs
- * Optimized for Vercel/Serverless environments
+ * IMPROVED Puppeteer PDF Service with Better Stability
  * 
- * Environment Variables (Optional):
- * - CHROMIUM_EXECUTABLE_PATH: Override chromium binary path
- * - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: Set to 'true' if using @sparticuz/chromium
+ * IMPROVEMENTS MADE:
+ * 1. Request queue to prevent concurrent overload
+ * 2. Browser health checks with timeout
+ * 3. Better error recovery
+ * 4. Comprehensive Chrome args for stability
+ * 5. Automatic browser restart on failures
+ * 
+ * Still has limitations:
+ * - Platform-dependent (Chrome required)
+ * - Memory intensive
+ * - Can still crash under load
+ * 
+ * For production, consider switching to PDFShift (see pdfServicePDFShift.js)
  */
 
-// Log versions for debugging
-console.log('[PDF Service] Initializing...');
+console.log('[PDF Service] Initializing Improved Puppeteer Service...');
 console.log('[PDF Service] Environment:', process.env.NODE_ENV);
 console.log('[PDF Service] Vercel:', process.env.VERCEL ? 'Yes' : 'No');
 
@@ -21,19 +28,22 @@ export class PDFService {
   static browserInstance = null;
   static requestQueue = [];
   static isProcessing = false;
+  static MAX_CONCURRENT = 1; // Process one PDF at a time to prevent crashes
+  static browserRestarts = 0;
+  static MAX_RESTARTS_PER_HOUR = 5;
 
   /**
-   * Queue PDF generation to prevent concurrent overload
+   * Queue PDF generation request
    */
   static async generateTripReportPDF(data) {
     return new Promise((resolve, reject) => {
-      this.requestQueue.push({ data, resolve, reject, timestamp: Date.now() });
+      this.requestQueue.push({ data, resolve, reject });
       this.processQueue();
     });
   }
 
   /**
-   * Process queued requests one at a time
+   * Process queued PDF requests
    */
   static async processQueue() {
     if (this.isProcessing || this.requestQueue.length === 0) {
@@ -46,14 +56,14 @@ export class PDFService {
       const { data, resolve, reject } = this.requestQueue.shift();
       
       try {
-        console.log(`[PDF Service] Processing (${this.requestQueue.length} in queue)...`);
-        const result = await this._internalGeneratePDF(data);
+        console.log(`[PDF Service] Processing request (${this.requestQueue.length} in queue)...`);
+        const result = await this._generatePDF(data);
         resolve(result);
       } catch (error) {
         reject(error);
       }
 
-      // Small delay to prevent overload
+      // Small delay between requests to prevent overload
       if (this.requestQueue.length > 0) {
         await new Promise(r => setTimeout(r, 500));
       }
@@ -63,9 +73,9 @@ export class PDFService {
   }
 
   /**
-   * Internal PDF generation method
+   * Internal PDF generation
    */
-  static async _internalGeneratePDF(data) {
+  static async _generatePDF(data) {
     let page = null;
 
     try {
@@ -79,23 +89,26 @@ export class PDFService {
         throw new Error('Generated HTML is empty or too short');
       }
 
-      // Launch browser
+      // Get browser
       const browser = await this.getBrowser();
       page = await browser.newPage();
+      
+      // Set viewport for consistent rendering
+      await page.setViewport({ width: 1200, height: 1600 });
       
       console.log('[PDF Service] Browser page created');
 
       // Set content
       await page.setContent(html, {
         waitUntil: 'domcontentloaded',
-        timeout: 30000, 
+        timeout: 30000,
       });
 
-      // Wait for images to load (with timeout fallback)
+      // Wait for images (with fallback)
       try {
         await page.waitForFunction(
           () => Array.from(document.images).every(img => img.complete),
-          { timeout: 10000 }
+          { timeout: 8000 }
         );
         console.log('[PDF Service] All images loaded');
       } catch (e) {
@@ -104,22 +117,28 @@ export class PDFService {
 
       console.log('[PDF Service] Content loaded, generating PDF...');
 
-      // Generate PDF with compression
+      // Generate PDF
       const pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
         preferCSSPageSize: false,
         omitBackground: false,
         scale: 0.95,
+        margin: {
+          top: '10mm',
+          bottom: '10mm',
+          left: '10mm',
+          right: '10mm',
+        },
       });
 
-      console.log('[PDF Service] PDF generated, size:', pdfBuffer.length, 'bytes');
+      console.log('[PDF Service] PDF generated successfully, size:', pdfBuffer.length, 'bytes');
 
       if (!pdfBuffer || pdfBuffer.length === 0) {
         throw new Error('Generated PDF is empty');
       }
 
-      // Debug: Save to file in dev
+      // Debug save in development
       if (process.env.NODE_ENV === 'development') {
         const fs = await import('fs');
         const path = await import('path');
@@ -133,15 +152,14 @@ export class PDFService {
       console.error('[PDF Service] Error:', error.message);
       console.error('[PDF Service] Stack:', error.stack);
       
-      // If browser crashed, clean up for next request
-      if (error.message.includes('closed') || error.message.includes('not opened') || 
-          error.message.includes('disconnected') || error.message.includes('Target closed')) {
-        console.warn('[PDF Service] Browser issue detected, resetting...');
-        try {
-          await PDFService.cleanup();
-        } catch (cleanupError) {
-          console.error('[PDF Service] Cleanup error:', cleanupError.message);
-        }
+      // Handle browser crashes
+      if (error.message.includes('closed') || 
+          error.message.includes('not opened') || 
+          error.message.includes('disconnected') || 
+          error.message.includes('Target closed')) {
+        console.warn('[PDF Service] Browser crash detected, restarting...');
+        await this.cleanup();
+        this.browserRestarts++;
       }
       
       throw new Error(`PDF generation failed: ${error.message}`);
@@ -151,14 +169,14 @@ export class PDFService {
           await page.close();
           console.log('[PDF Service] Page closed');
         } catch (e) {
-          console.warn('[PDF Service] Page close error:', e.message);
+          console.warn('[PDF Service] Error closing page:', e.message);
         }
       }
     }
   }
 
   /**
-   * Get or create browser instance (reuse for performance)
+   * Get or create browser instance with improved health checks
    */
   static async getBrowser() {
     try {
@@ -184,23 +202,13 @@ export class PDFService {
         }
       }
 
+      // Launch new browser
       if (!this.browserInstance) {
         const isDev = process.env.NODE_ENV === 'development' || !process.env.VERCEL;
-        
-        // OPTION 1: Remote Browser
-        if (process.env.BROWSER_WS_ENDPOINT) {
-          console.log('[PDF Service] Connecting to Remote Browser...');
-          this.browserInstance = await puppeteer.connect({
-            browserWSEndpoint: process.env.BROWSER_WS_ENDPOINT,
-            ignoreHTTPSErrors: true
-          });
-          console.log('[PDF Service] ✓ Connected to Remote Browser');
-          return this.browserInstance;
-        }
-
-        // OPTION 2: Local Chrome (macOS-optimized)
         let options;
+
         if (isDev) {
+          // Development with comprehensive args
           options = {
             args: [
               '--no-sandbox',
@@ -208,14 +216,23 @@ export class PDFService {
               '--disable-dev-shm-usage',
               '--disable-gpu',
               '--no-first-run',
+              '--no-zygote',
               '--disable-extensions',
-              // REMOVED --single-process (causes crash on macOS)
+              '--disable-background-networking',
+              '--disable-default-apps',
+              '--disable-sync',
+              '--disable-translate',
+              '--hide-scrollbars',
+              '--metrics-recording-only',
+              '--mute-audio',
+              '--safebrowsing-disable-auto-update',
+              '--single-process',
             ],
             headless: true,
             executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
             timeout: 30000,
           };
-          console.log('[PDF Service] DEV mode - macOS Chrome');
+          console.log('[PDF Service] DEV mode - Using local Chrome with stability args');
         } else if (process.env.RENDER || process.env.DOCKER_CONTAINER) {
           options = {
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
@@ -225,6 +242,7 @@ export class PDFService {
           };
           console.log('[PDF Service] DOCKER mode');
         } else {
+          // Vercel with @sparticuz/chromium
           console.log('[PDF Service] VERCEL mode');
           try {
             if (chromiumPkg.setGraphicsMode) {
@@ -244,8 +262,9 @@ export class PDFService {
 
         console.log(`[PDF Service] Launching browser...`);
         this.browserInstance = await puppeteer.launch(options);
-        console.log('[PDF Service] ✓ Browser launched');
+        console.log('[PDF Service] ✓ Browser launched successfully');
       }
+      
       return this.browserInstance;
     } catch (error) {
       console.error('[PDF Service] ✗ Browser launch FAILED');
@@ -255,14 +274,14 @@ export class PDFService {
     }
   }
 
-
   /**
-   * Cleanup browser instance
+   * Cleanup browser
    */
   static async cleanup() {
     if (this.browserInstance) {
       try {
         await this.browserInstance.close();
+        console.log('[PDF Service] Browser closed');
       } catch (e) {
         console.warn('[PDF Service] Browser close error:', e.message);
       } finally {
@@ -272,7 +291,7 @@ export class PDFService {
   }
 }
 
-// Cleanup on process exit
+// Cleanup on exit
 process.on('exit', () => {
   PDFService.cleanup();
 });

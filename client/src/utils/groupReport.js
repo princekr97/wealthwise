@@ -26,6 +26,7 @@ export const generateGroupReport = async (group, expenses, balances, preview = f
         headers: {
           'Accept': 'application/pdf',
         },
+        timeout: 60000, // 60 seconds for PDF generation (can be slow with many expenses/images)
       }
     );
 

@@ -193,11 +193,26 @@ export default function GroupDetails() {
         setPreviewLoading(true);
         try {
             const url = await generateGroupReport(group, expenses, balances, true);
+            if (!url) {
+                throw new Error('Failed to generate PDF URL');
+            }
             setPdfUrl(url);
             setPreviewOpen(true);
         } catch (error) {
             console.error('Preview error:', error);
-            toast.error('Failed to preview report');
+            let errorMessage = 'Failed to preview report';
+
+            if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+                errorMessage = 'PDF generation timed out. Please try again.';
+            } else if (error.response?.status === 500) {
+                errorMessage = 'Server error while generating PDF. Please check server logs.';
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            toast.error(errorMessage);
         } finally {
             setPreviewLoading(false);
         }
@@ -908,9 +923,9 @@ export default function GroupDetails() {
 
             {/* TAB 0: DASHBOARD */}
             {tabValue === 0 && (
-                <Box 
-                    sx={{ 
-                        px: { xs: 0, sm: 2 }, 
+                <Box
+                    sx={{
+                        px: { xs: 0, sm: 2 },
                         pb: 3,
                         animation: 'fadeIn 0.3s ease-in-out',
                         '@keyframes fadeIn': {
@@ -930,9 +945,9 @@ export default function GroupDetails() {
 
             {/* TAB 1: EXPENSES */}
             {tabValue === 1 && (
-                <Box 
-                    sx={{ 
-                        px: { xs: 0, sm: 2 }, 
+                <Box
+                    sx={{
+                        px: { xs: 0, sm: 2 },
                         pb: 3,
                         animation: 'fadeIn 0.3s ease-in-out',
                         '@keyframes fadeIn': {
@@ -995,10 +1010,10 @@ export default function GroupDetails() {
                                             <Typography sx={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
                                                 {getPayerName(expense)}
                                             </Typography>
-                                            <Box sx={{ 
-                                                px: 0.75, 
-                                                py: 0.2, 
-                                                borderRadius: '5px', 
+                                            <Box sx={{
+                                                px: 0.75,
+                                                py: 0.2,
+                                                borderRadius: '5px',
                                                 bgcolor: `${getCategoryStyle(expense.category).color}25`,
                                                 border: `1px solid ${getCategoryStyle(expense.category).color}50`
                                             }}>
@@ -1027,9 +1042,9 @@ export default function GroupDetails() {
 
             {/* TAB 2: BALANCES */}
             {tabValue === 2 && (
-                <Box 
-                    sx={{ 
-                        px: { xs: 0, sm: 2 }, 
+                <Box
+                    sx={{
+                        px: { xs: 0, sm: 2 },
                         pb: 3,
                         animation: 'fadeIn 0.3s ease-in-out',
                         '@keyframes fadeIn': {
@@ -1220,7 +1235,9 @@ export default function GroupDetails() {
                         borderRadius: '16px',
                         overflow: 'hidden',
                         border: '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                        display: 'flex',
+                        flexDirection: 'column'
                     }
                 }}
                 sx={{
@@ -1230,13 +1247,15 @@ export default function GroupDetails() {
                 }}
             >
                 {/* Minimal Header - Icons Only */}
-                <div style={{
+                <Box sx={{
                     padding: '12px 20px',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     background: '#0f172a',
-                    borderBottom: '1px solid rgba(255,255,255,0.08)'
+                    borderBottom: '1px solid rgba(255,255,255,0.08)',
+                    flexShrink: 0,
+                    minHeight: '60px'
                 }}>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         {/* Share Icon */}
@@ -1290,20 +1309,37 @@ export default function GroupDetails() {
                     >
                         <CloseIcon />
                     </IconButton>
-                </div>
+                </Box>
 
                 {/* PDF Viewer (Toolbar Hidden) */}
-                <div style={{ flex: 1, height: '100%', background: '#1e293b', overflow: 'auto' }}>
-                    {pdfUrl && (
+                <Box sx={{
+                    flexGrow: 1,
+                    height: 'calc(85vh - 60px)', // Full dialog height minus header
+                    background: '#1e293b',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
+                    {pdfUrl ? (
                         <iframe
                             src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`}
                             width="100%"
                             height="100%"
-                            style={{ border: 'none', minHeight: '100%' }}
+                            style={{ border: 'none', display: 'block' }}
                             title="Trip Report Preview"
                         />
+                    ) : (
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            height: '100%',
+                            color: '#64748b'
+                        }}>
+                            <Typography>Loading PDF...</Typography>
+                        </Box>
                     )}
-                </div>
+                </Box>
             </Dialog>
         </PageContainer>
     );

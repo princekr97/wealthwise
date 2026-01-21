@@ -1,37 +1,62 @@
-# Use the official Puppeteer image which includes Chrome
-# This is critical for PDF generation reliability
-FROM ghcr.io/puppeteer/puppeteer:19.7.5
+# Use Node.js 18 with Debian (better Chrome support than Alpine)
+FROM node:18-bullseye-slim
 
-# Switch to root to install dependencies and copy files
-USER root
+# Install Chrome and dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    ca-certificates \
+    fonts-liberation \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libatspi2.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libdrm2 \
+    libgbm1 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libwayland-client0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxkbcommon0 \
+    libxrandr2 \
+    xdg-utils \
+    --no-install-recommends
 
-# Set working directory
-WORKDIR /usr/src/app
+# Install Chrome
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Chrome path for Puppeteer
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+ENV CHROME_BIN=/usr/bin/google-chrome-stable
+
+# Create app directory
+WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
-# We use npm install instead of ci to be flexible, but ci is better for stability
-RUN npm install
-# or RUN npm ci --omit=dev
+RUN npm ci --only=production
 
-# Copy the rest of the application code
+# Copy application code
 COPY . .
 
-# Ensure permissions for the pptruser (default user in this image)
-RUN chown -R pptruser:pptruser /usr/src/app
+# Expose port
+EXPOSE 5001
 
-# Switch back to the non-root user provided by the image
-USER pptruser
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:5001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Expose the API port
-EXPOSE 5000
-
-# Set environment variables
-ENV NODE_ENV=production
-ENV DOCKER_CONTAINER=true
-ENV PORT=5000
-
-# Start command
+# Start the application
 CMD ["npm", "start"]
