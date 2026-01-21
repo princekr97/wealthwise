@@ -36,7 +36,9 @@ import {
     Fade,
     Divider,
     FormControlLabel,
-    Switch
+    Switch,
+    CircularProgress,
+    useTheme
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -121,53 +123,54 @@ const CATEGORY_ICONS = {
 const StyledDialog = styled(Dialog)(({ theme }) => ({
     '& .MuiDialog-paper': {
         borderRadius: '16px',
-        bgcolor: '#1E293B',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+        background: theme.palette.mode === 'dark' ? '#1E293B' : '#FFFFFF',
+        backgroundColor: theme.palette.mode === 'dark' ? '#1E293B' : '#FFFFFF',
+        border: `1px solid ${theme.palette.divider}`,
+        boxShadow: theme.palette.mode === 'dark' ? '0 20px 60px rgba(0, 0, 0, 0.5)' : '0 20px 60px rgba(0, 0, 0, 0.1)',
         maxWidth: '690px',
         width: '100%',
         margin: 16
     }
 }));
 
-const HeaderBox = styled(Box)({
-    bgcolor: '#1E293B',
+const HeaderBox = styled(Box)(({ theme }) => ({
+    background: theme.palette.mode === 'dark' ? '#1E293B' : '#FFFFFF',
     padding: '1.25rem 1.5rem',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+    borderBottom: `1px solid ${theme.palette.divider}`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between'
-});
+}));
 
-const CloseButton = styled(IconButton)({
+const CloseButton = styled(IconButton)(({ theme }) => ({
     width: '32px',
     height: '32px',
-    bgcolor: 'rgba(255, 255, 255, 0.05)',
+    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
     borderRadius: '50%',
-    color: '#94A3B8',
+    color: theme.palette.text.secondary,
     '&:hover': {
-        bgcolor: 'rgba(255, 255, 255, 0.1)',
-        color: 'white'
+        bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+        color: theme.palette.text.primary
     },
     '& svg': {
         fontSize: '1.1rem'
     }
-});
+}));
 
-const CustomTextField = styled(TextField)({
+const CustomTextField = styled(TextField)(({ theme }) => ({
     '& .MuiOutlinedInput-root': {
         borderRadius: '12px',
-        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
         transition: 'all 0.2s ease',
         '& fieldset': {
-            borderColor: 'rgba(255, 255, 255, 0.08)',
+            borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.1)',
             borderWidth: '1px'
         },
         '&:hover fieldset': {
-            borderColor: 'rgba(255, 255, 255, 0.15)'
+            borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.2)'
         },
         '&.Mui-focused': {
-            backgroundColor: 'rgba(255, 255, 255, 0.06)',
+            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
             '& fieldset': {
                 borderColor: '#3b82f6', // Accent Blue
                 borderWidth: '1.5px'
@@ -177,26 +180,26 @@ const CustomTextField = styled(TextField)({
     '& .MuiInputBase-input': {
         padding: '0.85rem 1.1rem',
         fontSize: '0.95rem',
-        color: 'white',
+        color: theme.palette.text.primary,
         fontWeight: 500,
         '&.Mui-disabled': {
-            color: 'white',
-            WebkitTextFillColor: 'white',
+            color: theme.palette.text.primary,
+            WebkitTextFillColor: theme.palette.text.primary,
             opacity: 1
         }
     },
-});
+}));
 
-const CustomSelect = styled(Select)({
+const CustomSelect = styled(Select)(({ theme }) => ({
     borderRadius: '12px',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    color: 'white',
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+    color: theme.palette.text.primary,
     '& .MuiOutlinedInput-notchedOutline': {
-        borderColor: 'rgba(255, 255, 255, 0.08)',
+        borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.1)',
         borderWidth: '1px'
     },
     '&:hover .MuiOutlinedInput-notchedOutline': {
-        borderColor: 'rgba(255, 255, 255, 0.15)'
+        borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.2)'
     },
     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
         borderColor: '#3b82f6',
@@ -209,38 +212,46 @@ const CustomSelect = styled(Select)({
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
-        color: '#f8fafc !important' // Explicitly off-white
+        color: `${theme.palette.text.primary} !important`
     },
     '& .MuiSvgIcon-root': {
-        color: 'rgba(255, 255, 255, 0.5) !important'
+        color: `${theme.palette.text.secondary} !important`
     }
-});
+}));
 
 // Helper for "Form Label" look
-const FormLabel = styled(Typography)({
+const FormLabel = styled(Typography)(({ theme }) => ({
     display: 'block',
     fontSize: '0.75rem',
     fontWeight: 800,
-    color: 'rgba(255,255,255,0.6)', // Improved visibility (was 0.4)
+    color: theme.palette.text.secondary,
     marginBottom: '0.5rem',
     textTransform: 'uppercase',
     letterSpacing: '1.5px'
-});
+}));
 
 const ParticipantCard = styled(Box)(({ theme, selected }) => ({
     display: 'flex',
     alignItems: 'center',
     gap: '0.75rem',
     padding: '0.85rem',
-    background: selected ? 'rgba(59, 130, 246, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+    background: selected
+        ? (theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(59, 130, 246, 0.15)')
+        : (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.03)'),
     borderRadius: '14px',
     border: '1px solid',
-    borderColor: selected ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255, 255, 255, 0.05)',
+    borderColor: selected
+        ? (theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.5)')
+        : (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.08)'),
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
     cursor: 'pointer',
     '&:hover': {
-        borderColor: selected ? 'rgba(59, 130, 246, 0.5)' : 'rgba(255, 255, 255, 0.1)',
-        background: selected ? 'rgba(59, 130, 246, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+        borderColor: selected
+            ? (theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.7)')
+            : (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)'),
+        background: selected
+            ? (theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.2)')
+            : (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.05)'),
         transform: 'translateY(-2px)'
     }
 }));
@@ -284,6 +295,7 @@ const getMemberId = (member) => {
 };
 
 export default function AddGroupExpenseDialog({ open, onClose, group, currentUser, onAddMemberClick, initialExpense, onExpenseAdded }) {
+    const theme = useTheme();
     const [splitType, setSplitType] = useState('equal'); // 'equal' | 'custom'
     const [members, setMembers] = useState([]);
     const [selectedMemberIds, setSelectedMemberIds] = useState([]); // Track selected members for split
@@ -484,7 +496,9 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                 }
 
                 // Trigger refresh AFTER success
-                if (onExpenseAdded) onExpenseAdded();
+                if (onExpenseAdded) {
+                    await onExpenseAdded();
+                }
                 onClose();
             } catch (err) {
                 console.error(err);
@@ -521,27 +535,27 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
         >
             <HeaderBox>
                 <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: 'white' }}>
-                        Add New Expense
+                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: theme.palette.text.primary }}>
+                        {initialExpense ? 'Edit Expense' : 'Add New Expense'}
                     </Typography>
-                    <Typography variant="body2" sx={{ fontSize: '0.75rem', mt: 0.3, color: '#94a3b8' }}>
+                    <Typography variant="body2" sx={{ fontSize: '0.75rem', mt: 0.3, color: theme.palette.text.secondary }}>
                         Enter details to split costs
                     </Typography>
                 </Box>
                 <IconButton
                     onClick={onClose}
                     sx={{
-                        bgcolor: 'rgba(255, 255, 255, 0.05)',
-                        color: '#94A3B8',
-                        '&:hover': { bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }
+                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                        color: theme.palette.text.secondary,
+                        '&:hover': { bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0, 0, 0, 0.1)', color: theme.palette.text.primary }
                     }}
                 >
                     <CloseIcon sx={{ fontSize: '1.1rem' }} />
                 </IconButton>
             </HeaderBox>
 
-            <DialogContent sx={{ 
-                p: '1.5rem !important', 
+            <DialogContent sx={{
+                p: '1.5rem !important',
                 bgcolor: '#1E293B',
                 maxHeight: { xs: '70vh', sm: '80vh' },
                 overflowY: 'auto',
@@ -581,7 +595,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                         type="number"
                                         fullWidth
                                         InputProps={{
-                                            startAdornment: <Typography sx={{ mr: 1, color: '#64748b', fontWeight: 600, fontSize: '0.9rem' }}>₹</Typography>
+                                            startAdornment: <Typography sx={{ mr: 1, color: theme.palette.text.secondary, fontWeight: 600, fontSize: '0.9rem' }}>₹</Typography>
                                         }}
                                     />
                                 )}
@@ -598,29 +612,29 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                         {...field}
                                         fullWidth
                                         displayEmpty
-                                        sx={{ '& .MuiSvgIcon-root': { color: '#94a3b8' } }}
+                                        sx={{ '& .MuiSvgIcon-root': { color: theme.palette.text.secondary } }}
                                         value={field.value || ''}
                                         MenuProps={{
                                             PaperProps: {
                                                 sx: {
-                                                    bgcolor: '#0f172a',
-                                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                    bgcolor: theme.palette.mode === 'dark' ? '#0f172a' : '#FFFFFF',
+                                                    border: `1px solid ${theme.palette.divider}`,
                                                     borderRadius: '12px',
-                                                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)',
+                                                    boxShadow: theme.palette.mode === 'dark' ? '0 20px 25px -5px rgba(0, 0, 0, 0.4)' : '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
                                                     mt: 1,
                                                     '& .MuiMenuItem-root': {
-                                                        color: '#cbd5e1',
+                                                        color: theme.palette.text.primary,
                                                         fontSize: '0.9rem',
                                                         p: '10px 16px',
                                                         gap: '12px',
                                                         transition: 'all 0.2s',
                                                         '&:hover': {
-                                                            bgcolor: 'rgba(255, 255, 255, 0.04)',
-                                                            color: '#fff'
+                                                            bgcolor: theme.palette.action.hover,
+                                                            color: theme.palette.text.primary
                                                         },
                                                         '&.Mui-selected': {
-                                                            bgcolor: 'rgba(59, 130, 246, 0.12) !important',
-                                                            color: '#60a5fa',
+                                                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.12) !important' : 'rgba(59, 130, 246, 0.08) !important',
+                                                            color: '#3b82f6',
                                                             fontWeight: 600
                                                         }
                                                     }
@@ -670,28 +684,28 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                     fullWidth
                                     displayEmpty
                                     value={field.value || ''}
-                                    sx={{ '& .MuiSvgIcon-root': { color: '#94a3b8' } }}
+                                    sx={{ '& .MuiSvgIcon-root': { color: theme.palette.text.secondary } }}
                                     MenuProps={{
                                         PaperProps: {
                                             sx: {
-                                                bgcolor: '#0f172a',
-                                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                bgcolor: theme.palette.mode === 'dark' ? '#0f172a' : '#FFFFFF',
+                                                border: `1px solid ${theme.palette.divider}`,
                                                 borderRadius: '12px',
-                                                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)',
+                                                boxShadow: theme.palette.mode === 'dark' ? '0 20px 25px -5px rgba(0, 0, 0, 0.4)' : '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
                                                 mt: 1,
                                                 '& .MuiMenuItem-root': {
-                                                    color: '#cbd5e1',
+                                                    color: theme.palette.text.primary,
                                                     fontSize: '0.9rem',
                                                     p: '10px 16px',
                                                     gap: '12px',
                                                     transition: 'all 0.2s',
                                                     '&:hover': {
-                                                        bgcolor: 'rgba(255, 255, 255, 0.04)',
-                                                        color: '#fff'
+                                                        bgcolor: theme.palette.action.hover,
+                                                        color: theme.palette.text.primary
                                                     },
                                                     '&.Mui-selected': {
-                                                        bgcolor: 'rgba(59, 130, 246, 0.12) !important',
-                                                        color: '#60a5fa',
+                                                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.12) !important' : 'rgba(59, 130, 246, 0.08) !important',
+                                                        color: '#3b82f6',
                                                         fontWeight: 600
                                                     }
                                                 }
@@ -728,7 +742,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                     </Box>
 
                     {/* Divider */}
-                    <Box sx={{ height: '1px', background: '#f1f5f9', my: 1 }} />
+                    <Box sx={{ height: '1px', background: theme.palette.divider, my: 1 }} />
 
                     {/* Split Section */}
                     <Box>
@@ -736,7 +750,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                         <Box sx={{ mb: 2 }}>
                             <FormLabel sx={{ fontSize: '0.75rem', mb: 0.5 }}>Split Method</FormLabel>
                             <Box sx={{
-                                background: 'rgba(255, 255, 255, 0.05)',
+                                background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
                                 borderRadius: '12px',
                                 p: 0.4,
                                 display: 'flex',
@@ -765,11 +779,11 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                             py: 0.7,
                                             minHeight: 0,
                                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                            color: splitType === type ? 'white' : '#94a3b8',
+                                            color: splitType === type ? 'white' : theme.palette.text.secondary,
                                             background: splitType === type ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'transparent',
                                             boxShadow: splitType === type ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none',
                                             '&:hover': {
-                                                background: splitType === type ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'rgba(255,255,255,0.03)'
+                                                background: splitType === type ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'
                                             }
                                         }}
                                     >
@@ -779,7 +793,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             </Box>
                         </Box>
 
-                        <Typography sx={{ fontSize: '0.8rem', color: '#64748b', mb: 1.5, display: 'block' }}>
+                        <Typography sx={{ fontSize: '0.8rem', color: theme.palette.text.secondary, mb: 1.5, display: 'block' }}>
                             {splitType === 'equal' ? 'Select people involved' : <span>Split among <span style={{ color: '#f59e0b', fontSize: '0.75rem' }}>(Tap to unselect)</span></span>}
                         </Typography>
 
@@ -811,11 +825,11 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                             borderRadius: '12px',
                                             background: isSelected ? 'rgba(59, 130, 246, 0.08)' : 'transparent',
                                             border: '1px solid',
-                                            borderColor: isSelected ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                            borderColor: isSelected ? 'rgba(59, 130, 246, 0.2)' : theme.palette.divider,
                                             cursor: splitType === 'equal' ? 'default' : 'pointer',
                                             transition: 'all 0.2s ease',
                                             '&:hover': {
-                                                background: (splitType !== 'equal' && isSelected) ? 'rgba(59, 130, 246, 0.12)' : (splitType !== 'equal' ? 'rgba(255, 255, 255, 0.03)' : 'transparent')
+                                                background: (splitType !== 'equal' && isSelected) ? 'rgba(59, 130, 246, 0.12)' : (splitType !== 'equal' ? theme.palette.action.hover : 'transparent')
                                             }
                                         }}
                                     >
@@ -829,8 +843,8 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                                         width: 20,
                                                         height: 20,
                                                         borderRadius: '6px',
-                                                        background: isSelected ? '#3b82f6' : 'rgba(255,255,255,0.1)',
-                                                        border: isSelected ? 'none' : '2px solid #cbd5e0',
+                                                        background: isSelected ? '#3b82f6' : 'transparent',
+                                                        border: isSelected ? 'none' : `2px solid ${theme.palette.divider}`,
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
@@ -859,7 +873,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
 
                                             <Typography sx={{
                                                 fontWeight: isSelected ? 600 : 500,
-                                                color: isSelected ? 'white' : '#94a3b8',
+                                                color: isSelected ? theme.palette.text.primary : theme.palette.text.secondary,
                                                 fontSize: '0.9rem',
                                                 transition: 'color 0.2s'
                                             }}>
@@ -884,7 +898,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                                             disabled={splitType === 'equal'}
                                                             InputProps={{
                                                                 disableUnderline: true,
-                                                                startAdornment: <Typography sx={{ mr: 0.5, color: splitType === 'equal' ? '#94a3b8' : 'white', fontSize: '0.9rem', fontWeight: 600 }}>₹</Typography>
+                                                                startAdornment: <Typography sx={{ mr: 0.5, color: splitType === 'equal' ? theme.palette.text.secondary : theme.palette.text.primary, fontSize: '0.9rem', fontWeight: 600 }}>₹</Typography>
                                                             }}
                                                             sx={{
                                                                 width: '80px',
@@ -892,12 +906,12 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                                                     fontSize: '0.95rem',
                                                                     fontWeight: 700,
                                                                     textAlign: 'right',
-                                                                    color: splitType === 'equal' ? '#94a3b8' : 'white', // Grey out auto-calc
+                                                                    color: splitType === 'equal' ? theme.palette.text.secondary : theme.palette.text.primary, // Grey out auto-calc
                                                                     p: 0.5
                                                                 },
                                                                 '& .MuiInputBase-input.Mui-disabled': {
-                                                                    color: '#94a3b8 !important',
-                                                                    WebkitTextFillColor: '#94a3b8 !important',
+                                                                    color: `${theme.palette.text.secondary} !important`,
+                                                                    WebkitTextFillColor: `${theme.palette.text.secondary} !important`,
                                                                 }
                                                             }}
                                                         />
@@ -920,14 +934,14 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             px: 1.5, py: 1,
                             mb: 2,
                             borderRadius: '12px',
-                            background: 'rgba(255,255,255,0.02)',
-                            border: '1px dashed rgba(255,255,255,0.1)'
+                            background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+                            border: `1px dashed ${theme.palette.divider}`
                         }}>
-                            <Typography sx={{ fontWeight: 500, fontSize: '0.8rem', color: '#94a3b8' }}>
-                                Selected: <span style={{ color: 'white' }}>{selectedMemberIds.length}</span> of {members.length}
+                            <Typography sx={{ fontWeight: 500, fontSize: '0.8rem', color: theme.palette.text.secondary }}>
+                                Selected: <span style={{ color: theme.palette.text.primary }}>{selectedMemberIds.length}</span> of {members.length}
                             </Typography>
                             {splitType === 'custom' && (
-                                <Typography sx={{ fontWeight: 500, fontSize: '0.8rem', color: '#94a3b8' }}>
+                                <Typography sx={{ fontWeight: 500, fontSize: '0.8rem', color: theme.palette.text.secondary }}>
                                     Remaining: <span style={{
                                         color: (() => {
                                             const assigned = (watch('splits') || []).reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0);
@@ -974,12 +988,12 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             sx={{
                                 py: 1,
                                 borderRadius: '10px',
-                                bgcolor: 'rgba(255, 255, 255, 0.05)',
-                                color: '#cbd5e1',
+                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                                color: theme.palette.text.secondary,
                                 fontWeight: 600,
                                 fontSize: '0.9rem',
                                 textTransform: 'none',
-                                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' }
+                                '&:hover': { bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }
                             }}
                         >
                             Cancel
@@ -991,23 +1005,30 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             sx={{
                                 py: 1,
                                 borderRadius: '10px',
-                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                                color: 'white',
+                                background: loading ? theme.palette.action.disabledBackground : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                color: loading ? theme.palette.text.disabled : 'white',
                                 fontWeight: 600,
                                 fontSize: '0.75rem',
                                 textTransform: 'none',
-                                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)',
+                                boxShadow: loading ? 'none' : '0 4px 12px rgba(37, 99, 235, 0.2)',
                                 '&:hover': {
-                                    boxShadow: '0 6px 16px rgba(37, 99, 235, 0.3)',
-                                    transform: 'translateY(-1px)'
+                                    boxShadow: loading ? 'none' : '0 6px 16px rgba(37, 99, 235, 0.3)',
+                                    transform: loading ? 'none' : 'translateY(-1px)'
                                 },
                                 '&:disabled': {
-                                    bgcolor: '#1e293b',
-                                    color: '#475569'
+                                    bgcolor: theme.palette.action.disabledBackground,
+                                    color: theme.palette.text.disabled
                                 }
                             }}
                         >
-                            {loading ? (initialExpense ? 'Updating...' : 'Adding...') : (initialExpense ? 'Update Expense' : 'Add Expense')}
+                            {loading ? (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <CircularProgress size={16} sx={{ color: '#475569' }} />
+                                    {initialExpense ? 'Updating...' : 'Adding...'}
+                                </Box>
+                            ) : (
+                                initialExpense ? 'Update Expense' : 'Add Expense'
+                            )}
                         </Button>
                     </Stack>
                 </Stack>

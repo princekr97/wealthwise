@@ -194,13 +194,6 @@ export default function Dashboard() {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: 6,
-                    fontSize: 12,
-                    padding: '8px 12px'
-                  }}
                   formatter={(value) => formatCurrency(value)}
                 />
               </PieChart>
@@ -231,29 +224,22 @@ export default function Dashboard() {
                     <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} vertical={false} />
                 <XAxis
                   dataKey="label"
-                  stroke="rgba(255,255,255,0.5)"
+                  stroke={theme.palette.text.secondary}
                   tickLine={false}
                   fontSize={isMobile ? 10 : 11}
-                  tick={{ fill: 'rgba(255,255,255,0.7)' }}
+                  tick={{ fill: theme.palette.text.secondary }}
                 />
                 <YAxis
-                  stroke="rgba(255,255,255,0.5)"
+                  stroke={theme.palette.text.secondary}
                   tickLine={false}
                   fontSize={isMobile ? 10 : 11}
                   tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
-                  tick={{ fill: 'rgba(255,255,255,0.7)' }}
+                  tick={{ fill: theme.palette.text.secondary }}
                 />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    borderRadius: 8,
-                    fontSize: isMobile ? 10 : 12,
-                    padding: '8px 12px'
-                  }}
                   formatter={(value) => formatCurrency(value)}
                   labelFormatter={(label) => `Month: ${label}`}
                 />
@@ -348,6 +334,7 @@ export default function Dashboard() {
  * TrendSummary - Summary stats below trend chart
  */
 function TrendSummary({ data }) {
+  const theme = useTheme();
   const totalIncome = data.reduce((sum, item) => sum + (item.income || 0), 0);
   const totalExpense = data.reduce((sum, item) => sum + (item.expense || 0), 0);
   const netSavings = totalIncome - totalExpense;
@@ -355,7 +342,7 @@ function TrendSummary({ data }) {
   return (
     <Box
       sx={{
-        borderTop: '1px solid rgba(255,255,255,0.1)',
+        borderTop: `1px solid ${theme.palette.divider}`,
         pt: 2,
         display: 'grid',
         gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' },
@@ -394,6 +381,7 @@ function TrendSummary({ data }) {
  * HealthMetricCard - Card for displaying health metrics with progress bar
  */
 function HealthMetricCard({ icon, label, value, description, progress, color, tooltip, trend, extra }) {
+  const theme = useTheme();
   return (
     <Card>
       <CardContent sx={{ minHeight: { xs: 150, sm: 160, md: 170 } }}>
@@ -431,7 +419,7 @@ function HealthMetricCard({ icon, label, value, description, progress, color, to
               sx={{
                 height: 6,
                 borderRadius: 3,
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
                 '& .MuiLinearProgress-bar': {
                   backgroundColor: color,
                   borderRadius: 3

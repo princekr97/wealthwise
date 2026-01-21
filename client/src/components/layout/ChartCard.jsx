@@ -41,10 +41,11 @@ export default function ChartCard({
         <Box
             sx={{
                 width: '100%',
-                background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : '#FFFFFF',
+                border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                 borderRadius: '16px',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
             }}
         >
             {/* Header - Simple and clean */}
@@ -59,7 +60,7 @@ export default function ChartCard({
                     p: 1.5,
                     borderRadius: '12px',
                     transition: 'background 0.2s',
-                    '&:hover': collapsible ? { bgcolor: 'rgba(255,255,255,0.03)' } : {}
+                    '&:hover': collapsible ? { bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } : {}
                 }}
                 onClick={() => collapsible && setExpanded(!expanded)}
             >
@@ -71,7 +72,7 @@ export default function ChartCard({
                             fontSize: { xs: '1rem', sm: '1.1rem' },
                             letterSpacing: '-0.01em',
                             lineHeight: 1.2,
-                            color: '#e2e8f0'
+                            color: theme.palette.text.primary
                         }}
                     >
                         {title}
@@ -83,7 +84,7 @@ export default function ChartCard({
                                 fontSize: { xs: '0.75rem', sm: '0.8rem' },
                                 fontWeight: 500,
                                 mt: 0.5,
-                                color: '#94a3b8'
+                                color: theme.palette.text.secondary
                             }}
                         >
                             {subtitle}
@@ -94,7 +95,7 @@ export default function ChartCard({
                     <KeyboardArrowDownIcon
                         fontSize="medium"
                         sx={{
-                            color: '#94a3b8',
+                            color: theme.palette.text.secondary,
                             transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
                             transition: 'transform 0.3s ease',
                             opacity: 0.7
@@ -181,6 +182,7 @@ export function EmptyChartState({ message = 'No data available' }) {
  * @param {Function} formatter - Optional formatter for value
  */
 export function CategoryLegend({ data, colors, formatter = (v) => v }) {
+    const theme = useTheme();
     if (!data || data.length === 0) return null;
 
     const total = data.reduce((sum, i) => sum + (i.value || i.total || 0), 0);
@@ -205,14 +207,14 @@ export function CategoryLegend({ data, colors, formatter = (v) => v }) {
                                         boxShadow: `0 0 8px ${color}`
                                     }}
                                 />
-                                <Typography sx={{ fontSize: '0.85rem', color: '#e2e8f0', fontWeight: 500 }}>
+                                <Typography sx={{ fontSize: '0.85rem', color: theme.palette.text.primary, fontWeight: 500 }}>
                                     {item.name || item.category || item.source}
                                 </Typography>
-                                <Typography sx={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>
+                                <Typography sx={{ fontSize: '0.75rem', color: theme.palette.text.secondary, fontWeight: 500 }}>
                                     {percentage}%
                                 </Typography>
                             </Box>
-                            <Typography sx={{ fontSize: '0.85rem', color: '#f8fafc', fontWeight: 600 }}>
+                            <Typography sx={{ fontSize: '0.85rem', color: theme.palette.text.primary, fontWeight: 600 }}>
                                 {formatter(val)}
                             </Typography>
                         </Box>
@@ -222,7 +224,7 @@ export function CategoryLegend({ data, colors, formatter = (v) => v }) {
                                 width: '100%',
                                 height: 4,
                                 borderRadius: 2,
-                                bgcolor: 'rgba(255, 255, 255, 0.05)',
+                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
                                 overflow: 'hidden'
                             }}
                         >

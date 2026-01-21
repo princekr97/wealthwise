@@ -12,38 +12,42 @@ export const useThemeContext = () => {
 };
 
 export const ThemeContextProvider = ({ children }) => {
-    // Default to 'emeraldFinance' or load from localStorage
+    const [mode, setMode] = useState(() => {
+        const saved = localStorage.getItem('wealthwise-theme-mode');
+        return saved || 'dark';
+    });
+
     const [currentGradient, setCurrentGradient] = useState(() => {
         const saved = localStorage.getItem('wealthwise-theme-gradient');
         return saved && gradients[saved] ? saved : 'emeraldFinance';
     });
 
+    const toggleMode = () => {
+        const newMode = mode === 'dark' ? 'light' : 'dark';
+        setMode(newMode);
+        localStorage.setItem('wealthwise-theme-mode', newMode);
+        document.documentElement.setAttribute('data-theme', newMode);
+    };
+
     const setGradient = (gradientKey) => {
-        console.log('🎨 Setting gradient:', gradientKey, gradients[gradientKey]);
         if (gradients[gradientKey]) {
             setCurrentGradient(gradientKey);
             localStorage.setItem('wealthwise-theme-gradient', gradientKey);
-            // Force immediate CSS variable update
             const gradientValue = gradients[gradientKey].gradient;
             document.documentElement.style.setProperty('--active-gradient', gradientValue);
-            console.log('✅ CSS variable set:', gradientValue);
-        } else {
-            console.error('❌ Gradient not found:', gradientKey);
         }
     };
 
-    // Apply gradient on mount
     useEffect(() => {
-        console.log('🔄 Applying gradient on mount/change:', currentGradient);
+        document.documentElement.setAttribute('data-theme', mode);
         if (gradients[currentGradient]) {
             const gradientValue = gradients[currentGradient].gradient;
             document.documentElement.style.setProperty('--active-gradient', gradientValue);
-            console.log('✅ Initial gradient applied:', gradientValue);
         }
-    }, [currentGradient]);
+    }, [currentGradient, mode]);
 
     return (
-        <ThemeContext.Provider value={{ currentGradient, setGradient }}>
+        <ThemeContext.Provider value={{ currentGradient, setGradient, mode, toggleMode }}>
             {children}
         </ThemeContext.Provider>
     );

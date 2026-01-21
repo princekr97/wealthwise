@@ -10,8 +10,10 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Box, Drawer, IconButton, Typography, useTheme, useMediaQuery, alpha, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { Logout as LogoutIcon, DeleteForever as DeleteIcon } from '@mui/icons-material';
 import { useAuthStore } from '../../store/authStore';
+import { useThemeContext } from '../../context/ThemeContext';
 import { toast } from 'sonner';
 import ConfirmDialog from '../common/ConfirmDialog';
+import ThemeToggle from '../common/ThemeToggle';
 import logo from '../../assets/images/khatabahi-logo.png';
 import { getMenuItems } from '../../config/menuConfig';
 import {
@@ -41,19 +43,8 @@ const iconMap = {
   Settings: SettingsIcon
 };
 
+// Sidebar width
 const SIDEBAR_WIDTH = 260;
-
-// Colors
-const colors = {
-  bgPrimary: '#0F172A',
-  bgSidebar: '#0F172A',
-  bgCard: '#1E293B',
-  border: 'rgba(148, 163, 184, 0.15)',
-  textPrimary: '#F1F5F9',
-  textSecondary: '#94A3B8',
-  primary: '#22C55E',
-  primaryHover: 'rgba(34, 197, 94, 0.1)'
-};
 
 export function Layout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -65,6 +56,20 @@ export function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, deleteAccount } = useAuthStore();
+  const { mode } = useThemeContext();
+  const isDark = mode === 'dark';
+
+  const themeColors = {
+    bgPrimary: isDark ? '#0F172A' : '#F8FAFC',
+    bgSidebar: isDark ? 'rgba(15, 23, 42, 0.4)' : '#FFFFFF',
+    bgHeader: isDark ? '#0F172A' : '#FFFFFF',
+    bgCard: isDark ? '#1E293B' : '#FFFFFF',
+    border: isDark ? 'rgba(148, 163, 184, 0.15)' : '#E2E8F0',
+    textPrimary: isDark ? '#F1F5F9' : '#1E293B',
+    textSecondary: isDark ? '#94A3B8' : '#64748B',
+    primary: '#22C55E',
+    primaryHover: isDark ? 'rgba(34, 197, 94, 0.1)' : 'rgba(34, 197, 94, 0.15)'
+  };
 
   // Get menu items from config based on user role
   const navItems = useMemo(() => {
@@ -127,9 +132,9 @@ export function Layout({ children }) {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: 'rgba(15, 23, 42, 0.4)', // Glassy sidebar
-        backdropFilter: 'blur(20px)',
-        borderRight: `1px solid ${colors.border}`
+        bgcolor: themeColors.bgSidebar,
+        backdropFilter: isDark ? 'blur(20px)' : 'none',
+        borderRight: `1px solid ${themeColors.border}`
       }}
     >
       {/* Logo */}
@@ -140,7 +145,7 @@ export function Layout({ children }) {
           display: 'flex',
           alignItems: 'center', // Changed to center for horizontal alignment
           justifyContent: 'flex-start',
-          borderBottom: `1px solid ${colors.border}`,
+          borderBottom: `1px solid ${themeColors.border}`,
           height: '64px',
           gap: 1.5 // Space between logo and text
         }}
@@ -175,7 +180,7 @@ export function Layout({ children }) {
           <Typography
             sx={{
               fontSize: '0.6rem',
-              color: colors.textSecondary,
+              color: themeColors.textSecondary,
               fontWeight: 500,
               letterSpacing: '0.5px',
               lineHeight: 1,
@@ -208,12 +213,12 @@ export function Layout({ children }) {
                   mb: 0.5,
                   borderRadius: 2,
                   transition: 'all 0.15s ease',
-                  bgcolor: isActive ? colors.primaryHover : 'transparent',
+                  bgcolor: isActive ? themeColors.primaryHover : 'transparent',
                   border: isActive ? `1px solid rgba(34, 197, 94, 0.3)` : '1px solid transparent',
-                  color: isActive ? colors.primary : colors.textSecondary,
+                  color: isActive ? themeColors.primary : themeColors.textSecondary,
                   '&:hover': {
-                    bgcolor: isActive ? colors.primaryHover : 'rgba(255, 255, 255, 0.03)',
-                    color: isActive ? colors.primary : colors.textPrimary
+                    bgcolor: isActive ? themeColors.primaryHover : isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+                    color: isActive ? themeColors.primary : themeColors.textPrimary
                   }
                 }}
               >
@@ -228,8 +233,8 @@ export function Layout({ children }) {
       </Box>
 
       {/* Footer */}
-      <Box sx={{ px: 2.5, py: 2, borderTop: `1px solid ${colors.border}` }}>
-        <Typography sx={{ fontSize: '0.7rem', color: colors.textSecondary, mb: 0.5 }}>
+      <Box sx={{ px: 2.5, py: 2, borderTop: `1px solid ${themeColors.border}` }}>
+        <Typography sx={{ fontSize: '0.7rem', color: themeColors.textSecondary, mb: 0.5 }}>
           Financial Health
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -251,7 +256,7 @@ export function Layout({ children }) {
               }}
             />
           </Box>
-          <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: colors.primary }}>
+          <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: themeColors.primary }}>
             72
           </Typography>
         </Box>
@@ -312,8 +317,8 @@ export function Layout({ children }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderBottom: `1px solid ${colors.border}`,
-            bgcolor: '#0F172A', // Solid background for best performance
+            borderBottom: `1px solid ${themeColors.border}`,
+            bgcolor: themeColors.bgHeader, // Solid background for best performance
             // _removed_ backdropFilter for performance
             position: 'sticky',
             top: 0,
@@ -326,8 +331,8 @@ export function Layout({ children }) {
               onClick={handleDrawerToggle}
               sx={{
                 display: { lg: 'none' },
-                color: colors.textSecondary,
-                '&:hover': { color: colors.textPrimary }
+                color: themeColors.textSecondary,
+                '&:hover': { color: themeColors.textPrimary }
               }}
             >
               {mobileOpen ? <CloseIcon /> : <MenuIcon />}
@@ -336,11 +341,11 @@ export function Layout({ children }) {
               sx={{
                 display: { xs: 'none', sm: 'block' },
                 fontSize: '0.85rem',
-                color: colors.textSecondary,
+                color: themeColors.textSecondary,
                 fontWeight: 500
               }}
             >
-              Welcome Back, <span style={{ color: colors.textPrimary, fontWeight: 600 }}>{user?.name?.split(' ')[0] || 'Investor'}</span>
+              Welcome Back, <span style={{ color: themeColors.textPrimary, fontWeight: 600 }}>{user?.name?.split(' ')[0] || 'Investor'}</span>
             </Typography>
           </Box>
 
@@ -358,14 +363,15 @@ export function Layout({ children }) {
               }}
             >
               <Box sx={{ textAlign: 'right' }}>
-                <Typography sx={{ fontSize: '0.7rem', color: colors.textSecondary, lineHeight: 1.2 }}>
+                <Typography sx={{ fontSize: '0.7rem', color: themeColors.textSecondary, lineHeight: 1.2 }}>
                   Today's snapshot
                 </Typography>
-                <Typography sx={{ fontSize: '0.75rem', color: colors.primary, fontWeight: 600, lineHeight: 1.2 }}>
+                <Typography sx={{ fontSize: '0.75rem', color: themeColors.primary, fontWeight: 600, lineHeight: 1.2 }}>
                   You're on track 🎯
                 </Typography>
               </Box>
             </Box>
+            <ThemeToggle />
             <Box
               onClick={handleMenuOpen}
               sx={{
@@ -440,11 +446,11 @@ export function Layout({ children }) {
                 }
               }}
             >
-              <MenuItem onClick={handleLogout}>
-                <ListItemIcon>
+              <MenuItem onClick={handleLogout} sx={{ gap: 1 }}>
+                <ListItemIcon sx={{ minWidth: 'auto !important' }}>
                   <LogoutIcon fontSize="small" sx={{ color: '#FFA500' }} />
                 </ListItemIcon>
-                <ListItemText>Logout</ListItemText>
+                <ListItemText primaryTypographyProps={{ sx: { color: isDark ? '#F1F5F9' : '#1E293B' } }}>Logout</ListItemText>
               </MenuItem>
             </Menu>
           </Box>
@@ -465,12 +471,12 @@ export function Layout({ children }) {
 
           {/* Global App Footer */}
           <Box component="footer" sx={{ py: 3, textAlign: 'center', mt: 'auto', opacity: 0.7 }}>
-            <Typography variant="caption" display="block" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+            <Typography variant="caption" display="block" sx={{ color: themeColors.textSecondary, mb: 0.5 }}>
               &copy; {new Date().getFullYear()} KhataBahi. All rights reserved.
             </Typography>
-            <Typography variant="caption" sx={{ color: colors.textSecondary }}>
+            <Typography variant="caption" sx={{ color: themeColors.textSecondary }}>
               🎨 Designed & 💻 Developed by{' '}
-              <Box component="span" sx={{ color: colors.primary, fontWeight: 600, cursor: 'default' }}>
+              <Box component="span" sx={{ color: themeColors.primary, fontWeight: 600, cursor: 'default' }}>
                 Prince Gupta
               </Box>
             </Typography>

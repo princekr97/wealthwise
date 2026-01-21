@@ -7,6 +7,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
+import { useThemeContext } from '../../context/ThemeContext';
 
 const trails1 = keyframes`
   0% { transform: rotate(0deg); }
@@ -80,7 +81,7 @@ const planetAn = keyframes`
   100% { transform: translate(-10px, 70px); opacity: 0; }
 `;
 
-const LoaderContainer = styled(Box)({
+const LoaderContainer = styled(Box)(({ mode }) => ({
     position: 'fixed',
     top: 0,
     left: 0,
@@ -90,9 +91,9 @@ const LoaderContainer = styled(Box)({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#0f172a',
+    background: mode === 'light' ? '#F8FAFC' : '#0f172a',
     zIndex: 9999,
-});
+}));
 
 const PlanetsWrapper = styled(Box)({
     position: 'relative',
@@ -222,8 +223,11 @@ const MessageContainer = styled(Box)({
 });
 
 const PageLoader = ({ message = 'Loading...', subMessage }) => {
+    const { mode } = useThemeContext();
+    const isLight = mode === 'light';
+
     return (
-        <LoaderContainer>
+        <LoaderContainer mode={mode}>
             <PlanetsWrapper>
                 <PlanetTrail1 size="96px" animationName={trails1} />
                 <PlanetTrail2 size="136px" animationName={trails2} />
@@ -243,7 +247,7 @@ const PageLoader = ({ message = 'Loading...', subMessage }) => {
                     <Typography
                         variant="h6"
                         sx={{
-                            color: 'rgb(255, 170, 0)',
+                            color: isLight ? '#059669' : 'rgb(255, 170, 0)',
                             fontWeight: 600,
                             letterSpacing: '0.05em',
                             fontSize: '1.0rem',
@@ -255,7 +259,7 @@ const PageLoader = ({ message = 'Loading...', subMessage }) => {
                         <Typography
                             variant="body2"
                             sx={{
-                                color: 'rgba(255,255,255,0.6)',
+                                color: isLight ? '#64748B' : 'rgba(255,255,255,0.6)',
                                 mt: 0.5,
                                 fontSize: '0.65rem'
                             }}

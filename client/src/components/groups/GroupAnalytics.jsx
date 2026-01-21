@@ -11,19 +11,22 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'
 
 // Custom Tooltip Component
 const CustomTooltip = ({ active, payload, label }) => {
+    const theme = useTheme();
+    const isLight = theme.palette.mode === 'light';
+
     if (active && payload && payload.length) {
         return (
             <Box
                 sx={{
-                    backgroundColor: '#1e293b',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    backgroundColor: isLight ? '#FFFFFF' : '#1e293b',
+                    border: isLight ? '1px solid #E2E8F0' : '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: '12px',
-                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
+                    boxShadow: isLight ? '0 10px 15px -3px rgba(0, 0, 0, 0.1)' : '0 10px 40px rgba(0, 0, 0, 0.5)',
                     p: 1.5,
                     minWidth: '150px'
                 }}
             >
-                <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, mb: 0.5 }}>
+                <Typography sx={{ color: isLight ? '#64748B' : '#94a3b8', fontSize: '0.75rem', fontWeight: 600, mb: 0.5 }}>
                     {payload[0].payload.name || payload[0].name || label}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -33,10 +36,10 @@ const CustomTooltip = ({ active, payload, label }) => {
                             height: 10,
                             borderRadius: '50%',
                             bgcolor: payload[0].payload.fill || '#3b82f6',
-                            boxShadow: `0 0 10px ${payload[0].payload.fill || '#3b82f6'}`
+                            boxShadow: isLight ? 'none' : `0 0 10px ${payload[0].payload.fill || '#3b82f6'}`
                         }}
                     />
-                    <Typography sx={{ color: 'white', fontSize: '1.1rem', fontWeight: 700 }}>
+                    <Typography sx={{ color: isLight ? '#1E293B' : 'white', fontSize: '1.1rem', fontWeight: 700 }}>
                         {formatCurrency(payload[0].value)}
                     </Typography>
                 </Box>
@@ -165,9 +168,9 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                 {/* Total Group Spend */}
                 <Box
                     sx={{
-                        background: 'rgba(255, 255, 255, 0.03)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF',
+                        backdropFilter: theme.palette.mode === 'dark' ? 'blur(10px)' : 'none',
+                        border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                         borderRadius: '20px',
                         p: 3,
                         display: 'flex',
@@ -175,7 +178,12 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         transition: 'all 0.3s',
-                        '&:hover': { background: 'rgba(255, 255, 255, 0.05)', transform: 'translateY(-4px)' }
+                        boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        '&:hover': {
+                            background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
+                            transform: 'translateY(-4px)',
+                            boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                        }
                     }}
                 >
                     <Box sx={{ mb: 1.5 }}>
@@ -188,7 +196,7 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                     <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 1, textAlign: 'center' }}>
                         Total Spending
                     </Typography>
-                    <Typography sx={{ fontSize: { xs: '1.4rem', sm: '1.75rem' }, fontWeight: 700, color: 'white', letterSpacing: '-0.5px', textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>
+                    <Typography sx={{ fontSize: { xs: '1.4rem', sm: '1.75rem' }, fontWeight: 700, color: theme.palette.text.primary, letterSpacing: '-0.5px', textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>
                         {formatCurrency(stats.totalGroupSpend)}
                     </Typography>
                 </Box>
@@ -196,9 +204,9 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                 {/* You Paid */}
                 <Box
                     sx={{
-                        background: 'rgba(255, 255, 255, 0.03)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF',
+                        backdropFilter: theme.palette.mode === 'dark' ? 'blur(10px)' : 'none',
+                        border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                         borderRadius: '20px',
                         p: 3,
                         display: 'flex',
@@ -206,7 +214,12 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         transition: 'all 0.3s',
-                        '&:hover': { background: 'rgba(255, 255, 255, 0.05)', transform: 'translateY(-4px)' }
+                        boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        '&:hover': {
+                            background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
+                            transform: 'translateY(-4px)',
+                            boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                        }
                     }}
                 >
                     <Box sx={{ mb: 1.5 }}>
@@ -218,7 +231,7 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                     <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 1, textAlign: 'center' }}>
                         You Paid
                     </Typography>
-                    <Typography sx={{ fontSize: { xs: '1.4rem', sm: '1.75rem' }, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px', textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>
+                    <Typography sx={{ fontSize: { xs: '1.4rem', sm: '1.75rem' }, fontWeight: 700, color: theme.palette.text.primary, letterSpacing: '-0.5px', textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>
                         {formatCurrency(stats.myTotalSpend)}
                     </Typography>
                 </Box>
@@ -227,9 +240,9 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                 <Box
                     sx={{
                         gridColumn: { xs: '1 / -1', md: 'auto' },
-                        background: 'rgba(255, 255, 255, 0.03)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF',
+                        backdropFilter: theme.palette.mode === 'dark' ? 'blur(10px)' : 'none',
+                        border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                         borderRadius: '20px',
                         p: 3,
                         display: 'flex',
@@ -237,7 +250,12 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         transition: 'all 0.3s',
-                        '&:hover': { background: 'rgba(255, 255, 255, 0.05)', transform: 'translateY(-4px)' }
+                        boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        '&:hover': {
+                            background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
+                            transform: 'translateY(-4px)',
+                            boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                        }
                     }}
                 >
                     <Box sx={{ mb: 1.5 }}>
@@ -250,7 +268,7 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                     <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 1, textAlign: 'center' }}>
                         Average Spend
                     </Typography>
-                    <Typography sx={{ fontSize: { xs: '1.4rem', sm: '1.75rem' }, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.5px', textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>
+                    <Typography sx={{ fontSize: { xs: '1.4rem', sm: '1.75rem' }, fontWeight: 700, color: theme.palette.text.primary, letterSpacing: '-0.5px', textAlign: 'center', wordBreak: 'break-word', maxWidth: '100%' }}>
                         {formatCurrency(stats.totalGroupSpend / (members.length || 1))}
                     </Typography>
                     <Box
@@ -348,7 +366,7 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                                     dataKey="value"
                                     position="right"
                                     formatter={(v) => formatCurrency(v)}
-                                    style={{ fill: '#f8fafc', fontSize: '11px', fontWeight: 600 }}
+                                    style={{ fill: theme.palette.text.primary, fontSize: '11px', fontWeight: 600 }}
                                 />
                             </Bar>
                         </BarChart>

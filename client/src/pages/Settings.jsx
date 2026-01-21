@@ -42,7 +42,7 @@ export default function Settings() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { user, logout, deleteAccount, fetchProfile } = useAuthStore();
-  const { currentGradient, setGradient } = useThemeContext();
+  const { currentGradient, setGradient, mode, toggleMode } = useThemeContext();
   const [activeTab, setActiveTab] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmType, setConfirmType] = useState('logout'); // 'logout' or 'delete'
@@ -363,11 +363,60 @@ export default function Settings() {
 
       {/* Appearance Tab */}
       {activeTab === 1 && (
-        <Card>
-          <CardContent>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
-              Background Theme
-            </Typography>
+        <Stack spacing={3}>
+          {/* Theme Mode Toggle */}
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
+                Theme Mode
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Box
+                  onClick={() => mode === 'light' && toggleMode()}
+                  sx={{
+                    flex: 1,
+                    p: 2.5,
+                    borderRadius: 2,
+                    border: '2px solid',
+                    borderColor: mode === 'dark' ? '#10B981' : 'rgba(255,255,255,0.1)',
+                    background: mode === 'dark' ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    textAlign: 'center',
+                    '&:hover': { borderColor: '#10B981' }
+                  }}
+                >
+                  <Typography sx={{ fontSize: '2rem', mb: 1 }}>🌙</Typography>
+                  <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>Dark Mode</Typography>
+                </Box>
+                <Box
+                  onClick={() => mode === 'dark' && toggleMode()}
+                  sx={{
+                    flex: 1,
+                    p: 2.5,
+                    borderRadius: 2,
+                    border: '2px solid',
+                    borderColor: mode === 'light' ? '#10B981' : 'rgba(255,255,255,0.1)',
+                    background: mode === 'light' ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    textAlign: 'center',
+                    '&:hover': { borderColor: '#10B981' }
+                  }}
+                >
+                  <Typography sx={{ fontSize: '2rem', mb: 1 }}>☀️</Typography>
+                  <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>Light Mode</Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Background Gradient */}
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
+                Background Theme
+              </Typography>
 
             <Stack spacing={4}>
               {Object.keys(gradientCategories).map((category) => {
@@ -465,6 +514,7 @@ export default function Settings() {
             </Stack>
           </CardContent>
         </Card>
+        </Stack>
       )}
 
       <ConfirmDialog

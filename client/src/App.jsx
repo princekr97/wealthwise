@@ -32,13 +32,14 @@ const GroupDetails = lazy(() => import('./pages/GroupDetails.jsx'));
 const GradientShowcase = lazy(() => import('./components/GradientShowcase.jsx'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx').then(m => ({ default: m.ResetPassword })));
 
-// Premium loader now imported from PageLoader component
-
+import { useThemeContext } from './context/ThemeContext.jsx';
 
 export default function App() {
+  const { mode } = useThemeContext();
+
   return (
     <ErrorBoundary>
-      <Toaster richColors position="top-right" duration={2000} />
+      <Toaster richColors position="top-right" duration={2000} theme={mode} />
       <Routes>
         <Route path="/" element={<Landing />} />
 

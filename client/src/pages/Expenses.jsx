@@ -334,7 +334,7 @@ export default function Expenses() {
                   style={{
                     fontSize: isMobile ? '18px' : '24px',
                     fontWeight: 700,
-                    fill: '#FFFFFF'
+                    fill: theme.palette.text.primary
                   }}
                 >
                   {formatCurrency(totalExpenses)}
@@ -347,7 +347,7 @@ export default function Expenses() {
                   style={{
                     fontSize: '12px',
                     fontWeight: 500,
-                    fill: '#94A3B8'
+                    fill: theme.palette.text.secondary
                   }}
                 >
                   Total Spent
@@ -415,8 +415,8 @@ export default function Expenses() {
       <Card sx={{ overflow: 'hidden' }}>
         <CardContent sx={{ p: 0 }}>
           {/* Header */}
-          <Box sx={{ px: 3, py: 2, borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.125rem', color: '#F1F5F9' }}>
+          <Box sx={{ px: 3, py: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.125rem', color: theme.palette.text.primary }}>
               📋 Recent Expenses
             </Typography>
           </Box>
@@ -437,9 +437,9 @@ export default function Expenses() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 1.5,
-                      borderBottom: index < paginatedExpenses.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
+                      borderBottom: index < paginatedExpenses.length - 1 ? `1px solid ${theme.palette.divider}` : 'none',
                       transition: 'background-color 0.15s ease',
-                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.03)' }
+                      '&:hover': { backgroundColor: theme.palette.action.hover }
                     }}
                   >
                     {/* Icon */}
@@ -450,7 +450,7 @@ export default function Expenses() {
                     {/* Details */}
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography sx={{ fontSize: '0.875rem', color: '#94A3B8' }}>
-                        <Box component="span" sx={{ fontWeight: 600, color: '#F1F5F9', mr: 1 }}>{expense.category}</Box>
+                        <Box component="span" sx={{ fontWeight: 600, color: theme.palette.text.primary, mr: 1 }}>{expense.category}</Box>
                         {formatDate(expense.date)} · {expense.paymentMethod || 'Cash'}
                         {expense.description && ` · ${expense.description.substring(0, 25)}${expense.description.length > 25 ? '...' : ''}`}
                       </Typography>
@@ -480,7 +480,7 @@ export default function Expenses() {
           ) : (
             <Box sx={{ py: 8, textAlign: 'center' }}>
               <Typography sx={{ fontSize: '3rem', mb: 2, opacity: 0.4 }}>💸</Typography>
-              <Typography sx={{ fontSize: '1.125rem', fontWeight: 600, color: '#F1F5F9', mb: 1 }}>No expenses yet</Typography>
+              <Typography sx={{ fontSize: '1.125rem', fontWeight: 600, color: theme.palette.text.primary, mb: 1 }}>No expenses yet</Typography>
               <Typography sx={{ fontSize: '0.875rem', color: '#94A3B8' }}>Start tracking your spending</Typography>
             </Box>
           )}
@@ -509,12 +509,14 @@ export default function Expenses() {
         PaperProps={{
           sx: {
             borderRadius: '24px 24px 16px 16px',
-            background: 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), var(--active-gradient)',
+            background: theme.palette.mode === 'dark'
+              ? 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), var(--active-gradient)'
+              : '#FFFFFF',
             backgroundAttachment: 'fixed',
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0px 24px 48px rgba(0, 0, 0, 0.6)',
+            backdropFilter: theme.palette.mode === 'dark' ? 'blur(24px)' : 'none',
+            WebkitBackdropFilter: theme.palette.mode === 'dark' ? 'blur(24px)' : 'none',
+            border: `1px solid ${theme.palette.divider}`,
+            boxShadow: theme.palette.mode === 'dark' ? '0px 24px 48px rgba(0, 0, 0, 0.6)' : '0px 24px 48px rgba(0, 0, 0, 0.1)',
             overflow: 'hidden'
           }
         }}
@@ -541,20 +543,20 @@ export default function Expenses() {
             display: 'flex',
             alignItems: 'center',
             gap: 1.5,
-            color: '#FFFFFF'
+            color: theme.palette.text.primary
           }}
         >
           <IconButton
             onClick={() => setOpen(false)}
             size="medium"
             sx={{
-              color: 'rgba(255, 255, 255, 0.7)',
+              color: theme.palette.text.secondary,
               width: 40,
               height: 40,
               transition: 'all 0.2s ease',
               '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                color: '#FFFFFF',
+                backgroundColor: theme.palette.action.hover,
+                color: theme.palette.text.primary,
                 transform: 'scale(1.1)'
               },
               '&:active': {
@@ -586,7 +588,7 @@ export default function Expenses() {
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      color: '#94A3B8',
+                      color: theme.palette.text.secondary,
                       mb: 1,
                       display: 'block'
                     }}
@@ -626,7 +628,7 @@ export default function Expenses() {
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      color: '#94A3B8',
+                      color: theme.palette.text.secondary,
                       mb: 1,
                       display: 'block'
                     }}
@@ -674,7 +676,7 @@ export default function Expenses() {
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      color: '#94A3B8',
+                      color: theme.palette.text.secondary,
                       mb: 1,
                       display: 'block'
                     }}
@@ -711,7 +713,7 @@ export default function Expenses() {
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      color: '#94A3B8',
+                      color: theme.palette.text.secondary,
                       mb: 1,
                       display: 'block'
                     }}
@@ -749,7 +751,7 @@ export default function Expenses() {
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      color: '#94A3B8',
+                      color: theme.palette.text.secondary,
                       mb: 1,
                       display: 'block'
                     }}
@@ -804,7 +806,7 @@ export default function Expenses() {
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      color: '#94A3B8',
+                      color: theme.palette.text.secondary,
                       mb: 1,
                       display: 'block'
                     }}

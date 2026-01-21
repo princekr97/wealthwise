@@ -153,6 +153,7 @@ export default function GroupDetails() {
     const [editingExpense, setEditingExpense] = useState(null);
 
     useEffect(() => {
+        window.scrollTo(0, 0);
         fetchGroupDetails();
     }, [id]);
 
@@ -859,7 +860,7 @@ export default function GroupDetails() {
 
 
             {/* 4. Tabs Navigation - Modern Pill Design */}
-            <Box sx={{ mb: 3 }}>
+            <Box sx={{ mb: 3, px: { xs: 0, sm: 2 } }}>
                 <Stack
                     direction="row"
                     spacing={1}
@@ -868,8 +869,8 @@ export default function GroupDetails() {
                         borderRadius: '12px',
                         p: 0.4,
                         border: '1px solid rgba(255, 255, 255, 0.08)',
-                        display: 'inline-flex',
-                        width: 'fit-content',
+                        display: 'flex',
+                        width: '100%',
                         position: 'relative'
                     }}
                 >
@@ -878,6 +879,7 @@ export default function GroupDetails() {
                             key={tab}
                             onClick={() => setTabValue(index)}
                             sx={{
+                                flex: 1,
                                 px: 2.5,
                                 py: 1,
                                 cursor: 'pointer',
@@ -889,6 +891,7 @@ export default function GroupDetails() {
                                 boxShadow: tabValue === index ? '0 4px 12px rgba(20, 184, 166, 0.3)' : 'none',
                                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                 whiteSpace: 'nowrap',
+                                textAlign: 'center',
                                 '&:hover': {
                                     color: 'white',
                                     background: tabValue === index ? 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' : 'rgba(255, 255, 255, 0.05)'

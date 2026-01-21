@@ -112,17 +112,23 @@ const typography = {
   button: { textTransform: 'none', fontWeight: 600, fontSize: '0.9375rem', letterSpacing: '0.01em' }
 };
 
-export const muiTheme = createTheme({
+export const createMuiTheme = (mode) => createTheme({
   palette: {
-    mode: 'dark',
+    mode,
     primary: { main: colors.primary, light: colors.primaryLight, dark: colors.primaryDark },
     secondary: { main: colors.secondary, light: colors.secondaryLight },
     success: { main: colors.success },
     error: { main: colors.error },
     warning: { main: colors.warning },
     info: { main: colors.info },
-    background: { default: colors.bgPrimary, paper: colors.bgSecondary },
-    text: { primary: colors.textPrimary, secondary: colors.textSecondary }
+    background: { 
+      default: mode === 'dark' ? colors.bgPrimary : '#F8FAFC', 
+      paper: mode === 'dark' ? colors.bgSecondary : '#FFFFFF' 
+    },
+    text: { 
+      primary: mode === 'dark' ? colors.textPrimary : '#000000', 
+      secondary: mode === 'dark' ? colors.textSecondary : '#374151' 
+    }
   },
   typography,
   shape: { borderRadius: 16 },
@@ -282,7 +288,7 @@ export const muiTheme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            backgroundColor: '#FFFFFF',
+            backgroundColor: mode === 'dark' ? '#1E293B' : '#FFFFFF',
             borderRadius: 10,
             transition: 'all 0.2s ease',
             '& fieldset': {
@@ -311,7 +317,7 @@ export const muiTheme = createTheme({
               color: colors.primary
             },
             '&.MuiInputLabel-shrink': {
-              backgroundColor: '#FFFFFF',
+              backgroundColor: '#FCF8F3',
               padding: '0 8px',
               marginLeft: '-4px',
               borderRadius: '4px'
@@ -327,7 +333,7 @@ export const muiTheme = createTheme({
     MuiSelect: {
       styleOverrides: {
         root: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: '#FCF8F3',
           borderRadius: 10,
           '& .MuiOutlinedInput-notchedOutline': {
             borderColor: 'rgba(16, 185, 129, 0.3)',
@@ -364,7 +370,7 @@ export const muiTheme = createTheme({
             color: colors.primary
           },
           '&.MuiInputLabel-shrink': {
-            backgroundColor: '#FFFFFF',
+            backgroundColor: '#FCF8F3',
             padding: '0 8px',
             marginLeft: '-4px',
             borderRadius: '4px'
@@ -372,7 +378,7 @@ export const muiTheme = createTheme({
         },
         outlined: {
           '&.MuiInputLabel-shrink': {
-            backgroundColor: '#FFFFFF',
+            backgroundColor: '#FCF8F3',
             padding: '0 8px',
             marginLeft: '-4px',
             borderRadius: '4px',
@@ -389,7 +395,7 @@ export const muiTheme = createTheme({
             color: '#6B7280',
             fontWeight: 500,
             '&.MuiInputLabel-shrink': {
-              backgroundColor: '#FFFFFF',
+              backgroundColor: '#FCF8F3',
               padding: '0 8px',
               marginLeft: '-4px',
               borderRadius: 4
@@ -408,7 +414,7 @@ export const muiTheme = createTheme({
     MuiMenu: {
       styleOverrides: {
         paper: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: '#FCF8F3',
           borderRadius: 12,
           boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
           border: '1px solid #E5E7EB'
@@ -645,17 +651,17 @@ export const muiTheme = createTheme({
     MuiTooltip: {
       styleOverrides: {
         tooltip: {
-          backgroundColor: colors.bgCard,
-          color: colors.textPrimary,
+          backgroundColor: mode === 'dark' ? colors.bgCard : '#FFFFFF',
+          color: mode === 'dark' ? colors.textPrimary : '#1E293B',
           fontSize: '0.8125rem',
           fontWeight: 500,
           padding: '8px 14px',
           borderRadius: 8,
-          border: `1px solid ${colors.glassBorder}`,
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
+          border: mode === 'dark' ? `1px solid ${colors.glassBorder}` : '1px solid #E2E8F0',
+          boxShadow: mode === 'dark' ? '0 4px 20px rgba(0, 0, 0, 0.3)' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
         },
         arrow: {
-          color: colors.bgCard
+          color: mode === 'dark' ? colors.bgCard : '#FFFFFF'
         }
       }
     },
@@ -715,6 +721,9 @@ export const muiTheme = createTheme({
     }
   }
 });
+
+// Legacy export for backward compatibility if needed (defaults to dark)
+export const muiTheme = createMuiTheme('dark');
 
 // Export colors for use in components
 export { colors, gradients };

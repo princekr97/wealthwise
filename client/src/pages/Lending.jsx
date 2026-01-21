@@ -326,7 +326,7 @@ export default function Lending() {
       </ChartGrid>
 
       {/* Tabs for Given/Taken */}
-      <Card>
+      <Card sx={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.1)' }}>
         <CardContent>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)}>
