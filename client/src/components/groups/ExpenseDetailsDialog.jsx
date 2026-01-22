@@ -141,8 +141,12 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
         return name.length > 6 ? name.substring(0, 6) + '...' : name;
     };
 
-    const formattedDate = new Date(expense.date).toLocaleDateString('en-GB', {
+    const dateObj = new Date(expense.date);
+    const formattedDate = dateObj.toLocaleDateString('en-GB', {
         day: 'numeric', month: 'short', year: 'numeric'
+    });
+    const formattedTime = dateObj.toLocaleTimeString('en-GB', {
+        hour: '2-digit', minute: '2-digit'
     });
 
     // Payer Resolution with null safety
@@ -238,17 +242,17 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
                         {getCategoryIcon(expense.category)}
                     </Avatar>
 
-                    <Typography variant="h6" sx={{ fontWeight: 800, color: 'white', mb: 0.25, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1.2px', fontSize: '1.1rem' }}> {/* Adjusted font size and spacing */}
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: 'white', mb: 0.25, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1.2px', fontSize: '1.0rem' }}>
                         {expense.description}
                     </Typography>
 
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}> {/* Reduced mb from 3 */}
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
                         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: 500 }}>
-                            {formattedDate}
+                            {formattedDate} • {formattedTime}
                         </Typography>
                         <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.2)' }} />
                         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: 500 }}>
-                            Added by <span style={{ fontWeight: 700, color: 'white' }}>{payerName}</span>
+                            By <span style={{ fontWeight: 700, color: 'white' }}>{payerName}</span>
                         </Typography>
                     </Stack>
 
@@ -280,7 +284,27 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
                     </Stack>
                 </Box>
 
-                <Divider sx={{ borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.1)', mb: 2.5 }} /> {/* Reduced mb from 3.5 */}
+                <Divider sx={{ borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.1)', mb: 2.5 }} />
+
+                {/* Full Description Section */}
+                <Box sx={{ mb: 3 }}>
+                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1.5px', mb: 1 }}>
+                        Notes / Description
+                    </Typography>
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            p: 2,
+                            borderRadius: '12px',
+                            bgcolor: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.05)'
+                        }}
+                    >
+                        <Typography sx={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>
+                            {expense.description}
+                        </Typography>
+                    </Paper>
+                </Box>
 
                 {/* Paid By */}
                 <Box sx={{ mb: 3 }}> {/* Reduced mb from 4 */}

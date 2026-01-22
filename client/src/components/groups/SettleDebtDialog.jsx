@@ -31,28 +31,35 @@ import { groupService } from '../../services/groupService';
 import { getAvatarConfig } from '../../utils/avatarHelper';
 
 const DisclaimerBox = styled(Box)(({ theme }) => ({
-    backgroundColor: 'rgba(139, 92, 246, 0.08)',
-    borderRadius: '12px',
-    padding: '12px 14px',
-    marginTop: '16px',
-    border: '1px solid rgba(139, 92, 246, 0.2)',
+    background: 'rgba(15, 23, 42, 0.6)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '16px',
+    padding: '12px',
+    marginTop: '12px',
+    border: '1px solid rgba(139, 92, 246, 0.12)',
+    width: '100%',
     transition: 'all 0.2s ease'
 }));
 
 const SettleButton = styled(Button)(({ theme }) => ({
-    borderRadius: '12px',
-    padding: '12px 24px',
+    borderRadius: '14px',
+    padding: '10px 24px',
     textTransform: 'none',
     fontSize: '0.9rem',
-    fontWeight: 700,
-    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-    transition: 'all 0.2s ease',
+    fontWeight: 800,
+    background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+    color: '#FFFFFF',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    boxShadow: '0 8px 16px rgba(139, 92, 246, 0.3)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
     '&:hover': {
-        background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-        transform: 'translateY(-1px)',
-        boxShadow: '0 6px 16px rgba(16, 185, 129, 0.4)'
+        background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+        transform: 'translateY(-2px)',
+        boxShadow: '0 12px 24px rgba(139, 92, 246, 0.45)'
     },
-    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)'
+    '&:active': {
+        transform: 'translateY(0)'
+    }
 }));
 
 const AmountInput = styled(TextField)(({ theme }) => ({
@@ -60,13 +67,17 @@ const AmountInput = styled(TextField)(({ theme }) => ({
         backgroundColor: 'transparent',
     },
     '& .MuiInputBase-input': {
-        fontSize: '2.5rem',
-        fontWeight: 700,
+        fontSize: '2.8rem', // Slightly smaller for better dialog fit
+        fontWeight: 800,
         textAlign: 'center',
-        padding: '10px 0',
+        padding: '0',
         color: '#F1F5F9',
-        width: '150px',
-        height: 'auto',
+        width: '100%',
+        maxWidth: '200px',
+        letterSpacing: '-1.5px',
+        background: 'linear-gradient(to bottom, #FFFFFF 0%, #CBD5E1 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
         '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
             '-webkit-appearance': 'none',
             margin: 0,
@@ -77,17 +88,6 @@ const AmountInput = styled(TextField)(({ theme }) => ({
     },
     '& .MuiOutlinedInput-notchedOutline': {
         border: 'none'
-    },
-    '& .MuiInputAdornment-root': {
-        marginRight: '0px',
-        marginLeft: '0px'
-    },
-    '& .MuiInputAdornment-root p': {
-        fontSize: '1.6rem',
-        fontWeight: 600,
-        color: '#94A3B8',
-        marginTop: '4px',
-        marginRight: '0px'
     }
 }));
 
@@ -101,7 +101,7 @@ export default function SettleDebtDialog({ open, onClose, group, currentUser, ba
 
     useEffect(() => {
         if (!open || !group || !currentUser || !initialSettlement) return;
-        
+
         setValue('payerId', initialSettlement.from.userId);
         setValue('receiverId', initialSettlement.to.userId);
         setValue('amount', initialSettlement.amount.toFixed(2));
@@ -144,34 +144,52 @@ export default function SettleDebtDialog({ open, onClose, group, currentUser, ba
             scroll="body"
             PaperProps={{
                 sx: {
-                    borderRadius: '24px',
+                    borderRadius: '28px',
                     p: 1,
                     backgroundImage: 'none',
-                    bgcolor: '#1E293B',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                    bgcolor: '#0F172A', // Deeper slate for better contrast
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+                    overflow: 'hidden'
                 }
             }}
             sx={{
                 '& .MuiBackdrop-root': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)'
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    backdropFilter: 'blur(8px)'
                 }
             }}
         >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 2, px: 2 }}>
-                <Box sx={{ width: 40, height: 4, bgcolor: 'rgba(255, 255, 255, 0.2)', borderRadius: 2 }} />
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 1, pr: 1 }}>
                 <IconButton
                     onClick={onClose}
                     size="small"
-                    sx={{ color: '#94A3B8', '&:hover': { color: '#F1F5F9', bgcolor: 'rgba(255,255,255,0.08)' } }}
+                    sx={{
+                        color: '#94A3B8',
+                        '&:hover': { color: '#F1F5F9', bgcolor: 'rgba(255,255,255,0.05)' }
+                    }}
                 >
                     <CloseIcon fontSize="small" />
                 </IconButton>
             </Box>
 
-            <DialogContent sx={{ mt: 1, px: 2.5, pb: 2.5 }}>
-                <Stack spacing={3} alignItems="center">
+            <DialogContent sx={{ mt: 0, px: 3, pb: 2, pt: 0 }}>
+                <Stack spacing={2} alignItems="center">
                     {/* User Selection Header */}
-                    <Box sx={{ textAlign: 'center' }}>
+                    <Box sx={{ textAlign: 'center', position: 'relative', width: '100%' }}>
+                        {/* Glow behind avatar */}
+                        <Box sx={{
+                            position: 'absolute',
+                            top: '20%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: 80,
+                            height: 80,
+                            borderRadius: '50%',
+                            background: 'radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%)',
+                            zIndex: 0
+                        }} />
+
                         <Avatar
                             src={getAvatarConfig(oppositeUser?.name || '?').url}
                             sx={{
@@ -179,21 +197,23 @@ export default function SettleDebtDialog({ open, onClose, group, currentUser, ba
                                 height: 64,
                                 mx: 'auto',
                                 mb: 1.5,
-                                border: '3px solid rgba(139, 92, 246, 0.3)',
-                                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.2)'
+                                position: 'relative',
+                                zIndex: 1,
+                                border: '2px solid rgba(255, 255, 255, 0.1)',
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
                             }}
                         />
-                        <Typography variant="body2" sx={{ color: '#94A3B8', fontWeight: 500, fontSize: '0.8rem', mb: 0.5 }}>
+                        <Typography sx={{ color: '#94A3B8', fontWeight: 600, fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px', mb: 0.25 }}>
                             Received from
                         </Typography>
-                        <Typography sx={{ color: '#F1F5F9', fontWeight: 700, fontSize: '1.15rem' }}>
+                        <Typography sx={{ color: '#F1F5F9', fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.5px' }}>
                             {oppositeUser?.name || '...'}
                         </Typography>
                     </Box>
 
                     <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', py: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                            <Typography sx={{ fontSize: '1.8rem', fontWeight: 600, color: '#94A3B8', mt: 0.5 }}>₹</Typography>
+                            <Typography sx={{ fontSize: '1.5rem', fontWeight: 700, color: '#4F46E5', opacity: 0.8 }}>₹</Typography>
                             <Controller
                                 name="amount"
                                 control={control}
@@ -207,7 +227,13 @@ export default function SettleDebtDialog({ open, onClose, group, currentUser, ba
                                 )}
                             />
                         </Box>
-                        <Box sx={{ height: '2px', bgcolor: 'rgba(139, 92, 246, 0.3)', width: '180px', mt: 0.5, borderRadius: 1 }} />
+                        {/* Interactive underline */}
+                        <Box sx={{
+                            height: '2px',
+                            background: 'linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent)',
+                            width: '160px',
+                            mt: 1
+                        }} />
                     </Box>
 
                     {/* Action Button */}
@@ -221,20 +247,20 @@ export default function SettleDebtDialog({ open, onClose, group, currentUser, ba
 
                     {/* Disclaimer Section */}
                     <DisclaimerBox>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#E2E8F0', mb: 1, fontSize: '0.8rem' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#94A3B8', mb: 1.5, fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
                             ⓘ Disclaimer
                         </Typography>
-                        <Stack spacing={0.8}>
-                            <Box sx={{ display: 'flex', gap: 1.2, alignItems: 'flex-start' }}>
-                                <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: '#A78BFA', mt: 0.8, flexShrink: 0 }} />
-                                <Typography variant="body2" sx={{ color: '#CBD5E1', fontSize: '0.75rem', lineHeight: 1.5 }}>
+                        <Stack spacing={1.5}>
+                            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#8b5cf6', boxShadow: '0 0 8px #8b5cf6' }} />
+                                <Typography variant="body2" sx={{ color: '#CBD5E1', fontSize: '0.8rem', fontWeight: 500 }}>
                                     Recording a payment doesn't move money
                                 </Typography>
                             </Box>
-                            <Box sx={{ display: 'flex', gap: 1.2, alignItems: 'flex-start' }}>
-                                <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: '#A78BFA', mt: 0.8, flexShrink: 0 }} />
-                                <Typography variant="body2" sx={{ color: '#CBD5E1', fontSize: '0.75rem', lineHeight: 1.5 }}>
-                                    This records payments made outside KhataBahi.
+                            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#8b5cf6', boxShadow: '0 0 8px #8b5cf6' }} />
+                                <Typography variant="body2" sx={{ color: '#CBD5E1', fontSize: '0.8rem', fontWeight: 500 }}>
+                                    This records payments made outside eKhataBahi.
                                 </Typography>
                             </Box>
                         </Stack>

@@ -47,7 +47,7 @@ const addExpense = async (req, res) => {
             group: groupId,
             description,
             amount,
-            date: date || Date.now(),
+            date: date ? new Date(date) : new Date(),
             category: category || 'Uncategorized',
             paidBy: paidBy || req.user._id,
             paidByName, // Store name for easier access
@@ -126,7 +126,7 @@ const updateExpense = async (req, res) => {
 
         expense.description = description || expense.description;
         expense.amount = amount || expense.amount;
-        expense.date = date || expense.date;
+        if (date) expense.date = new Date(date);
         expense.category = category || expense.category;
         expense.paidBy = paidBy || expense.paidBy;
         expense.splits = splits || expense.splits;

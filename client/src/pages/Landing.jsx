@@ -1,244 +1,214 @@
 /**
  * Landing Page
- *
- * Gradient-themed, mobile-responsive minimal landing page.
- * Focuses on premium aesthetics and fluid design.
+ * Modern glassmorphic landing page with Lucide icons
  */
 
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Box, Typography, Button, Container, useMediaQuery, useTheme } from '@mui/material';
-import logo from '../assets/images/khatabahi-logo.png';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowForward as ArrowForwardIcon,
-  CheckCircleOutline as CheckIcon
-} from '@mui/icons-material';
+  ArrowRight,
+  CheckCircle2,
+  Users,
+  TrendingUp,
+  Wallet,
+  FileText,
+  Sparkles,
+  Shield,
+  Zap
+} from 'lucide-react';
+import logo from '../assets/images/khatabahi-logo.png';
 
 export function Landing() {
-  return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 overflow-x-hidden relative">
-      {/* Background Gradient Orbs - Adjusted for Mobile */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] sm:w-[800px] h-[500px] bg-emerald-500/10 blur-[100px] sm:blur-[120px] rounded-full opacity-40 pointer-events-none" />
-      <div className="absolute top-[20%] right-0 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-blue-600/10 blur-[80px] sm:blur-[100px] rounded-full pointer-events-none" />
+  const navigate = useNavigate();
+  const [hoveredFeature, setHoveredFeature] = useState(null);
 
-      <Header />
-      <main className="flex-grow flex flex-col justify-start pt-32 sm:justify-center sm:pt-0 relative z-10">
-        <HeroSection />
-      </main>
-      <Footer />
-    </div>
-  );
-}
+  const features = [
+    {
+      icon: Users,
+      title: 'Group Expenses',
+      description: 'Split bills and track shared expenses with friends',
+      color: 'from-emerald-400 to-cyan-500'
+    },
+    {
+      icon: Wallet,
+      title: 'Debt Settlement',
+      description: 'Simplify and settle debts automatically',
+      color: 'from-purple-400 to-pink-500'
+    },
+    {
+      icon: TrendingUp,
+      title: 'Portfolio Tracking',
+      description: 'Monitor your investments in real-time',
+      color: 'from-amber-400 to-orange-500'
+    },
+    {
+      icon: FileText,
+      title: 'Lending Records',
+      description: 'Keep track of money you lend or borrow',
+      color: 'from-blue-400 to-indigo-500'
+    }
+  ];
 
-function Header() {
   return (
-    <header className="absolute top-0 w-full z-50">
-      <Container maxWidth="lg" sx={{ px: { xs: 3, sm: 6 }, py: { xs: 2.5, sm: 6 } }}>
-        <div className="flex items-center justify-between gap-4">
-          {/* Logo Section */}
-          <div className="flex items-center gap-3">
-            <Box
-              component="img"
-              src={logo}
-              alt="KhataBahi Logo"
-              sx={{
-                width: { xs: 32, sm: 40 },
-                height: { xs: 32, sm: 40 },
-                borderRadius: '10px',
-                filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))'
-              }}
-            />
-            <Box sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              gap: 0.25
-            }}>
-              <Typography
-                sx={{
-                  fontSize: { xs: '1.2rem', sm: '1.5rem' },
-                  fontWeight: 800,
-                  background: 'linear-gradient(135deg, #22C55E 0%, #3B82F6 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  letterSpacing: '-0.02em',
-                  lineHeight: 1
-                }}
-              >
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-700"></div>
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      </div>
+
+      {/* Header */}
+      <header className="relative z-10 px-6 py-5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-11 h-11 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30 overflow-hidden">
+              <img src={logo} alt="KhataBahi" className="w-full h-full object-contain p-1.5" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                 KhataBahi
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: { xs: '0.55rem', sm: '0.6rem' },
-                  color: 'rgba(148, 163, 184, 0.8)',
-                  fontWeight: 500,
-                  letterSpacing: '0.5px',
-                  lineHeight: 1
-                }}
-              >
-                Hisaab-Kitaab Made Easy
-              </Typography>
-            </Box>
+              </h1>
+              <p className="text-slate-400 text-xs">Hisaab-Kitaab Made Easy</p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/register')}
+            className="px-5 py-2.5 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 rounded-2xl text-white text-sm font-semibold transition-all backdrop-blur-xl"
+          >
+            Sign up
+          </button>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <main className="relative z-10 px-6 pt-8 pb-16">
+        <div className="max-w-4xl mx-auto text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-5 py-2 mb-6 backdrop-blur-xl">
+            <Sparkles className="text-emerald-400" size={14} />
+            <span className="text-emerald-400 font-medium text-xs">Smart Group Settlements are Live</span>
           </div>
 
-          {/* Auth Buttons */}
-          <div className="flex items-center gap-3 sm:gap-6">
-            <Link to="/login" className="text-sm font-medium text-slate-400 hover:text-white transition-colors hidden sm:block">
-              Log in
-            </Link>
-            <Link to="/register">
-              <Button
-                variant="outlined"
-                sx={{
-                  color: 'white',
-                  borderColor: 'rgba(255,255,255,0.15)',
-                  textTransform: 'none',
-                  borderRadius: '50px',
-                  px: { xs: 2, sm: 3 },
-                  py: 0.75,
-                  fontSize: { xs: '0.8rem', sm: '0.85rem' },
-                  backdropFilter: 'blur(4px)',
-                  '&:hover': {
-                    borderColor: 'white',
-                    bgcolor: 'rgba(255,255,255,0.05)'
-                  }
-                }}
-              >
-                Sign up
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </Container>
-    </header>
-  );
-}
+          {/* Main Heading */}
+          <h2 className="text-5xl md:text-6xl font-bold mb-5 leading-tight">
+            <span className="text-white">Finance,</span>
+            <br />
+            <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              Reimagined.
+            </span>
+          </h2>
 
-function HeroSection() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+          {/* Subheading */}
+          <p className="text-lg text-slate-300 mb-10 leading-relaxed max-w-3xl mx-auto">
+            Split expenses, settle debts, and track your net worth in a{' '}
+            <span className="text-white font-semibold">unified, ad-free dashboard</span>{' '}
+            designed for clarity.
+          </p>
 
-  return (
-    <section>
-      <Container maxWidth="md" sx={{ textAlign: 'center', px: { xs: 3, sm: 0 } }}>
-
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-[10px] sm:text-xs font-semibold mb-6 sm:mb-8 backdrop-blur-sm mx-auto">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-          Smart Group Settlements are Live
-        </div>
-
-        {/* Main Headline with Gradient */}
-        <Typography variant="h1" sx={{
-          fontSize: { xs: '2.75rem', sm: '4rem', md: '5.5rem' },
-          fontWeight: 800,
-          lineHeight: { xs: 1.1, md: 1.05 },
-          letterSpacing: '-0.03em',
-          mb: { xs: 3, md: 5 },
-          px: { xs: 1, sm: 0 }
-        }}>
-          <span className="block text-white mb-1 sm:mb-2">Finance,</span>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 animate-gradient-x">
-            Reimagined.
-          </span>
-        </Typography>
-
-        {/* Subheadline */}
-        <Typography sx={{
-          fontSize: { xs: '1rem', sm: '1.25rem' },
-          color: '#94A3B8',
-          maxWidth: '560px',
-          mx: 'auto',
-          mb: { xs: 6, md: 8 },
-          lineHeight: 1.6,
-          px: { xs: 2, sm: 0 }
-        }}>
-          Split expenses, settle debts, and track your net worth in a <span className="text-white font-medium">unified, ad-free dashboard</span> designed for clarity.
-        </Typography>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 sm:mb-24 w-full px-4 sm:px-0">
-          <Link to="/register" className="w-full sm:w-auto">
-            <Button
-              endIcon={<ArrowForwardIcon />}
-              fullWidth={isMobile}
-              sx={{
-                fontSize: '1rem',
-                background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
-                color: 'white',
-                py: 1.75,
-                px: 5,
-                borderRadius: '16px',
-                fontWeight: 700,
-                textTransform: 'none',
-                boxShadow: '0 8px 20px -4px rgba(16, 185, 129, 0.4)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #059669 0%, #0891B2 100%)',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 12px 24px -4px rgba(16, 185, 129, 0.5)'
-                },
-                transition: 'all 0.2s',
-                minWidth: { sm: '180px' }
-              }}
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-12">
+            <button
+              onClick={() => navigate('/register')}
+              className="group px-7 py-4 bg-gradient-to-r from-emerald-400 to-cyan-500 hover:from-emerald-500 hover:to-cyan-600 text-slate-900 font-bold text-base rounded-2xl transition-all shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-500/50 flex items-center justify-center"
             >
               Get Started Free
-            </Button>
-          </Link>
-          <Link to="/login" className="w-full sm:w-auto">
-            <Button
-              fullWidth={isMobile}
-              sx={{
-                fontSize: '1rem',
-                color: '#94a3b8',
-                py: 1.75,
-                px: 5,
-                borderRadius: '16px',
-                fontWeight: 600,
-                textTransform: 'none',
-                border: '1px solid rgba(255,255,255,0.05)',
-                '&:hover': {
-                  color: 'white',
-                  bgcolor: 'rgba(255,255,255,0.03)',
-                  borderColor: 'rgba(255,255,255,0.1)'
-                }
-              }}
+              <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={18} />
+            </button>
+            <button
+              onClick={() => navigate('/login')}
+              className="px-7 py-4 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 text-white text-base font-semibold rounded-2xl transition-all backdrop-blur-xl"
             >
               Log in
-            </Button>
-          </Link>
-        </div>
+            </button>
+          </div>
 
-        {/* Feature List - Responsive Grid */}
-        <div className="flex flex-col sm:flex-row justify-center items-start sm:items-center gap-y-4 gap-x-8 lg:gap-x-12 px-6 sm:px-0">
-          {[
-            'Group Expenses',
-            'Debt Settlement',
-            'Portfolio Tracking',
-            'Lending Records'
-          ].map((feature) => (
-            <div key={feature} className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/20">
-                <CheckIcon sx={{ fontSize: 14, color: '#34D399' }} />
-              </div>
-              <span className="text-sm font-medium text-slate-400">{feature}</span>
+          {/* Trust Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-5 mb-12 text-slate-400 text-xs">
+            <div className="flex items-center space-x-2">
+              <Shield className="text-emerald-400" size={16} />
+              <span>Bank-level Security</span>
             </div>
-          ))}
+            <div className="flex items-center space-x-2">
+              <Zap className="text-cyan-400" size={16} />
+              <span>Lightning Fast</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <CheckCircle2 className="text-purple-400" size={16} />
+              <span>100% Ad-Free</span>
+            </div>
+          </div>
+
+          {/* Features Grid */}
+          <div className="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={index}
+                  onMouseEnter={() => setHoveredFeature(index)}
+                  onMouseLeave={() => setHoveredFeature(null)}
+                  className="group relative bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 hover:bg-slate-800/50 transition-all cursor-pointer"
+                >
+                  <div className="flex items-start space-x-4">
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center shadow-lg flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                      <Icon className="text-slate-900" size={24} />
+                    </div>
+                    <div className="text-left flex-1">
+                      <h3 className="text-white font-semibold text-lg mb-1 flex items-center">
+                        {feature.title}
+                        <CheckCircle2
+                          className={`ml-2 text-emerald-400 transition-opacity ${hoveredFeature === index ? 'opacity-100' : 'opacity-0'
+                            }`}
+                          size={18}
+                        />
+                      </h3>
+                      <p className="text-slate-400 text-xs">{feature.description}</p>
+                    </div>
+                  </div>
+
+                  {/* Hover effect */}
+                  <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${feature.color} opacity-0 group-hover:opacity-5 transition-opacity`}></div>
+                </div>
+              );
+            })}
+          </div>
         </div>
+      </main>
 
-      </Container>
-    </section>
-  );
-}
+      {/* Footer */}
+      <footer className="relative z-10 px-6 py-5 border-t border-slate-800/50">
+        <div className="max-w-7xl mx-auto text-center">
+          <p className="text-slate-500 text-xs mb-1.5">
+            © 2026 KhataBahi. All rights reserved.
+          </p>
+          <p className="text-slate-600 text-[10px] flex items-center justify-center">
+            <span className="mr-1">🎨</span> Designed &
+            <span className="ml-1 mr-1">💻</span> Developed by
+            <span className="ml-1 text-emerald-400 font-medium">Prince Gupta</span>
+          </p>
+        </div>
+      </footer>
 
-function Footer() {
-  return (
-    <footer className="py-8 text-center border-t border-slate-800/50 bg-[#0f172a] relative z-20">
-      <div className="flex flex-col gap-3">
-        <p className="text-slate-600 text-xs">
-          🎨 Designed & 💻 Developed by <span className="text-emerald-500 hover:text-emerald-400 transition-colors cursor-default">Prince Gupta</span>
-        </p>
-      </div>
-    </footer>
+      <style>{`
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 0.5;
+          }
+          50% {
+            opacity: 0.8;
+          }
+        }
+        .animate-pulse {
+          animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .delay-700 {
+          animation-delay: 700ms;
+        }
+        .delay-1000 {
+          animation-delay: 1000ms;
+        }
+      `}</style>
+    </div>
   );
 }

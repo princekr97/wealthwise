@@ -82,17 +82,15 @@ const planetAn = keyframes`
 `;
 
 const LoaderContainer = styled(Box)(({ mode }) => ({
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    background: mode === 'light' ? '#F8FAFC' : '#0f172a',
-    zIndex: 9999,
+    flex: 1, // Take up all available space
+    minHeight: '70vh', // Ensure it occupies most of the viewport
+    background: 'transparent', // Let parent layout handle background
+    zIndex: 10,
+    padding: '40px 20px',
 }));
 
 const PlanetsWrapper = styled(Box)({

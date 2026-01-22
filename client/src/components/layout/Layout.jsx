@@ -2,49 +2,52 @@
  * Layout Component
  * 
  * Main application shell with sidebar navigation and header.
- * Uses MUI components for consistency with the rest of the app.
+ * Modern fintech design with glassmorphic sidebar and Lucide icons.
  */
 
 import React, { useState, useMemo } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Box, Drawer, IconButton, Typography, useTheme, useMediaQuery, alpha, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { Logout as LogoutIcon, DeleteForever as DeleteIcon } from '@mui/icons-material';
+import {
+  LayoutGrid,
+  Users,
+  Receipt,
+  IndianRupee,
+  CreditCard,
+  TrendingUp,
+  HandCoins,
+  Target,
+  Settings,
+  Bell,
+  Search,
+  Sparkles,
+  Menu as MenuIconLucide,
+  X
+} from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeContext } from '../../context/ThemeContext';
 import { toast } from 'sonner';
 import ConfirmDialog from '../common/ConfirmDialog';
-import ThemeToggle from '../common/ThemeToggle';
+// import ThemeToggle from '../common/ThemeToggle';
 import logo from '../../assets/images/khatabahi-logo.png';
 import { getMenuItems } from '../../config/menuConfig';
-import {
-  Menu as MenuIcon,
-  Close as CloseIcon,
-  Dashboard as DashboardIcon,
-  Receipt as ExpensesIcon,
-  AccountBalance as IncomeIcon,
-  CreditCard as LoansIcon,
-  TrendingUp as InvestmentsIcon,
-  Handshake as LendingIcon,
-  Flag as BudgetIcon,
-  Settings as SettingsIcon,
-  Groups as GroupsIcon
-} from '@mui/icons-material';
 
-// Icon mapping
+// Icon mapping - Lucide icons for modern fintech look
 const iconMap = {
-  Dashboard: DashboardIcon,
-  Groups: GroupsIcon,
-  Receipt: ExpensesIcon,
-  AccountBalance: IncomeIcon,
-  CreditCard: LoansIcon,
-  TrendingUp: InvestmentsIcon,
-  Handshake: LendingIcon,
-  Flag: BudgetIcon,
-  Settings: SettingsIcon
+  Dashboard: LayoutGrid,
+  Groups: Users,
+  Receipt: Receipt,
+  AccountBalance: IndianRupee,
+  CreditCard: CreditCard,
+  TrendingUp: TrendingUp,
+  Handshake: HandCoins,
+  Flag: Target,
+  Settings: Settings
 };
 
 // Sidebar width
-const SIDEBAR_WIDTH = 260;
+const SIDEBAR_WIDTH = 288; // Reduced by 10% from 320px
 
 export function Layout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -76,7 +79,7 @@ export function Layout({ children }) {
     const userRole = user?.role || 'user';
     return getMenuItems(userRole).map(item => ({
       ...item,
-      icon: iconMap[item.icon] || DashboardIcon
+      icon: iconMap[item.icon] || LayoutGrid
     }));
   }, [user?.role]);
 
@@ -132,69 +135,86 @@ export function Layout({ children }) {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: themeColors.bgSidebar,
-        backdropFilter: isDark ? 'blur(20px)' : 'none',
-        borderRight: `1px solid ${themeColors.border}`
+        bgcolor: isDark ? 'rgba(7, 10, 18, 0.95)' : '#FFFFFF',
+        backdropFilter: 'blur(32px)',
+        borderRight: `1px solid ${themeColors.border}`,
+        position: 'relative',
+        overflow: 'hidden'
       }}
     >
-      {/* Logo */}
-      <Box
-        sx={{
-          px: 3,
-          py: 2,
-          display: 'flex',
-          alignItems: 'center', // Changed to center for horizontal alignment
-          justifyContent: 'flex-start',
-          borderBottom: `1px solid ${themeColors.border}`,
-          height: '64px',
-          gap: 1.5 // Space between logo and text
-        }}
-      >
-        <Box
-          component="img"
-          src={logo}
-          alt="KhataBahi Logo"
-          sx={{
-            width: 38,
-            height: 38,
-            borderRadius: '10px',
-            // Subtle glow effect
-            filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.4))'
-          }}
-        />
-        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-          <Typography
-            sx={{
-              fontSize: '1.4rem',
-              fontWeight: 800,
-              background: 'linear-gradient(135deg, #22C55E 0%, #3B82F6 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              letterSpacing: '-0.02em',
-              lineHeight: 1
-            }}
-          >
-            KhataBahi
-          </Typography>
-          <Typography
-            sx={{
-              fontSize: '0.6rem',
-              color: themeColors.textSecondary,
-              fontWeight: 500,
-              letterSpacing: '0.5px',
-              lineHeight: 1,
-              mt: 0.25
-            }}
-          >
-            Hisaab-Kitaab Made Easy
-          </Typography>
-        </Box>
+      {/* Decorative Glows */}
+      {isDark && (
+        <>
+          <Box sx={{
+            position: 'absolute',
+            top: -100,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 250,
+            height: 250,
+            bgcolor: 'rgba(16, 185, 129, 0.15)',
+            filter: 'blur(80px)',
+            borderRadius: 'full',
+            pointerEvents: 'none'
+          }} />
+          <Box sx={{
+            position: 'absolute',
+            bottom: -80,
+            left: 50,
+            width: 200,
+            height: 200,
+            bgcolor: 'rgba(59, 130, 246, 0.1)',
+            filter: 'blur(80px)',
+            borderRadius: 'full',
+            pointerEvents: 'none'
+          }} />
+        </>
+      )}
+
+      {/* Header Section */}
+      <Box sx={{ p: 2.5, pt: 3, pb: 1 }}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {/* Logo Mark */}
+            {/* <div className="relative grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/5 shadow-lg overflow-hidden">
+              <img src={logo} alt="KhataBahi" className="w-full h-full object-contain p-2 relative z-10" />
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 to-transparent opacity-50" />
+            </div> */}
+
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-extrabold tracking-tight text-white">eKhataBahi</h1>
+                <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-emerald-400/80">
+                  Beta
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 font-medium">Hisaab‑Kitaab Made Easy</p>
+            </div>
+          </div>
+
+          <button className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition hover:bg-white/10 hover:text-white">
+            <Bell size={18} />
+          </button>
+        </div>
       </Box>
 
       {/* Navigation */}
-      <Box component="nav" sx={{ flex: 1, py: 2, px: 1.5 }}>
-        {navItems.map(({ to, label, icon: Icon }) => {
+      <Box
+        component="nav"
+        sx={{
+          flex: 1,
+          py: 2,
+          px: 1.5,
+          overflowY: 'auto',
+          '&::-webkit-scrollbar': { width: 0 },
+          msOverflowStyle: 'none',
+          scrollbarWidth: 'none',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1
+        }}
+      >
+        {navItems.map(({ to, label, icon: Icon, badge }) => {
           const isActive = location.pathname === to;
           return (
             <NavLink
@@ -203,72 +223,76 @@ export function Layout({ children }) {
               onClick={() => isMobile && setMobileOpen(false)}
               style={{ textDecoration: 'none' }}
             >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  px: 2,
-                  py: 1.25,
-                  mb: 0.5,
-                  borderRadius: 2,
-                  transition: 'all 0.15s ease',
-                  bgcolor: isActive ? themeColors.primaryHover : 'transparent',
-                  border: isActive ? `1px solid rgba(34, 197, 94, 0.3)` : '1px solid transparent',
-                  color: isActive ? themeColors.primary : themeColors.textSecondary,
-                  '&:hover': {
-                    bgcolor: isActive ? themeColors.primaryHover : isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
-                    color: isActive ? themeColors.primary : themeColors.textPrimary
-                  }
-                }}
-              >
-                <Icon sx={{ fontSize: 20 }} />
-                <Typography sx={{ fontSize: '0.85rem', fontWeight: isActive ? 600 : 500 }}>
-                  {label}
-                </Typography>
-              </Box>
+              <div className={`
+                group relative flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-left transition-all
+                ${isActive
+                  ? 'bg-emerald-400/10 ring-1 ring-emerald-400/25'
+                  : 'hover:bg-white/5'}
+              `}>
+                <div className="flex items-center gap-2.5 z-10">
+                  {/* Icon Box */}
+                  <span className={`
+                    grid h-8 w-8 place-items-center rounded-lg border transition-all
+                    ${isActive
+                      ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.2)]'
+                      : 'border-white/5 bg-white/5 text-slate-400 group-hover:text-white group-hover:bg-white/10'}
+                  `}>
+                    <Icon size={16} />
+                  </span>
+
+                  {/* Labels */}
+                  <div className="flex flex-col">
+                    <span className={`
+                      text-sm font-semibold transition-colors
+                      ${isActive ? 'text-emerald-50' : 'text-slate-300 group-hover:text-white'}
+                    `}>
+                      {label}
+                    </span>
+                    <span className={`
+                      text-[10px] font-medium transition-colors
+                      ${isActive ? 'text-emerald-400/70' : 'text-slate-500 group-hover:text-slate-400'}
+                    `}>
+                      {isActive ? 'Currently open' : 'Tap to view'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 z-10">
+                  {badge && (
+                    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-bold text-emerald-400 uppercase tracking-tight">
+                      {badge}
+                    </span>
+                  )}
+                  <span className={`
+                    h-1.5 w-1.5 rounded-full transition-all duration-300
+                    ${isActive ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] scale-110' : 'bg-transparent'}
+                  `} />
+                </div>
+
+                {/* Subtle active background glow */}
+                {isActive && (
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-400/5 via-cyan-400/2 to-blue-500/5 pointer-events-none" />
+                )}
+              </div>
             </NavLink>
           );
         })}
       </Box>
 
-      {/* Footer */}
-      <Box sx={{ px: 2.5, py: 2, borderTop: `1px solid ${themeColors.border}` }}>
-        <Typography sx={{ fontSize: '0.7rem', color: themeColors.textSecondary, mb: 0.5 }}>
-          Financial Health
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box
-            sx={{
-              flex: 1,
-              height: 6,
-              borderRadius: 3,
-              bgcolor: 'rgba(255, 255, 255, 0.1)',
-              overflow: 'hidden'
-            }}
-          >
-            <Box
-              sx={{
-                width: '72%',
-                height: '100%',
-                background: 'linear-gradient(90deg, #22C55E 0%, #3B82F6 100%)',
-                borderRadius: 3
-              }}
-            />
-          </Box>
-          <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: themeColors.primary }}>
-            72
-          </Typography>
-        </Box>
-      </Box>
+      {/* Footer Note */}
+      <div className="mt-auto p-4 border-t border-white/5">
+        <p className="text-center text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em]">
+          Track smarter • Settle faster
+        </p>
+      </div>
     </Box>
   );
 
   return (
     <Box sx={{
       display: 'flex',
-      minHeight: '100vh',
-      minHeight: '-webkit-fill-available',
+      height: '100vh', // Fixed height shell
+      overflow: 'hidden', // Prevent shell-level scrolling
       bgcolor: 'transparent',
       position: 'relative',
     }}>
@@ -280,12 +304,10 @@ export function Layout({ children }) {
           width: SIDEBAR_WIDTH,
           flexShrink: 0,
           position: 'relative',
-          zIndex: 1
+          zIndex: 10
         }}
       >
-        <Box sx={{ position: 'fixed', width: SIDEBAR_WIDTH, height: '100vh' }}>
-          <SidebarContent />
-        </Box>
+        <SidebarContent />
       </Box>
 
       {/* Mobile Drawer */}
@@ -296,9 +318,10 @@ export function Layout({ children }) {
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: 'block', lg: 'none' },
+          zIndex: 1200,
           '& .MuiDrawer-paper': {
             width: SIDEBAR_WIDTH,
-            bgcolor: 'transparent', // Make drawer paper transparent to show SidebarContent's glass
+            bgcolor: 'transparent',
             border: 'none'
           }
         }}
@@ -306,9 +329,17 @@ export function Layout({ children }) {
         <SidebarContent />
       </Drawer>
 
-      {/* Main Content */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative', zIndex: 1 }}>
-        {/* Header */}
+      {/* Main Content Area */}
+      <Box sx={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        minWidth: 0,
+        position: 'relative',
+        height: '100vh',
+        bgcolor: themeColors.bgPrimary
+      }}>
+        {/* Fixed Header */}
         <Box
           component="header"
           sx={{
@@ -318,15 +349,13 @@ export function Layout({ children }) {
             alignItems: 'center',
             justifyContent: 'space-between',
             borderBottom: `1px solid ${themeColors.border}`,
-            bgcolor: themeColors.bgHeader, // Solid background for best performance
-            // _removed_ backdropFilter for performance
-            position: 'sticky',
-            top: 0,
-            zIndex: 100
+            bgcolor: themeColors.bgHeader,
+            position: 'relative',
+            zIndex: 100,
+            flexShrink: 0
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {/* Mobile menu button */}
             <IconButton
               onClick={handleDrawerToggle}
               sx={{
@@ -335,7 +364,7 @@ export function Layout({ children }) {
                 '&:hover': { color: themeColors.textPrimary }
               }}
             >
-              {mobileOpen ? <CloseIcon /> : <MenuIcon />}
+              {mobileOpen ? <X size={24} /> : <MenuIconLucide size={24} />}
             </IconButton>
             <Typography
               sx={{
@@ -350,49 +379,24 @@ export function Layout({ children }) {
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box
-              sx={{
-                display: { xs: 'none', sm: 'flex' },
-                alignItems: 'center',
-                gap: 1.5,
-                px: 2,
-                py: 1,
-                borderRadius: '12px',
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.08)'
-              }}
-            >
-              <Box sx={{ textAlign: 'right' }}>
-                <Typography sx={{ fontSize: '0.7rem', color: themeColors.textSecondary, lineHeight: 1.2 }}>
-                  Today's snapshot
-                </Typography>
-                <Typography sx={{ fontSize: '0.75rem', color: themeColors.primary, fontWeight: 600, lineHeight: 1.2 }}>
-                  You're on track 🎯
-                </Typography>
-              </Box>
-            </Box>
-            <ThemeToggle />
+            {/* <ThemeToggle /> */}
             <Box
               onClick={handleMenuOpen}
               sx={{
-                width: 40,
-                height: 40,
+                width: 36,
+                height: 36,
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #22C55E 0%, #3B82F6 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#0F172A',
-                fontSize: '0.85rem',
+                fontSize: '0.8rem',
                 fontWeight: 700,
                 boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
-                border: '2px solid rgba(255, 255, 255, 0.1)',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                '&:hover': {
-                  transform: 'scale(1.05)',
-                  boxShadow: '0 6px 16px rgba(34, 197, 94, 0.4)'
-                }
+                '&:hover': { transform: 'scale(1.05)' }
               }}
             >
               {getUserInitials()}
@@ -403,48 +407,6 @@ export function Layout({ children }) {
               onClose={handleMenuClose}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              slotProps={{
-                paper: {
-                  elevation: 0,
-                  sx: {
-                    mt: 1.5,
-                    minWidth: 200,
-                    bgcolor: '#1E293B',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 2,
-                    overflow: 'visible',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                    '&:before': {
-                      content: '""',
-                      display: 'block',
-                      position: 'absolute',
-                      top: 0,
-                      right: 14,
-                      width: 10,
-                      height: 10,
-                      bgcolor: '#1E293B',
-                      transform: 'translateY(-50%) rotate(45deg)',
-                      zIndex: 0,
-                      borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderLeft: '1px solid rgba(255, 255, 255, 0.1)'
-                    }
-                  }
-                }
-              }}
-              sx={{
-                '& .MuiMenuItem-root': {
-                  color: '#F1F5F9',
-                  py: 1.5,
-                  px: 2,
-                  fontSize: '0.9rem',
-                  '&:hover': {
-                    bgcolor: 'rgba(255, 255, 255, 0.05)'
-                  }
-                },
-                '& .MuiListItemIcon-root': {
-                  minWidth: 36
-                }
-              }}
             >
               <MenuItem onClick={handleLogout} sx={{ gap: 1 }}>
                 <ListItemIcon sx={{ minWidth: 'auto !important' }}>
@@ -456,25 +418,38 @@ export function Layout({ children }) {
           </Box>
         </Box>
 
-        {/* Page Content */}
+        {/* Scrollable Content Pane */}
         <Box
-          component="main"
           sx={{
             flex: 1,
-            bgcolor: 'transparent',
+            overflowY: 'auto', // ONLY THIS AREA SCROLLS
             display: 'flex',
             flexDirection: 'column',
-            minHeight: '100vh'
+            position: 'relative',
+            '&::-webkit-scrollbar': { width: '6px' },
+            '&::-webkit-scrollbar-thumb': { bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', borderRadius: '10px' }
           }}
         >
-          {children}
+          {/* Children / Page Content */}
+          <Box sx={{ flex: 1 }}>
+            {children}
+          </Box>
 
-          {/* Global App Footer */}
-          <Box component="footer" sx={{ py: 3, textAlign: 'center', mt: 'auto', opacity: 0.7 }}>
-            <Typography variant="caption" display="block" sx={{ color: themeColors.textSecondary, mb: 0.5 }}>
-              &copy; {new Date().getFullYear()} KhataBahi. All rights reserved.
+          {/* Footer naturally at end of scroll */}
+          <Box
+            component="footer"
+            sx={{
+              py: 4,
+              mt: 2,
+              textAlign: 'center',
+              opacity: 0.7,
+              flexShrink: 0
+            }}
+          >
+            <Typography variant="caption" display="block" sx={{ color: themeColors.textSecondary, mb: 0.5, fontSize: '0.7rem' }}>
+              &copy; {new Date().getFullYear()} eKhataBahi. All rights reserved.
             </Typography>
-            <Typography variant="caption" sx={{ color: themeColors.textSecondary }}>
+            <Typography variant="caption" sx={{ color: themeColors.textSecondary, fontSize: '0.65rem' }}>
               🎨 Designed & 💻 Developed by{' '}
               <Box component="span" sx={{ color: themeColors.primary, fontWeight: 600, cursor: 'default' }}>
                 Prince Gupta

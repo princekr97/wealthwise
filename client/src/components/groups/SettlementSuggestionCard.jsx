@@ -44,24 +44,26 @@ const UserIcon = () => (
 
 // Styled components for premium look with mobile optimization
 const SettlementCard = styled(Paper)(({ theme }) => ({
-    background: 'rgba(255, 255, 255, 0.05)',
-    backdropFilter: 'blur(20px)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: 14,
-    padding: '12px',
-    marginBottom: '10px',
-    transition: 'all 0.2s ease',
+    background: 'rgba(255, 255, 255, 0.03)',
+    backdropFilter: 'blur(32px)',
+    border: '1px solid rgba(255, 255, 255, 0.06)',
+    borderRadius: '24px',
+    padding: '16px',
+    marginBottom: '12px',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    position: 'relative',
+    overflow: 'hidden',
 
     '&:hover': {
-        transform: 'translateY(-2px)',
-        background: 'rgba(255, 255, 255, 0.08)',
-        border: '1px solid rgba(255, 255, 255, 0.15)'
+        transform: 'translateY(-4px)',
+        background: 'rgba(255, 255, 255, 0.06)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.5)',
     },
 
     [theme.breakpoints.down('md')]: {
-        padding: '10px',
-        borderRadius: '12px',
-        marginBottom: '8px'
+        padding: '12px',
+        borderRadius: '20px',
     }
 }));
 
@@ -103,31 +105,26 @@ const AmountDisplay = styled(Box)(({ theme }) => ({
 }));
 
 const SettleButton = styled(Button)(({ theme }) => ({
-    borderRadius: 8,
-    padding: '7px 18px',
+    borderRadius: '14px',
+    padding: '8px 24px',
     textTransform: 'none',
-    fontSize: '0.85rem',
-    fontWeight: 600,
-    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    fontSize: '0.875rem',
+    fontWeight: 700,
+    background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
     color: '#FFFFFF',
-    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+    boxShadow: '0 4px 12px rgba(139, 92, 246, 0.35)',
     whiteSpace: 'nowrap',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
 
     '&:hover': {
-        background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-        transform: 'translateY(-1px)',
-        boxShadow: '0 6px 16px rgba(16, 185, 129, 0.4)'
+        background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+        transform: 'scale(1.02)',
+        boxShadow: '0 8px 24px rgba(139, 92, 246, 0.45)',
     },
 
     [theme.breakpoints.down('md')]: {
-        padding: '6px 14px',
+        padding: '6px 16px',
         fontSize: '0.8rem',
-        borderRadius: 7
-    },
-
-    [theme.breakpoints.down('sm')]: {
-        padding: '5px 10px',
-        fontSize: '0.7rem'
     }
 }));
 
@@ -203,14 +200,15 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                 </Stack>
 
                 {/* Amount - Large & Prominent */}
-                <Box sx={{ flex: '0 0 auto', textAlign: 'center' }}>
+                <Box sx={{ flex: 1, textAlign: 'center', mx: 2 }}>
                     <Typography
                         sx={{
-                            fontWeight: 700,
-                            color: '#34D399',
-                            fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.4rem' },
+                            fontWeight: 800,
+                            color: '#F1F5F9',
+                            fontSize: { xs: '0.8rem', sm: '1.5rem', md: '1.75rem' },
                             lineHeight: 1,
-                            mb: 0.3
+                            letterSpacing: '-1px',
+                            mb: 0.5
                         }}
                     >
                         {formatCurrency(amount)}
@@ -218,9 +216,11 @@ export default function SettlementSuggestionCard({ settlement, onSettle, loading
                     <Typography
                         variant="caption"
                         sx={{
-                            color: '#94A3B8',
-                            fontSize: { xs: '0.65rem', sm: '0.7rem' },
-                            fontWeight: 500
+                            color: '#8b5cf6',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
                         }}
                     >
                         will pay
@@ -355,42 +355,55 @@ export function SettlementSuggestionsList({ settlements, onSettle, onSettleAll, 
             {/* Header - Trendy Fintech Style */}
             <Box
                 sx={{
-                    mb: 2.5,
-                    p: 2,
-                    borderRadius: '16px',
-                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
-                    border: '1px solid rgba(139, 92, 246, 0.25)',
-                    backdropFilter: 'blur(10px)',
+                    mb: 3,
+                    p: 3,
+                    borderRadius: '24px',
+                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%)',
+                    border: '1px solid rgba(139, 92, 246, 0.2)',
+                    backdropFilter: 'blur(20px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     flexDirection: { xs: 'column', sm: 'row' },
-                    gap: { xs: 2, sm: 0 }
+                    gap: { xs: 2.5, sm: 0 },
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}
             >
-                <Box sx={{ flex: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                {/* Visual Glow */}
+                <Box sx={{
+                    position: 'absolute',
+                    top: -50,
+                    left: -50,
+                    width: 150,
+                    height: 150,
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%)',
+                    zIndex: 0
+                }} />
+
+                <Box sx={{ flex: 1, position: 'relative', zIndex: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Box sx={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: '10px',
+                            width: 44,
+                            height: 44,
+                            borderRadius: '14px',
                             background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.35)'
+                            boxShadow: '0 8px 16px rgba(139, 92, 246, 0.3), inset 0 1px 1px rgba(255,255,255,0.25)'
                         }}>
-                            {/* Sparkles Icon - Represents Success/Celebration */}
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                                 <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 <path d="M19 3L19.5 5.5L22 6L19.5 6.5L19 9L18.5 6.5L16 6L18.5 5.5L19 3Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                         </Box>
                         <Box>
-                            <Typography sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#F1F5F9', lineHeight: 1.2 }}>
+                            <Typography sx={{ fontWeight: 800, fontSize: '1.25rem', color: '#F1F5F9', lineHeight: 1.1, letterSpacing: '-0.5px' }}>
                                 Suggested Settlements
                             </Typography>
-                            <Typography sx={{ color: '#94A3B8', fontSize: '0.75rem', fontWeight: 500 }}>
+                            <Typography sx={{ color: '#94A3B8', fontSize: '0.8rem', fontWeight: 600, mt: 0.5 }}>
                                 Simplified to {settlements.length} payment{settlements.length > 1 ? 's' : ''}
                             </Typography>
                         </Box>
@@ -402,24 +415,22 @@ export function SettlementSuggestionsList({ settlements, onSettle, onSettleAll, 
                         onClick={() => setConfirmOpen(true)}
                         disabled={loading || settling}
                         sx={{
-                            borderRadius: '10px',
+                            borderRadius: '14px',
                             textTransform: 'none',
-                            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-                            color: '#FFFFFF',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            padding: '8px 20px',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            color: '#8b5cf6',
+                            fontSize: '0.875rem',
+                            fontWeight: 700,
+                            padding: '10px 24px',
                             width: { xs: '100%', sm: 'auto' },
-                            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.35)',
-                            border: 'none',
+                            border: '1px solid rgba(139, 92, 246, 0.3)',
+                            background: 'rgba(139, 92, 246, 0.1)',
+                            zIndex: 1,
+                            transition: 'all 0.2s',
                             '&:hover': {
-                                background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
-                                transform: 'translateY(-1px)',
-                                boxShadow: '0 6px 16px rgba(139, 92, 246, 0.45)'
-                            },
-                            '&:disabled': {
-                                background: 'rgba(139, 92, 246, 0.3)',
-                                color: 'rgba(255, 255, 255, 0.5)'
+                                background: 'rgba(139, 92, 246, 0.15)',
+                                borderColor: '#8b5cf6',
+                                transform: 'translateY(-1px)'
                             }
                         }}
                     >

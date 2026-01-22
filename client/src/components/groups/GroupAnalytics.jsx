@@ -59,72 +59,81 @@ const MetricCard = ({ title, value, icon, theme, color, children }) => (
             p: 3,
             height: '100%',
             background: theme.palette.mode === 'dark'
-                ? `linear-gradient(135deg, ${alpha(color, 0.1)} 0%, ${alpha(color, 0.02)} 100%)`
-                : `linear-gradient(135deg, #FFFFFF 0%, ${alpha(color, 0.05)} 100%)`,
-            backdropFilter: 'blur(20px)',
-            border: `1px solid ${alpha(color, 0.15)}`,
-            boxShadow: theme.palette.mode === 'dark' ? 'none' : `0 10px 30px -10px ${alpha(color, 0.15)}`,
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                ? `linear-gradient(135deg, ${alpha(color, 0.12)} 0%, ${alpha(color, 0.03)} 100%)`
+                : `linear-gradient(135deg, #FFFFFF 0%, ${alpha(color, 0.08)} 100%)`,
+            backdropFilter: 'blur(32px)',
+            border: `1px solid ${alpha(color, 0.2)}`,
+            boxShadow: theme.palette.mode === 'dark'
+                ? `0 10px 40px -15px ${alpha('#000', 0.5)}, inset 0 1px 1px ${alpha('#fff', 0.05)}`
+                : `0 10px 30px -10px ${alpha(color, 0.15)}`,
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            cursor: 'default',
             '&:hover': {
-                transform: 'translateY(-4px)',
+                transform: 'translateY(-6px)',
                 boxShadow: theme.palette.mode === 'dark'
-                    ? `0 10px 30px -10px ${alpha(color, 0.3)}`
+                    ? `0 20px 60px -12px ${alpha(color, 0.25)}, inset 0 1px 1px ${alpha('#fff', 0.1)}`
                     : `0 20px 40px -12px ${alpha(color, 0.2)}`,
-                border: `1px solid ${alpha(color, 0.3)}`,
+                border: `1px solid ${alpha(color, 0.4)}`,
             }
         }}
     >
-        {/* Decorative Background Glow */}
+        {/* Subtle Decorative Glow Component */}
         <Box sx={{
             position: 'absolute',
-            top: -40,
-            right: -40,
-            width: 140,
-            height: 140,
+            top: -60,
+            right: -60,
+            width: 160,
+            height: 160,
             borderRadius: '50%',
-            background: `radial-gradient(circle, ${alpha(color, 0.2)} 0%, transparent 70%)`,
+            background: `radial-gradient(circle, ${alpha(color, 0.25)} 0%, transparent 70%)`,
             zIndex: 0,
-            opacity: 0.6
+            pointerEvents: 'none'
         }} />
 
-        <Box sx={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <Box sx={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <Box>
-                {/* Icon */}
+                {/* Brand-colored Icon Container */}
                 <Box sx={{
-                    p: 1.25,
-                    borderRadius: '14px',
-                    bgcolor: alpha(color, 0.1),
+                    width: 48,
+                    height: 48,
+                    borderRadius: '16px',
+                    bgcolor: alpha(color, 0.15),
                     color: color,
-                    display: 'inline-flex',
+                    display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    mb: 1.5
+                    mb: 2,
+                    boxShadow: `0 8px 16px -4px ${alpha(color, 0.3)}`,
+                    border: `1px solid ${alpha(color, 0.1)}`
                 }}>
                     {React.cloneElement(icon, { width: 24, height: 24, strokeWidth: 2.5 })}
                 </Box>
 
-                {/* Title */}
+                {/* Subdued Typography for Title */}
                 <Typography sx={{
-                    color: theme.palette.text.secondary,
-                    fontWeight: 600,
-                    fontSize: '0.8rem',
-                    letterSpacing: '0.5px',
+                    color: alpha(theme.palette.text.primary, 0.5),
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    letterSpacing: '1.2px',
                     textTransform: 'uppercase',
-                    mb: 0.5
+                    mb: 1
                 }}>
                     {title}
                 </Typography>
             </Box>
 
-            {/* Content: Value or Custom Children */}
-            <Box sx={{ width: '100%' }}>
+            {/* High-Impact Value Display */}
+            <Box>
                 {children ? children : (
                     <Typography sx={{
-                        fontSize: { xs: '1.8rem', md: '2.2rem' },
+                        fontSize: { xs: '1.5rem', md: '2.25rem' },
                         fontWeight: 800,
                         color: theme.palette.text.primary,
-                        letterSpacing: '-1px',
-                        lineHeight: 1
+                        letterSpacing: '-1.5px',
+                        lineHeight: 1,
+                        background: 'linear-gradient(to bottom, #FFFFFF 0%, #CBD5E1 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: theme.palette.mode === 'dark' ? 'transparent' : 'inherit'
                     }}>
                         {value}
                     </Typography>
@@ -306,18 +315,18 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                     <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 0.5, mt: 0 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', minWidth: 0 }}>
                             <Typography noWrap sx={{ fontSize: '0.7rem', fontWeight: 600, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.5px', mr: 1 }}>
-                                Paid
+                                Paid₹
                             </Typography>
-                            <Typography noWrap sx={{ fontSize: { xs: '0.95rem', sm: '1.2rem' }, fontWeight: 700, color: theme.palette.text.primary }}>
+                            <Typography noWrap sx={{ fontSize: { xs: '0.80rem', sm: '1.2rem' }, fontWeight: 700, color: theme.palette.text.primary }}>
                                 {formatCurrency(stats.mySettlementPaid)}
                             </Typography>
                         </Box>
                         <Box sx={{ width: '100%', height: '1px', bgcolor: alpha('#8b5cf6', 0.15), my: 0.5 }} />
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', minWidth: 0 }}>
                             <Typography noWrap sx={{ fontSize: '0.7rem', fontWeight: 600, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.5px', mr: 1 }}>
-                                Received
+                                Get₹
                             </Typography>
-                            <Typography noWrap sx={{ fontSize: { xs: '0.95rem', sm: '1.2rem' }, fontWeight: 700, color: theme.palette.text.primary }}>
+                            <Typography noWrap sx={{ fontSize: { xs: '0.80rem', sm: '1.2rem' }, fontWeight: 700, color: theme.palette.text.primary }}>
                                 {formatCurrency(stats.mySettlementReceived)}
                             </Typography>
                         </Box>
@@ -338,7 +347,7 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                     }
                 >
                     <Typography sx={{
-                        fontSize: { xs: '1.8rem', md: '2.2rem' },
+                        fontSize: { xs: '1.4rem', md: '2.2rem' },
                         fontWeight: 800,
                         color: theme.palette.text.primary,
                         letterSpacing: '-1px',

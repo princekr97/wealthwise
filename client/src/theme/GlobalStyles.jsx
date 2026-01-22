@@ -37,7 +37,7 @@ export default function GlobalStyles() {
 
         'html': {
           height: '100%',
-          minHeight: '-webkit-fill-available',
+          minHeight: '100vh',
         },
 
         'html[data-theme="dark"]': {
@@ -50,7 +50,6 @@ export default function GlobalStyles() {
 
         'body': {
           minHeight: '100vh',
-          minHeight: '-webkit-fill-available',
           color: '#F9FAFB',
           margin: 0,
           padding: 0,
@@ -77,7 +76,6 @@ export default function GlobalStyles() {
           width: '100vw',
           height: '100vh',
           minHeight: '100vh',
-          minHeight: '-webkit-fill-available',
           backgroundRepeat: 'no-repeat',
           backgroundSize: 'cover',
           backgroundAttachment: 'fixed',
@@ -98,7 +96,6 @@ export default function GlobalStyles() {
 
         '#root': {
           minHeight: '100vh',
-          minHeight: '-webkit-fill-available',
           backgroundColor: 'transparent',
           display: 'flex',
           flexDirection: 'column'

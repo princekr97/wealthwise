@@ -65,7 +65,10 @@ import {
     Close as CloseIcon,
     Share as ShareIcon,
     PersonAdd as AddMemberIcon,
-    KeyboardArrowDown as KeyboardArrowDownIcon
+    KeyboardArrowDown as KeyboardArrowDownIcon,
+    Dashboard as DashboardIcon,
+    History as HistoryIcon,
+    AccountBalance as BalanceIcon
 } from '@mui/icons-material';
 
 import { groupService } from '../services/groupService';
@@ -88,6 +91,128 @@ import { toast } from 'sonner';
 import { useAuthStore } from '../store/authStore';
 
 
+
+// ============================================
+// HELPER COMPONENTS
+// ============================================
+
+const ExpenseItem = React.memo(({ expense, onClick, getPayerName, getCategoryIcon, formatCurrency, getCategoryStyle }) => {
+    const categoryStyle = getCategoryStyle(expense.category);
+    const dateObj = new Date(expense.date);
+    const day = dateObj.toLocaleDateString(undefined, { day: '2-digit' });
+    const month = dateObj.toLocaleDateString(undefined, { month: 'short' });
+
+    return (
+        <Box
+            className="glass-card-clean"
+            onClick={() => onClick(expense)}
+            sx={{
+                p: 1.25,
+                borderRadius: '16px',
+                cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                    background: 'rgba(255,255,255,0.08)',
+                    transform: 'translateX(4px)',
+                    borderColor: 'rgba(255,255,255,0.15)'
+                },
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                border: '1px solid rgba(255,255,255,0.05)',
+                borderLeft: `3px solid ${categoryStyle.color}`,
+                mb: 1.25,
+                position: 'relative',
+                minHeight: '70px'
+            }}
+        >
+            {/* Left Section: Time & Icon (Side-by-side for less height) */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 85 }}>
+                <Box sx={{ textAlign: 'center' }}>
+                    <Typography sx={{ fontSize: '0.85rem', fontWeight: 900, color: '#F8FAFC', lineHeight: 1 }}>
+                        {day}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>
+                        {month}
+                    </Typography>
+                </Box>
+
+                <Box sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '10px',
+                    background: `${categoryStyle.color}15`,
+                    border: `1px solid ${categoryStyle.color}30`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: categoryStyle.color,
+                }}>
+                    {React.cloneElement(getCategoryIcon(expense.category), { sx: { fontSize: '1.1rem' } })}
+                </Box>
+            </Box>
+
+            {/* Middle Section: Transaction Details */}
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography sx={{
+                    fontWeight: 700,
+                    color: '#F8FAFC',
+                    fontSize: '0.85rem',
+                    mb: 0.25,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                }}>
+                    {expense.description}
+                </Typography>
+
+                <Stack direction="row" alignItems="center" spacing={0.75}>
+                    <Avatar
+                        src={`https://api.dicebear.com/7.x/notionists/svg?seed=${getPayerName(expense)}`}
+                        sx={{ width: 14, height: 14 }}
+                    />
+                    <Typography sx={{ fontSize: '0.7rem', color: '#94A3B8' }}>
+                        By <span style={{ color: '#F1F5F9', fontWeight: 600 }}>{getPayerName(expense).split(' ')[0]}</span>
+                    </Typography>
+                </Stack>
+            </Box>
+
+            {/* Right Section: Compact Financials */}
+            <Box sx={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.25 }}>
+                <Typography sx={{
+                    fontWeight: 800,
+                    color: '#F8FAFC',
+                    fontSize: '1.05rem',
+                    lineHeight: 1
+                }}>
+                    {formatCurrency(expense.amount)}
+                </Typography>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <Typography sx={{ fontSize: '0.6rem', color: '#64748B', fontWeight: 700 }}>
+                        {expense.splits?.length || 0}P
+                    </Typography>
+                    <Box sx={{
+                        px: 0.75,
+                        py: 0.15,
+                        borderRadius: '4px',
+                        bgcolor: 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${categoryStyle.color}40`,
+                    }}>
+                        <Typography sx={{
+                            fontSize: '0.55rem',
+                            color: categoryStyle.color,
+                            fontWeight: 800,
+                            textTransform: 'uppercase'
+                        }}>
+                            {expense.category}
+                        </Typography>
+                    </Box>
+                </Box>
+            </Box>
+        </Box>
+    );
+});
 
 export default function GroupDetails() {
     const { id } = useParams();
@@ -956,35 +1081,37 @@ export default function GroupDetails() {
                         position: 'relative'
                     }}
                 >
-                    {['Dashboard', 'Expenses', 'Balances'].map((tab, index) => (
-                        <Box
-                            key={tab}
-                            onClick={() => handleTabChange(index)}
-                            sx={{
-                                flex: 1,
-                                px: 2.5,
-                                py: 1.25,
-                                cursor: 'pointer',
-                                color: tabValue === index ? 'white' : 'rgba(255,255,255,0.5)',
-                                fontWeight: tabValue === index ? 700 : 600,
-                                fontSize: '0.9rem',
-                                borderRadius: '12px',
-                                background: tabValue === index ? 'rgba(30, 41, 59, 0.8)' : 'transparent',
-                                boxShadow: tabValue === index ? '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1)' : 'none',
-                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                willChange: 'background, color, box-shadow, transform',
-                                whiteSpace: 'nowrap',
-                                textAlign: 'center',
-                                border: tabValue === index ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid transparent',
-                                '&:hover': {
-                                    color: 'white',
-                                    background: tabValue === index ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.03)',
-                                    transform: tabValue === index ? 'none' : 'translateY(-1px)'
-                                }
-                            }}
-                        >
-                            {tab}
-                        </Box>
+                    {[
+                        { label: 'Dashboard', icon: <DashboardIcon sx={{ fontSize: '1.25rem' }} /> },
+                        { label: 'Expenses', icon: <HistoryIcon sx={{ fontSize: '1.25rem' }} /> },
+                        { label: 'Balances', icon: <BalanceIcon sx={{ fontSize: '1.25rem' }} /> }
+                    ].map((tab, index) => (
+                        <Tooltip key={tab.label} title={tab.label} arrow>
+                            <Box
+                                onClick={() => handleTabChange(index)}
+                                sx={{
+                                    flex: 1,
+                                    py: 1.5,
+                                    cursor: 'pointer',
+                                    color: tabValue === index ? 'white' : 'rgba(255,255,255,0.4)',
+                                    borderRadius: '12px',
+                                    background: tabValue === index ? 'rgba(30, 41, 59, 0.9)' : 'transparent',
+                                    boxShadow: tabValue === index ? '0 8px 16px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1)' : 'none',
+                                    transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: tabValue === index ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid transparent',
+                                    '&:hover': {
+                                        color: 'white',
+                                        background: tabValue === index ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.05)',
+                                        transform: tabValue === index ? 'none' : 'translateY(-2px)'
+                                    }
+                                }}
+                            >
+                                {tab.icon}
+                            </Box>
+                        </Tooltip>
                     ))}
                 </Stack>
             </Box>
@@ -1015,7 +1142,7 @@ export default function GroupDetails() {
                             pointerEvents: tabValue === 0 ? 'auto' : 'none'
                         }}
                     >
-                        {(tabValue === 0 || tabValue === 1) && (
+                        {tabValue === 0 && (
                             <GroupAnalytics
                                 expenses={expenses}
                                 members={group.members}
@@ -1035,8 +1162,8 @@ export default function GroupDetails() {
                             pointerEvents: tabValue === 1 ? 'auto' : 'none'
                         }}
                     >
-                        {(tabValue === 0 || tabValue === 1 || tabValue === 2) && (
-                            <Stack spacing={1.5}>
+                        {(tabValue === 1) && (
+                            <Stack spacing={0}>
                                 {expenses.length === 0 ? (
                                     <Box sx={{ textAlign: 'center', py: 6, opacity: 0.6 }}>
                                         <Typography variant="h2" sx={{ mb: 1.5, fontSize: '2.5rem' }}>📝</Typography>
@@ -1044,77 +1171,19 @@ export default function GroupDetails() {
                                         <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>Add your first expense to get started!</Typography>
                                     </Box>
                                 ) : (
-                                    expenses.map((expense) => (
-                                        <Box
-                                            key={expense._id}
-                                            className="glass-card-clean"
-                                            onClick={() => setSelectedExpense(expense)}
-                                            sx={{
-                                                p: 1.5,
-                                                borderRadius: '14px',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s',
-                                                '&:hover': { background: 'rgba(255,255,255,0.12)', transform: 'translateY(-2px)' },
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 1.5,
-                                                borderLeft: `3px solid ${getCategoryStyle(expense.category).color}`
-                                            }}
-                                        >
-                                            {/* Icon Container */}
-                                            <Box sx={{
-                                                minWidth: 42,
-                                                height: 42,
-                                                borderRadius: '10px',
-                                                background: `linear-gradient(135deg, ${getCategoryStyle(expense.category).color}CC 0%, ${getCategoryStyle(expense.category).color}80 100%)`,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontSize: '1.1rem',
-                                                color: '#FFFFFF',
-                                                boxShadow: `0 4px 12px ${getCategoryStyle(expense.category).color}30`
-                                            }}>
-                                                {getCategoryIcon(expense.category)}
-                                            </Box>
-
-                                            {/* Main Content */}
-                                            <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                <Typography sx={{ fontWeight: 600, color: '#F1F5F9', fontSize: '0.9rem', mb: 0.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {expense.description}
-                                                </Typography>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                                    <Typography sx={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
-                                                        {new Date(expense.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                                    </Typography>
-                                                    <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: '#64748B' }} />
-                                                    <Typography sx={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
-                                                        {getPayerName(expense)}
-                                                    </Typography>
-                                                    <Box sx={{
-                                                        px: 0.75,
-                                                        py: 0.2,
-                                                        borderRadius: '5px',
-                                                        bgcolor: `${getCategoryStyle(expense.category).color}25`,
-                                                        border: `1px solid ${getCategoryStyle(expense.category).color}50`
-                                                    }}>
-                                                        <Typography sx={{ fontSize: '0.65rem', color: '#F1F5F9', fontWeight: 600 }}>
-                                                            {expense.category}
-                                                        </Typography>
-                                                    </Box>
-                                                </Box>
-                                            </Box>
-
-                                            {/* Amount */}
-                                            <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-                                                <Typography sx={{ fontWeight: 700, color: '#F1F5F9', fontSize: '1rem', lineHeight: 1.2 }}>
-                                                    {formatCurrency(expense.amount)}
-                                                </Typography>
-                                                <Typography sx={{ fontSize: '0.65rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                    {expense.splits?.length || 0} split{expense.splits?.length !== 1 ? 's' : ''}
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                    ))
+                                    expenses.slice()
+                                        .sort((a, b) => new Date(b.date) - new Date(a.date))
+                                        .map((expense) => (
+                                            <ExpenseItem
+                                                key={expense._id}
+                                                expense={expense}
+                                                onClick={setSelectedExpense}
+                                                getPayerName={getPayerName}
+                                                getCategoryIcon={getCategoryIcon}
+                                                formatCurrency={formatCurrency}
+                                                getCategoryStyle={getCategoryStyle}
+                                            />
+                                        ))
                                 )}
                             </Stack>
                         )}
@@ -1130,7 +1199,7 @@ export default function GroupDetails() {
                             pointerEvents: tabValue === 2 ? 'auto' : 'none'
                         }}
                     >
-                        {(tabValue === 1 || tabValue === 2) && (
+                        {(tabValue === 2) && (
                             <>
                                 {/* Settlement Suggestions Section */}
                                 {settlements.length > 0 ? (

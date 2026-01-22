@@ -13,8 +13,6 @@ export default function PageContainer({ children, maxWidth = 'xl' }) {
         <Box
             sx={{
                 width: '100%',
-                minHeight: '100vh',
-                minHeight: '-webkit-fill-available',
                 py: 2,
                 px: 2,
                 position: 'relative',

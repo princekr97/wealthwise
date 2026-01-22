@@ -5,15 +5,16 @@ import { z } from 'zod';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     Box,
-    Typography,
-    TextField,
-    Button,
-    Stack,
-    InputAdornment,
-    IconButton,
-    CircularProgress
+    CircularProgress,
 } from '@mui/material';
-import { Visibility, VisibilityOff, LockReset as ResetIcon } from '@mui/icons-material';
+import {
+    Lock,
+    ShieldCheck,
+    Eye,
+    EyeOff,
+    ArrowRight,
+    ArrowLeft
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '../store/authStore';
 
@@ -43,7 +44,6 @@ export function ResetPassword() {
 
     const onSubmit = async (values) => {
         setLoading(true);
-        // Pass the token from URL and the new password
         const res = await resetPasswordAction({ token, password: values.password });
         setLoading(false);
 
@@ -56,98 +56,83 @@ export function ResetPassword() {
     };
 
     return (
-        <Box>
-            <Box sx={{ mb: 4, textAlign: 'center' }}>
-                <ResetIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2, opacity: 0.8 }} />
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-                    Set New Password
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                    Please enter your new password below.
-                </Typography>
-            </Box>
+        <div className="w-full">
+            <div className="p-8">
+                <div className="mb-8 text-center">
+                    <div className="inline-flex p-3 bg-purple-500/20 rounded-2xl mb-4">
+                        <Lock className="text-purple-400" size={32} />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Set New Password</h2>
+                    <p className="text-slate-400 text-sm">Please enter your new password below to regain access.</p>
+                </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} noValidate>
-                <Stack spacing={3}>
-                    <TextField
-                        {...register('password')}
-                        label="New Password"
-                        type={showPassword ? 'text' : 'password'}
-                        fullWidth
-                        error={!!errors.password}
-                        helperText={errors.password?.message}
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <IconButton
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        edge="end"
-                                        sx={{ color: 'text.secondary' }}
-                                    >
-                                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                                    </IconButton>
-                                </InputAdornment>
-                            ),
-                        }}
-                        sx={{
-                            '& .MuiInputBase-root': {
-                                color: '#fff',
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: 'rgba(255, 255, 255, 0.7)',
-                            },
-                        }}
-                    />
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                    {/* Password Field */}
+                    <div>
+                        <label className="block text-slate-300 text-sm font-medium mb-2">New Password</label>
+                        <div className="relative group">
+                            <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.password ? 'text-rose-500' : 'text-slate-400 group-focus-within:text-purple-400'}`} size={20} />
+                            <input
+                                {...register('password')}
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="••••••••"
+                                className={`w-full bg-white/5 border rounded-2xl py-3.5 pl-12 pr-12 text-white placeholder-slate-500 focus:outline-none focus:bg-white/10 transition-all ${errors.password ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-purple-500/50'}`}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                            >
+                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                        </div>
+                        {errors.password && <p className="mt-1.5 text-xs text-rose-500 items-center flex gap-1"><span className="w-1 h-1 rounded-full bg-rose-500" /> {errors.password.message}</p>}
+                    </div>
 
-                    <TextField
-                        {...register('confirmPassword')}
-                        label="Confirm Password"
-                        type={showPassword ? 'text' : 'password'}
-                        fullWidth
-                        error={!!errors.confirmPassword}
-                        helperText={errors.confirmPassword?.message}
-                        sx={{
-                            '& .MuiInputBase-root': {
-                                color: '#fff',
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: 'rgba(255, 255, 255, 0.7)',
-                            },
-                        }}
-                    />
+                    {/* Confirm Password Field */}
+                    <div>
+                        <label className="block text-slate-300 text-sm font-medium mb-2">Confirm New Password</label>
+                        <div className="relative group">
+                            <ShieldCheck className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.confirmPassword ? 'text-rose-500' : 'text-slate-400 group-focus-within:text-purple-400'}`} size={20} />
+                            <input
+                                {...register('confirmPassword')}
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="••••••••"
+                                className={`w-full bg-white/5 border rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:bg-white/10 transition-all ${errors.confirmPassword ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-purple-500/50'}`}
+                            />
+                        </div>
+                        {errors.confirmPassword && <p className="mt-1.5 text-xs text-rose-500 items-center flex gap-1"><span className="w-1 h-1 rounded-full bg-rose-500" /> {errors.confirmPassword.message}</p>}
+                    </div>
 
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        size="large"
-                        disabled={loading}
-                        fullWidth
-                        sx={{
-                            mt: 2,
-                            borderRadius: 2,
-                            textTransform: 'none',
-                            fontSize: '1rem',
-                            fontWeight: 600
-                        }}
-                    >
-                        {loading ? <CircularProgress size={24} color="inherit" /> : 'Update Password'}
-                    </Button>
+                    <div className="space-y-3 pt-2">
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-gradient-to-r from-emerald-500 to-purple-600 text-white font-bold py-4 rounded-2xl hover:shadow-lg hover:shadow-purple-500/30 transition-all flex items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <CircularProgress size={20} color="inherit" />
+                                    <span>Updating...</span>
+                                </Box>
+                            ) : (
+                                <>
+                                    <span>Update Password</span>
+                                    <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
+                                </>
+                            )}
+                        </button>
 
-                    <Button
-                        variant="text"
-                        onClick={() => navigate('/login')}
-                        fullWidth
-                        sx={{
-                            mt: 1,
-                            textTransform: 'none',
-                            color: 'text.secondary',
-                            '&:hover': { color: '#fff' }
-                        }}
-                    >
-                        Back to Login
-                    </Button>
-                </Stack>
-            </form>
-        </Box>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/login')}
+                            className="w-full flex items-center justify-center gap-2 py-3 text-slate-400 hover:text-white transition-colors text-sm font-medium"
+                        >
+                            <ArrowLeft size={16} /> Back to Login
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 }

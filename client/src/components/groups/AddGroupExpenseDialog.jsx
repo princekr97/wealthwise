@@ -159,75 +159,94 @@ const CloseButton = styled(IconButton)(({ theme }) => ({
 
 const CustomTextField = styled(TextField)(({ theme }) => ({
     '& .MuiOutlinedInput-root': {
-        borderRadius: '12px',
-        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
-        transition: 'all 0.2s ease',
+        borderRadius: '14px',
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.6)' : 'rgba(248, 250, 252, 0.8)',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        border: '1px solid',
+        borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.08)',
         '& fieldset': {
-            borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.1)',
-            borderWidth: '1px'
+            border: 'none',
         },
-        '&:hover fieldset': {
-            borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.2)'
+        '&:hover': {
+            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.8)' : 'rgba(248, 250, 252, 1)',
+            borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.15)',
         },
         '&.Mui-focused': {
-            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-            '& fieldset': {
-                borderColor: '#3b82f6', // Accent Blue
-                borderWidth: '1.5px'
-            }
+            backgroundColor: theme.palette.mode === 'dark' ? '#0f172a' : '#ffffff',
+            borderColor: '#3b82f6',
+            boxShadow: '0 0 0 4px rgba(59, 130, 246, 0.1)',
         },
     },
     '& .MuiInputBase-input': {
-        padding: '0.85rem 1.1rem',
+        padding: '12px 16px',
         fontSize: '0.95rem',
         color: theme.palette.text.primary,
-        fontWeight: 500,
+        fontWeight: 600,
+        height: '24px', // Force consistent height
         '&.Mui-disabled': {
-            color: theme.palette.text.primary,
-            WebkitTextFillColor: theme.palette.text.primary,
-            opacity: 1
+            color: theme.palette.text.secondary,
+            WebkitTextFillColor: theme.palette.text.secondary,
+            opacity: 0.7
         }
     },
 }));
 
 const CustomSelect = styled(Select)(({ theme }) => ({
-    borderRadius: '12px',
-    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
-    color: theme.palette.text.primary,
+    borderRadius: '14px',
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.6)' : 'rgba(248, 250, 252, 0.8)',
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    border: '1px solid',
+    borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.08)',
     '& .MuiOutlinedInput-notchedOutline': {
-        borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.1)',
-        borderWidth: '1px'
+        border: 'none',
     },
-    '&:hover .MuiOutlinedInput-notchedOutline': {
-        borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.2)'
+    '&:hover': {
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.8)' : 'rgba(248, 250, 252, 1)',
+        borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.15)',
     },
-    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+    '&.Mui-focused': {
+        backgroundColor: theme.palette.mode === 'dark' ? '#0f172a' : '#ffffff',
         borderColor: '#3b82f6',
-        borderWidth: '1.5px'
+        boxShadow: '0 0 0 4px rgba(59, 130, 246, 0.1)',
     },
     '& .MuiSelect-select': {
-        padding: '0.85rem 1.1rem !important',
+        padding: '12px 16px !important',
         fontSize: '0.95rem',
-        fontWeight: 500,
+        fontWeight: 600,
+        height: '24px !important', // Force consistent height
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
-        color: `${theme.palette.text.primary} !important`
+        color: `${theme.palette.text.primary} !important`,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
     },
     '& .MuiSvgIcon-root': {
-        color: `${theme.palette.text.secondary} !important`
+        color: `${theme.palette.text.secondary} !important`,
+        fontSize: '1.2rem'
     }
 }));
+
+// Helper to get local date string YYYY-MM-DD
+const getTodayDateString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 // Helper for "Form Label" look
 const FormLabel = styled(Typography)(({ theme }) => ({
     display: 'block',
-    fontSize: '0.75rem',
-    fontWeight: 800,
-    color: theme.palette.text.secondary,
-    marginBottom: '0.5rem',
+    fontSize: '0.7rem',
+    fontWeight: 700,
+    color: theme.palette.mode === 'dark' ? '#94a3b8' : '#64748b',
+    marginBottom: '6px',
     textTransform: 'uppercase',
-    letterSpacing: '1.5px'
+    letterSpacing: '1px',
+    paddingLeft: '4px'
 }));
 
 const ParticipantCard = styled(Box)(({ theme, selected }) => ({
@@ -300,6 +319,8 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
     const [members, setMembers] = useState([]);
     const [selectedMemberIds, setSelectedMemberIds] = useState([]); // Track selected members for split
     const [loading, setLoading] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(false);
+    const isFirstLoad = React.useRef(true);
 
     const { control, handleSubmit, watch, setValue, reset, getValues } = useForm({
         defaultValues: {
@@ -307,6 +328,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
             amount: '',
             category: '',
             paidBy: currentUser?._id || '',
+            date: getTodayDateString(),
             splits: []
         }
     });
@@ -323,21 +345,62 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
     // Initialize form for Add or Edit
     useEffect(() => {
         if (open) {
+            setIsInitializing(true);
             if (initialExpense) {
-                setSplitType(initialExpense.splitType || 'equal');
+                const splitMode = initialExpense.splitType || 'equal';
+                setSplitType(splitMode);
+
+                const fullSplits = members.map(m => {
+                    const mId = String(getMemberId(m));
+                    const mName = m.name?.toLowerCase().trim();
+
+                    // Match by ID or Name (for shadow members where user might be null in DB)
+                    const existingSplit = initialExpense.splits?.find(s => {
+                        const sId = String(s.user?._id || s.user);
+                        if (sId !== "null" && sId !== "undefined") return sId === mId;
+                        return s.userName?.toLowerCase().trim() === mName;
+                    });
+
+                    return {
+                        user: mId,
+                        userName: m.name,
+                        amount: existingSplit ? existingSplit.amount : 0
+                    };
+                });
+
                 reset({
                     description: initialExpense.description,
                     amount: initialExpense.amount,
                     category: initialExpense.category || '',
-                    paidBy: (initialExpense.paidBy?._id || initialExpense.paidBy) || '',
-                    splits: initialExpense.splits || []
+                    paidBy: (initialExpense.paidBy?._id || initialExpense.paidBy)?.toString() || '',
+                    date: initialExpense.date ? new Date(initialExpense.date).toISOString().split('T')[0] : getTodayDateString(),
+                    splits: fullSplits
                 });
+
                 // Set selected members from existing splits
                 if (initialExpense.splits) {
-                    setSelectedMemberIds(initialExpense.splits.filter(s => s.amount > 0).map(s => String(s.user?._id || s.user)));
+                    const selectedIds = initialExpense.splits
+                        .filter(s => s.amount > 0)
+                        .map(s => {
+                            const sId = String(s.user?._id || s.user);
+                            if (sId !== "null" && sId !== "undefined") return sId;
+                            // Fallback to name matching in members list for shadow members
+                            const matchingMember = members.find(m => m.name?.toLowerCase().trim() === s.userName?.toLowerCase().trim());
+                            return matchingMember ? String(getMemberId(matchingMember)) : null;
+                        })
+                        .filter(Boolean);
+
+                    setSelectedMemberIds(selectedIds);
+                    prevSelectedRef.current = selectedIds;
                 }
+
+                // CRITICAL: We stay in 'First Load' mode for one turn to let state settle
+                isFirstLoad.current = true;
             } else {
                 setSplitType('equal');
+                const allSelected = members.map(m => String(getMemberId(m)));
+                setSelectedMemberIds(allSelected);
+                prevSelectedRef.current = allSelected;
 
                 // Find matching member ID for current user to ensure dropdown value match
                 let defaultPayer = '';
@@ -353,25 +416,35 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                     amount: '',
                     category: '',
                     paidBy: defaultPayer,
+                    date: getTodayDateString(),
                     splits: []
                 });
-                setSelectedMemberIds(group?.members?.map(m => String(getMemberId(m))) || []);
             }
+            setIsInitializing(false);
         } else {
             reset();
             setSplitType('equal');
             setSelectedMemberIds([]); // Reset selection on close
+            isFirstLoad.current = true;
+            setIsInitializing(false);
         }
-    }, [open, initialExpense, reset, group, currentUser]);
+    }, [open, initialExpense, reset, group, currentUser, members]);
 
     // Track previous selection to detect additions/removals
     const prevSelectedRef = React.useRef(selectedMemberIds);
 
-    // Recalculate Equal Splits when amount or selection changes
-    // This logic now applies to BOTH 'equal' and 'custom' modes to provide "Auto-Equalize" behavior.
-    // In 'custom' mode, users can then manually edit the values (unlike 'equal' mode where inputs are disabled).
     useEffect(() => {
-        if (!amount) return;
+        if (!amount || members.length === 0 || splitType === 'custom') return;
+
+        // Skip auto-equalize on initial load for ANY existing expense (Edit mode).
+        // This avoids race conditions between 'amount' (from reset) and 'selectedMemberIds' updates.
+        if (initialExpense && isFirstLoad.current) {
+            // Once we have both amount and members, we consider the next tick as 'ready'
+            if (amount && selectedMemberIds.length > 0) {
+                isFirstLoad.current = false;
+            }
+            return;
+        }
 
         const totalAmount = parseFloat(amount);
         if (isNaN(totalAmount) || totalAmount <= 0) return;
@@ -381,8 +454,8 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
         // If no one is selected, just zero out everyone
         if (activeMembers === 0) {
             const zeroSplits = members.map(m => ({
-                userId: getMemberId(m),
-                name: m.name,
+                user: getMemberId(m),
+                userName: m.name,
                 amount: 0
             }));
             setValue('splits', zeroSplits);
@@ -404,8 +477,8 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
 
             if (!isSelected) {
                 return {
-                    userId: getMemberId(member),
-                    name: member.name,
+                    user: getMemberId(member),
+                    userName: member.name,
                     amount: 0
                 };
             }
@@ -418,19 +491,16 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
             }
 
             return {
-                userId: getMemberId(member),
-                name: member.name,
+                user: getMemberId(member),
+                userName: member.name,
                 amount: splitAmount
             };
         });
 
-        // We update the form values. 
-        // Note: In 'custom' mode, this OVERWRITES manual edits if the 'amount' or 'selection' changes.
-        // This is the desired behavior per user request.
-        // Manual edits are only preserved if NO dependency changes (i.e. just typing).
+        // Update internal form splits
         setValue('splits', newSplits, { shouldValidate: true });
 
-    }, [amount, members, selectedMemberIds, setValue]);
+    }, [amount, members, selectedMemberIds, setValue, splitType, initialExpense]);
 
 
 
@@ -447,28 +517,60 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
 
             setLoading(true);
 
-            // Robustly construct splits by iterating members to ensure IDs match
-            const validSplits = members.map((member, index) => {
-                const splitEntry = data.splits && data.splits[index];
-                const amount = splitEntry ? parseFloat(splitEntry.amount || 0) : 0;
+            // Re-calculate splits one last time to ensure we have the absolute latest data
+            // This prevents race conditions where 'amount' was just typed and 'splits' haven't updated in useEffect yet.
+            let finalSplits = [];
 
-                return {
-                    user: getMemberId(member),
-                    userName: member.name,
-                    amount: amount,
-                    owed: amount
-                };
-            }).filter(s => s.amount > 0);
+            if (splitType === 'equal') {
+                const totalAmount = parseFloat(data.amount);
+                const activeMembers = selectedMemberIds.length;
 
-            // Client-side validation: validSplits sum must equal total amount
-            const totalSplit = validSplits.reduce((sum, s) => sum + s.amount, 0);
+                if (activeMembers === 0) {
+                    toast.error("Please select at least one person to split with.");
+                    setLoading(false);
+                    return;
+                }
+
+                const amountPerPerson = totalAmount / activeMembers;
+                const roundedAmount = Math.floor(amountPerPerson * 100) / 100;
+                const remainder = parseFloat((totalAmount - (roundedAmount * activeMembers)).toFixed(2));
+                let remainderAdded = false;
+
+                finalSplits = members.map((member) => {
+                    const mId = String(getMemberId(member));
+                    const isSelected = selectedMemberIds.includes(mId);
+                    if (!isSelected) return { user: mId, userName: member.name, amount: 0, owed: 0 };
+
+                    let splitAmount = roundedAmount;
+                    if (!remainderAdded) {
+                        splitAmount = parseFloat((roundedAmount + remainder).toFixed(2));
+                        remainderAdded = true;
+                    }
+                    return { user: mId, userName: member.name, amount: splitAmount, owed: splitAmount };
+                }).filter(s => s.amount > 0);
+            } else {
+                // Custom Splits - Use values from form 'data.splits'
+                finalSplits = members.map((member, index) => {
+                    const splitEntry = data.splits && data.splits[index];
+                    const amount = splitEntry ? parseFloat(splitEntry.amount || 0) : 0;
+                    return {
+                        user: getMemberId(member),
+                        userName: member.name,
+                        amount: amount,
+                        owed: amount
+                    };
+                }).filter(s => s.amount > 0);
+            }
+
+            // Final Validation
+            const totalSplitValue = finalSplits.reduce((sum, s) => sum + s.amount, 0);
             const expenseAmount = Number(data.amount);
 
-            if (Math.abs(totalSplit - expenseAmount) > 0.1) {
-                if (validSplits.length === 0) {
+            if (Math.abs(totalSplitValue - expenseAmount) > 0.1) {
+                if (finalSplits.length === 0) {
                     toast.error("Please select at least one person to split with.");
                 } else {
-                    toast.error(`Total split (₹${totalSplit}) does not match expense amount (₹${expenseAmount})`);
+                    toast.error(`Total split (₹${totalSplitValue.toFixed(2)}) doesn't match total (₹${expenseAmount.toFixed(2)})`);
                 }
                 setLoading(false);
                 return;
@@ -480,7 +582,8 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                 category: data.category || 'Misc.',
                 paidBy: data.paidBy,
                 paidByName: members.find(m => String(getMemberId(m)) === String(data.paidBy))?.name || '',
-                splits: validSplits,
+                date: data.date,
+                splits: finalSplits,
                 splitType
             };
 
@@ -495,13 +598,10 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                     toast.success('Expense added!');
                 }
 
-                // Trigger refresh AFTER success
-                if (onExpenseAdded) {
-                    await onExpenseAdded();
-                }
+                if (onExpenseAdded) await onExpenseAdded();
                 onClose();
             } catch (err) {
-                console.error(err);
+                console.error('Submission error:', err);
                 toast.error(err.response?.data?.message || `Failed to ${isUpdate ? 'update' : 'add'} expense`);
             } finally {
                 setLoading(false);
@@ -533,9 +633,13 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                 }
             }}
         >
-            <HeaderBox>
-                <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: theme.palette.text.primary }}>
+            <HeaderBox sx={{
+                backdropFilter: 'blur(24px)',
+
+                background: 'linear-gradient(rgba(42, 51, 59, 0.8), rgba(5, 4, 57, 0.8)), var(--active-gradient)',
+            }}>
+                <Box >
+                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: theme.palette.text.primary, }}>
                         {initialExpense ? 'Edit Expense' : 'Add New Expense'}
                     </Typography>
                     <Typography variant="body2" sx={{ fontSize: '0.75rem', mt: 0.3, color: theme.palette.text.secondary }}>
@@ -556,7 +660,10 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
 
             <DialogContent sx={{
                 p: '1.5rem !important',
-                bgcolor: '#1E293B',
+                // bgcolor: '#1E293B',
+                background: 'rgba(30, 41, 59, 0.95)',
+                backdropFilter: 'blur(24px)',
+
                 maxHeight: { xs: '70vh', sm: '80vh' },
                 overflowY: 'auto',
                 overflowX: 'hidden'
@@ -582,7 +689,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
 
                     {/* Amount & Category Row */}
                     <Stack direction="row" spacing={2}>
-                        <Box sx={{ flex: 1 }}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
                             <FormLabel>Amount</FormLabel>
                             <Controller
                                 name="amount"
@@ -602,7 +709,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             />
                         </Box>
 
-                        <Box sx={{ flex: 1.2 }}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
                             <FormLabel>Category</FormLabel>
                             <Controller
                                 name="category"
@@ -612,8 +719,34 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                         {...field}
                                         fullWidth
                                         displayEmpty
-                                        sx={{ '& .MuiSvgIcon-root': { color: theme.palette.text.secondary } }}
                                         value={field.value || ''}
+                                        renderValue={(selected) => {
+                                            if (!selected) return <Typography sx={{ fontSize: '0.85rem', color: '#64748b' }}>Select Category</Typography>;
+                                            const categoryStyle = getCategoryStyle(selected);
+                                            const Icon = CATEGORY_ICONS[selected] || CategoryIcon;
+                                            return (
+                                                <Stack direction="row" alignItems="center" spacing={1} sx={{ overflow: 'hidden' }}>
+                                                    <Box
+                                                        sx={{
+                                                            width: 18, height: 18,
+                                                            borderRadius: '6px',
+                                                            bgcolor: `${categoryStyle.color}15`,
+                                                            color: categoryStyle.color,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            flexShrink: 0
+                                                        }}
+                                                    >
+                                                        <Icon sx={{ fontSize: '0.9rem' }} />
+                                                    </Box>
+                                                    <Typography noWrap sx={{ fontSize: '0.9rem', fontWeight: 600 }}>
+                                                        {selected}
+                                                    </Typography>
+                                                </Stack>
+                                            );
+                                        }}
+                                        sx={{ '& .MuiSvgIcon-root': { color: theme.palette.text.secondary } }}
                                         MenuProps={{
                                             PaperProps: {
                                                 sx: {
@@ -671,75 +804,120 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                         </Box>
                     </Stack>
 
-                    {/* Paid By */}
-                    <Box>
-                        <FormLabel>Who Paid?</FormLabel>
-                        <Controller
-                            name="paidBy"
-                            control={control}
-                            rules={{ required: 'Required' }}
-                            render={({ field }) => (
-                                <CustomSelect
-                                    {...field}
-                                    fullWidth
-                                    displayEmpty
-                                    value={field.value || ''}
-                                    sx={{ '& .MuiSvgIcon-root': { color: theme.palette.text.secondary } }}
-                                    MenuProps={{
-                                        PaperProps: {
-                                            sx: {
-                                                bgcolor: theme.palette.mode === 'dark' ? '#0f172a' : '#FFFFFF',
-                                                border: `1px solid ${theme.palette.divider}`,
-                                                borderRadius: '12px',
-                                                boxShadow: theme.palette.mode === 'dark' ? '0 20px 25px -5px rgba(0, 0, 0, 0.4)' : '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-                                                mt: 1,
-                                                '& .MuiMenuItem-root': {
-                                                    color: theme.palette.text.primary,
-                                                    fontSize: '0.9rem',
-                                                    p: '10px 16px',
-                                                    gap: '12px',
-                                                    transition: 'all 0.2s',
-                                                    '&:hover': {
-                                                        bgcolor: theme.palette.action.hover,
-                                                        color: theme.palette.text.primary
-                                                    },
-                                                    '&.Mui-selected': {
-                                                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.12) !important' : 'rgba(59, 130, 246, 0.08) !important',
-                                                        color: '#3b82f6',
-                                                        fontWeight: 600
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }}
-                                >
-                                    <MenuItem value="" disabled sx={{ fontSize: '0.85rem', color: '#64748b !important' }}>Select Member</MenuItem>
-                                    {members.map(member => {
-                                        const isMe = currentUser && String(getMemberId(member)) === String(currentUser._id);
-                                        return (
-                                            <MenuItem
-                                                key={member._id}
-                                                value={getMemberId(member)}
-                                            >
-                                                <Stack direction="row" alignItems="center" spacing={1.5}>
+                    {/* Paid By & Date Row */}
+                    <Stack direction="row" spacing={2}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <FormLabel>Who Paid?</FormLabel>
+                            <Controller
+                                name="paidBy"
+                                control={control}
+                                rules={{ required: 'Required' }}
+                                render={({ field }) => (
+                                    <CustomSelect
+                                        {...field}
+                                        fullWidth
+                                        displayEmpty
+                                        value={field.value || ''}
+                                        renderValue={(selected) => {
+                                            if (!selected) return <Typography sx={{ fontSize: '0.85rem', color: '#64748b' }}>Select Member</Typography>;
+                                            const member = members.find(m => String(getMemberId(m)) === String(selected));
+                                            if (!member) return selected;
+                                            const isMe = currentUser && String(getMemberId(member)) === String(currentUser._id);
+                                            return (
+                                                <Stack direction="row" alignItems="center" spacing={1} sx={{ overflow: 'hidden' }}>
                                                     <Avatar
                                                         sx={{
-                                                            width: 24, height: 24,
+                                                            width: 20, height: 20,
                                                             bgcolor: getAvatarConfig(member.name, member.avatarUrl).bgcolor,
-                                                            color: '#0f172a',
-                                                            border: '1px solid #e2e8f0'
+                                                            fontSize: '0.7rem'
                                                         }}
                                                         src={getAvatarConfig(member.name, member.avatarUrl).src}
                                                     />
-                                                    <span style={{ color: 'inherit' }}>{isMe ? 'You' : member.name}</span>
+                                                    <Typography noWrap sx={{ fontSize: '0.9rem', fontWeight: 500 }}>
+                                                        {isMe ? 'You' : member.name}
+                                                    </Typography>
                                                 </Stack>
-                                            </MenuItem>
-                                        );
-                                    })}
-                                </CustomSelect>
-                            )}
-                        />
-                    </Box>
+                                            );
+                                        }}
+                                        sx={{ '& .MuiSvgIcon-root': { color: theme.palette.text.secondary } }}
+                                        MenuProps={{
+                                            PaperProps: {
+                                                sx: {
+                                                    bgcolor: theme.palette.mode === 'dark' ? '#0f172a' : '#FFFFFF',
+                                                    border: `1px solid ${theme.palette.divider}`,
+                                                    borderRadius: '12px',
+                                                    boxShadow: theme.palette.mode === 'dark' ? '0 20px 25px -5px rgba(0, 0, 0, 0.4)' : '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                                                    mt: 1,
+                                                    '& .MuiMenuItem-root': {
+                                                        color: theme.palette.text.primary,
+                                                        fontSize: '0.9rem',
+                                                        p: '10px 16px',
+                                                        gap: '12px',
+                                                        transition: 'all 0.2s',
+                                                        '&:hover': {
+                                                            bgcolor: theme.palette.action.hover,
+                                                            color: theme.palette.text.primary
+                                                        },
+                                                        '&.Mui-selected': {
+                                                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.12) !important' : 'rgba(59, 130, 246, 0.08) !important',
+                                                            color: '#3b82f6',
+                                                            fontWeight: 600
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                    >
+                                        <MenuItem value="" disabled sx={{ fontSize: '0.85rem', color: '#64748b !important' }}>Select Member</MenuItem>
+                                        {members.map(member => {
+                                            const isMe = currentUser && String(getMemberId(member)) === String(currentUser._id);
+                                            return (
+                                                <MenuItem
+                                                    key={member._id}
+                                                    value={getMemberId(member)}
+                                                >
+                                                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                                                        <Avatar
+                                                            sx={{
+                                                                width: 24, height: 24,
+                                                                bgcolor: getAvatarConfig(member.name, member.avatarUrl).bgcolor,
+                                                                color: '#0f172a',
+                                                                border: '1px solid #e2e8f0'
+                                                            }}
+                                                            src={getAvatarConfig(member.name, member.avatarUrl).src}
+                                                        />
+                                                        <span style={{ color: 'inherit' }}>{isMe ? 'You' : member.name}</span>
+                                                    </Stack>
+                                                </MenuItem>
+                                            );
+                                        })}
+                                    </CustomSelect>
+                                )}
+                            />
+                        </Box>
+
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <FormLabel>Date</FormLabel>
+                            <Controller
+                                name="date"
+                                control={control}
+                                rules={{ required: 'Required' }}
+                                render={({ field }) => (
+                                    <CustomTextField
+                                        {...field}
+                                        type="date"
+                                        fullWidth
+                                        sx={{
+                                            '& input::-webkit-calendar-picker-indicator': {
+                                                filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none',
+                                                cursor: 'pointer'
+                                            }
+                                        }}
+                                    />
+                                )}
+                            />
+                        </Box>
+                    </Stack>
 
                     {/* Divider */}
                     <Box sx={{ height: '1px', background: theme.palette.divider, my: 1 }} />
@@ -982,7 +1160,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
 
                     {/* Action Buttons */}
                     <Stack direction="row" spacing={1.5} sx={{ pt: 1 }}>
-                        <Button
+                        {/* <Button
                             fullWidth
                             onClick={onClose}
                             sx={{
@@ -997,37 +1175,45 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             }}
                         >
                             Cancel
-                        </Button>
+                        </Button> */}
                         <Button
                             fullWidth
                             disabled={loading}
-                            onClick={handleSubmit(onSubmit)}
+                            onClick={handleSubmit(onSubmit, (errors) => {
+                                console.error('Form Validation Errors:', errors);
+                                const firstError = Object.values(errors)[0];
+                                if (firstError?.message) toast.error(firstError.message);
+                            })}
                             sx={{
-                                py: 1,
-                                borderRadius: '10px',
-                                background: loading ? theme.palette.action.disabledBackground : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                                color: loading ? theme.palette.text.disabled : 'white',
-                                fontWeight: 600,
-                                fontSize: '0.75rem',
+                                py: 1.25,
+                                borderRadius: '12px',
+                                background: loading ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                color: 'white',
+                                fontWeight: 700,
+                                fontSize: '0.9rem',
                                 textTransform: 'none',
-                                boxShadow: loading ? 'none' : '0 4px 12px rgba(37, 99, 235, 0.2)',
+                                boxShadow: loading ? 'none' : '0 10px 20px -5px rgba(37, 99, 235, 0.4)',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                 '&:hover': {
-                                    boxShadow: loading ? 'none' : '0 6px 16px rgba(37, 99, 235, 0.3)',
-                                    transform: loading ? 'none' : 'translateY(-1px)'
+                                    background: loading ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                                    boxShadow: loading ? 'none' : '0 15px 25px -5px rgba(37, 99, 235, 0.5)',
+                                    transform: loading ? 'none' : 'translateY(-2px)'
                                 },
-                                '&:disabled': {
-                                    bgcolor: theme.palette.action.disabledBackground,
-                                    color: theme.palette.text.disabled
+                                '&:active': {
+                                    transform: 'translateY(1px)'
+                                },
+                                '& .MuiCircularProgress-root': {
+                                    color: 'white'
                                 }
                             }}
                         >
                             {loading ? (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <CircularProgress size={16} sx={{ color: '#475569' }} />
-                                    {initialExpense ? 'Updating...' : 'Adding...'}
-                                </Box>
+                                <Stack direction="row" spacing={1.5} alignItems="center">
+                                    <CircularProgress size={18} />
+                                    <span>{initialExpense ? 'Saving Changes...' : 'Adding Expense...'}</span>
+                                </Stack>
                             ) : (
-                                initialExpense ? 'Update Expense' : 'Add Expense'
+                                <span>{initialExpense ? 'Update Expense' : 'Confirm Expense'}</span>
                             )}
                         </Button>
                     </Stack>

@@ -28,6 +28,7 @@ import {
   Palette as PaletteIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
+import { User, Mail, Phone, ArrowRight } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { authService } from '../services/authService';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -163,120 +164,81 @@ export default function Settings() {
                 Profile Information
               </Typography>
 
-              <Stack spacing={2.5}>
-                <TextField
-                  label="Name"
-                  value={profileData.name}
-                  onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                  fullWidth
-                  size="small"
-                  InputProps={{
-                    sx: {
-                      color: '#1E293B',
-                      fontSize: '0.9rem',
-                      fontWeight: 500,
-                      '& input': {
-                        color: '#1E293B !important'
-                      }
-                    }
-                  }}
-                  InputLabelProps={{
-                    sx: {
-                      color: '#94A3B8'
-                    }
-                  }}
-                />
+              <div className="space-y-5">
+                {/* Name Field */}
+                <div>
+                  <label className="block text-slate-300 text-sm font-medium mb-2">Full Name</label>
+                  <div className="relative group">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-400 transition-colors" size={20} />
+                    <input
+                      type="text"
+                      value={profileData.name}
+                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                      placeholder="Enter your name"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all"
+                    />
+                  </div>
+                </div>
 
-                <TextField
-                  label="Email"
-                  value={profileData.email}
-                  onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                  disabled={!!user?.email}
-                  fullWidth
-                  size="small"
-                  type="email"
-                  placeholder={!user?.email ? "Add your email" : ""}
-                  helperText={user?.email ? "Email cannot be changed" : "Add your email (cannot be changed later)"}
-                  InputProps={{
-                    sx: {
-                      color: '#1E293B !important',
-                      fontSize: '0.9rem',
-                      fontWeight: 500,
-                      '& input': {
-                        color: '#1E293B !important',
-                        WebkitTextFillColor: '#1E293B !important'
-                      }
-                    }
-                  }}
-                  InputLabelProps={{
-                    sx: {
-                      color: '#94A3B8 !important'
-                    }
-                  }}
-                  FormHelperTextProps={{
-                    sx: {
-                      color: '#64748B'
-                    }
-                  }}
-                />
+                {/* Email Field */}
+                <div>
+                  <label className="block text-slate-300 text-sm font-medium mb-2">Email Address</label>
+                  <div className="relative group">
+                    <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${!!user?.email ? 'text-slate-500' : 'text-slate-400 group-focus-within:text-emerald-400'}`} size={20} />
+                    <input
+                      type="email"
+                      value={profileData.email}
+                      onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                      disabled={!!user?.email}
+                      placeholder={!user?.email ? "Add your email" : ""}
+                      className={`w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none transition-all ${!!user?.email ? 'opacity-60 cursor-not-allowed' : 'focus:border-emerald-500/50 focus:bg-white/10'}`}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    {user?.email ? "Email cannot be changed" : "Add your email (cannot be changed later)"}
+                  </p>
+                </div>
 
-                <TextField
-                  label="Phone Number"
-                  value={profileData.phoneNumber}
-                  onChange={(e) => setProfileData({ ...profileData, phoneNumber: e.target.value })}
-                  disabled={!!user?.phoneNumber}
-                  fullWidth
-                  size="small"
-                  type="tel"
-                  placeholder={!user?.phoneNumber ? "Add 10-digit phone" : ""}
-                  helperText={user?.phoneNumber ? "Phone number cannot be changed" : "Add phone number (cannot be changed later)"}
-                  InputProps={{
-                    sx: {
-                      color: '#1E293B !important',
-                      fontSize: '0.9rem',
-                      fontWeight: 500,
-                      '& input': {
-                        color: '#1E293B !important',
-                        WebkitTextFillColor: '#1E293B !important'
-                      }
-                    }
-                  }}
-                  InputLabelProps={{
-                    sx: {
-                      color: '#94A3B8 !important'
-                    }
-                  }}
-                  FormHelperTextProps={{
-                    sx: {
-                      color: '#64748B'
-                    }
-                  }}
-                />
+                {/* Phone Number Field */}
+                <div>
+                  <label className="block text-slate-300 text-sm font-medium mb-2">Phone Number</label>
+                  <div className="relative group">
+                    <Phone className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${!!user?.phoneNumber ? 'text-slate-500' : 'text-slate-400 group-focus-within:text-emerald-400'}`} size={20} />
+                    <input
+                      type="tel"
+                      value={profileData.phoneNumber}
+                      onChange={(e) => setProfileData({ ...profileData, phoneNumber: e.target.value })}
+                      disabled={!!user?.phoneNumber}
+                      placeholder={!user?.phoneNumber ? "Add 10-digit phone" : ""}
+                      className={`w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none transition-all ${!!user?.phoneNumber ? 'opacity-60 cursor-not-allowed' : 'focus:border-emerald-500/50 focus:bg-white/10'}`}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    {user?.phoneNumber ? "Phone number cannot be changed" : "Add phone number (cannot be changed later)"}
+                  </p>
+                </div>
 
-                <Box>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    sx={{ minWidth: 120 }}
-                    onClick={async () => {
-                      const updates = { name: profileData.name };
-                      if (!user?.email && profileData.email) updates.email = profileData.email;
-                      if (!user?.phoneNumber && profileData.phoneNumber) updates.phoneNumber = profileData.phoneNumber;
+                {/* Save Button */}
+                <button
+                  onClick={async () => {
+                    const updates = { name: profileData.name };
+                    if (!user?.email && profileData.email) updates.email = profileData.email;
+                    if (!user?.phoneNumber && profileData.phoneNumber) updates.phoneNumber = profileData.phoneNumber;
 
-                      // Call API to update profile
-                      try {
-                        await authService.updateProfile(updates);
-                        await fetchProfile();
-                        toast.success('Profile updated successfully');
-                      } catch (error) {
-                        toast.error('Failed to update profile');
-                      }
-                    }}
-                  >
-                    Save Changes
-                  </Button>
-                </Box>
-              </Stack>
+                    try {
+                      await authService.updateProfile(updates);
+                      await fetchProfile();
+                      toast.success('Profile updated successfully');
+                    } catch (error) {
+                      toast.error('Failed to update profile');
+                    }
+                  }}
+                  className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold py-3.5 px-8 rounded-2xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all flex items-center justify-center gap-2 group"
+                >
+                  <span>Save Changes</span>
+                  <ArrowRight className="group-hover:translate-x-1 transition-transform" size={18} />
+                </button>
+              </div>
             </CardContent>
           </Card>
 
@@ -418,102 +380,102 @@ export default function Settings() {
                 Background Theme
               </Typography>
 
-            <Stack spacing={4}>
-              {Object.keys(gradientCategories).map((category) => {
-                const categoryGradients = getGradientsByCategory(category);
-                if (categoryGradients.length === 0) return null;
+              <Stack spacing={4}>
+                {Object.keys(gradientCategories).map((category) => {
+                  const categoryGradients = getGradientsByCategory(category);
+                  if (categoryGradients.length === 0) return null;
 
-                return (
-                  <Box key={category}>
-                    <Typography
-                      variant="subtitle2"
-                      color="textSecondary"
-                      sx={{ mb: 1.5, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}
-                    >
-                      {gradientCategories[category]}
-                    </Typography>
+                  return (
+                    <Box key={category}>
+                      <Typography
+                        variant="subtitle2"
+                        color="textSecondary"
+                        sx={{ mb: 1.5, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}
+                      >
+                        {gradientCategories[category]}
+                      </Typography>
 
-                    <Box
-                      sx={{
-                        display: 'grid',
-                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' },
-                        gap: 2,
-                      }}
-                    >
-                      {categoryGradients.map(({ key, name, gradient, textColor }) => (
-                        <Box
-                          key={key}
-                          onClick={() => {
-                            setGradient(key);
-                            toast.success(`Theme updated to ${name}`);
-                          }}
-                          sx={{
-                            position: 'relative',
-                            aspectRatio: '16/9',
-                            borderRadius: 2,
-                            background: gradient,
-                            cursor: 'pointer',
-                            overflow: 'hidden',
-                            border: '2px solid',
-                            borderColor: currentGradient === key ? '#10B981' : 'transparent',
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                              transform: 'scale(1.02)',
-                              boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-                            },
-                          }}
-                        >
-                          {currentGradient === key && (
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' },
+                          gap: 2,
+                        }}
+                      >
+                        {categoryGradients.map(({ key, name, gradient, textColor }) => (
+                          <Box
+                            key={key}
+                            onClick={() => {
+                              setGradient(key);
+                              toast.success(`Theme updated to ${name}`);
+                            }}
+                            sx={{
+                              position: 'relative',
+                              aspectRatio: '16/9',
+                              borderRadius: 2,
+                              background: gradient,
+                              cursor: 'pointer',
+                              overflow: 'hidden',
+                              border: '2px solid',
+                              borderColor: currentGradient === key ? '#10B981' : 'transparent',
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                transform: 'scale(1.02)',
+                                boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+                              },
+                            }}
+                          >
+                            {currentGradient === key && (
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  top: 8,
+                                  right: 8,
+                                  width: 24,
+                                  height: 24,
+                                  borderRadius: '50%',
+                                  bgcolor: '#10B981',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: 'white',
+                                  fontSize: '0.875rem',
+                                }}
+                              >
+                                ✓
+                              </Box>
+                            )}
                             <Box
                               sx={{
                                 position: 'absolute',
-                                top: 8,
-                                right: 8,
-                                width: 24,
-                                height: 24,
-                                borderRadius: '50%',
-                                bgcolor: '#10B981',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'white',
-                                fontSize: '0.875rem',
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                p: 1.5,
+                                background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
                               }}
                             >
-                              ✓
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: 'white',
+                                  fontWeight: 600,
+                                  display: 'block',
+                                  lineHeight: 1.2,
+                                }}
+                              >
+                                {name}
+                              </Typography>
                             </Box>
-                          )}
-                          <Box
-                            sx={{
-                              position: 'absolute',
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              p: 1.5,
-                              background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
-                            }}
-                          >
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: 'white',
-                                fontWeight: 600,
-                                display: 'block',
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              {name}
-                            </Typography>
                           </Box>
-                        </Box>
-                      ))}
+                        ))}
+                      </Box>
                     </Box>
-                  </Box>
-                );
-              })}
-            </Stack>
-          </CardContent>
-        </Card>
+                  );
+                })}
+              </Stack>
+            </CardContent>
+          </Card>
         </Stack>
       )}
 

@@ -1,35 +1,25 @@
-/**
- * Register Page
- *
- * Uses MUI components for consistency with the rest of the app.
- * Mobile-first responsive design.
- */
-
 import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Link,
-  Stack,
-  CircularProgress,
-  IconButton,
-  InputAdornment,
-} from '@mui/material';
-import {
-  PersonAdd as PersonAddIcon,
-  Visibility,
-  VisibilityOff,
-  Email as EmailIcon,
-  Person as PersonIcon,
-  PhoneIphone as PhoneIcon,
-  Lock as LockIcon
-} from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import {
+  User,
+  Mail,
+  Phone,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  CheckCircle2,
+  UserPlus
+} from 'lucide-react';
+import {
+  Box,
+  CircularProgress,
+  IconButton
+} from '@mui/material';
+
 import { registerSchema } from '../utils/validators';
 import { useAuth } from '../hooks/useAuth';
 
@@ -63,375 +53,145 @@ export function Register() {
   };
 
   return (
-    <Box>
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-          <Box sx={{
-            width: 42,
-            height: 42,
-            borderRadius: 2,
-            background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
-          }}>
-            <PersonAddIcon sx={{ color: '#fff', fontSize: 22 }} />
-          </Box>
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 700,
-              fontSize: { xs: '1.25rem', sm: '1.5rem' },
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Create Account
-          </Typography>
-        </Box>
-        <Typography
-          variant="body2"
-          color="textSecondary"
-          sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, color: '#94A3B8' }}
+    <div className="w-full">
+      {/* Tab Switcher */}
+      <div className="flex p-2 bg-white/5 border-b border-white/5">
+        <button
+          onClick={() => navigate('/login')}
+          className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-300 text-slate-400 hover:text-white"
         >
-          Join KhataBahi and start managing money smarter 🚀
-        </Typography>
-      </Box>
+          Login
+        </button>
+        <button
+          className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-300 bg-gradient-to-r from-emerald-500 to-purple-600 text-white shadow-lg"
+        >
+          Sign Up
+        </button>
+      </div>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Stack spacing={2.5}>
-          <TextField
-            {...register('name')}
-            label="Full Name"
-            type="text"
-            fullWidth
-            size="small"
-            placeholder="Prince Gupta"
-            error={!!errors.name}
-            helperText={errors.name?.message}
-            InputLabelProps={{
-              sx: {
-                color: '#94A3B8',
-                '&.Mui-focused': {
-                  color: '#10B981'
-                }
-              }
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <PersonIcon sx={{ fontSize: 20, color: '#10B981', opacity: 0.7 }} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              '& .MuiInputBase-root': {
-                fontSize: { xs: '0.875rem', sm: '1rem' },
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                borderRadius: 2,
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                },
-                '&.Mui-focused': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
-                }
-              },
-              '& .MuiInputBase-input': {
-                color: '#F1F5F9',
-                '&::placeholder': {
-                  color: '#64748B',
-                  opacity: 1
-                },
-                '&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus, &:-webkit-autofill:active': {
-                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
-                  WebkitTextFillColor: '#F1F5F9 !important',
-                  caretColor: '#F1F5F9',
-                  transition: 'background-color 5000s ease-in-out 0s'
-                }
-              },
-            }}
-          />
+      {/* Form Content */}
+      <div className="p-8">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-emerald-500/20 rounded-lg">
+              <UserPlus className="text-emerald-400" size={24} />
+            </div>
+            <h2 className="text-2xl font-bold text-white">Create Account</h2>
+          </div>
+          <p className="text-slate-400 text-sm">Join KhataBahi and start managing money smarter 🚀</p>
+        </div>
 
-          <TextField
-            {...register('email')}
-            label="Email"
-            type="email"
-            fullWidth
-            size="small"
-            placeholder="you@example.com"
-            error={!!errors.email}
-            helperText={errors.email?.message}
-            InputLabelProps={{
-              sx: {
-                color: '#94A3B8',
-                '&.Mui-focused': {
-                  color: '#10B981'
-                }
-              }
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <EmailIcon sx={{ fontSize: 20, color: '#10B981', opacity: 0.7 }} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              '& .MuiInputBase-root': {
-                fontSize: { xs: '0.875rem', sm: '1rem' },
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                borderRadius: 2,
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                },
-                '&.Mui-focused': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
-                }
-              },
-              '& .MuiInputBase-input': {
-                color: '#F1F5F9',
-                '&::placeholder': {
-                  color: '#64748B',
-                  opacity: 1
-                },
-                '&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus, &:-webkit-autofill:active': {
-                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
-                  WebkitTextFillColor: '#F1F5F9 !important',
-                  caretColor: '#F1F5F9',
-                  transition: 'background-color 5000s ease-in-out 0s'
-                }
-              },
-            }}
-          />
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          {/* Name Field */}
+          <div>
+            <label className="block text-slate-300 text-sm font-medium mb-2">Full Name</label>
+            <div className="relative group">
+              <User className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.name ? 'text-rose-500' : 'text-slate-400 group-focus-within:text-emerald-400'}`} size={20} />
+              <input
+                {...register('name')}
+                type="text"
+                placeholder="Prince Gupta"
+                className={`w-full bg-white/5 border rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:bg-white/10 transition-all ${errors.name ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-emerald-500/50'}`}
+              />
+            </div>
+            {errors.name && <p className="mt-1.5 text-xs text-rose-500 items-center flex gap-1"><span className="w-1 h-1 rounded-full bg-rose-500" /> {errors.name.message}</p>}
+          </div>
 
-          <TextField
-            {...register('phoneNumber')}
-            label="Phone Number"
-            type="tel"
-            fullWidth
-            size="small"
-            placeholder="10-digit mobile number"
-            error={!!errors.phoneNumber}
-            helperText={errors.phoneNumber?.message || "Required for group member syncing"}
-            InputLabelProps={{
-              sx: {
-                color: '#94A3B8',
-                '&.Mui-focused': {
-                  color: '#10B981'
-                }
-              }
-            }}
-            FormHelperTextProps={{
-              sx: {
-                color: '#64748B',
-                fontSize: '0.7rem'
-              }
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <PhoneIcon sx={{ fontSize: 20, color: '#10B981', opacity: 0.7 }} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              '& .MuiInputBase-root': {
-                fontSize: { xs: '0.875rem', sm: '1rem' },
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                borderRadius: 2,
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                },
-                '&.Mui-focused': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
-                }
-              },
-              '& .MuiInputBase-input': {
-                color: '#F1F5F9',
-                '&::placeholder': {
-                  color: '#64748B',
-                  opacity: 1
-                },
-                '&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus, &:-webkit-autofill:active': {
-                  WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
-                  WebkitTextFillColor: '#F1F5F9 !important',
-                  caretColor: '#F1F5F9',
-                  transition: 'background-color 5000s ease-in-out 0s'
-                }
-              },
-            }}
-          />
+          {/* Email Field */}
+          <div>
+            <label className="block text-slate-300 text-sm font-medium mb-2">Email Address</label>
+            <div className="relative group">
+              <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.email ? 'text-rose-500' : 'text-slate-400 group-focus-within:text-emerald-400'}`} size={20} />
+              <input
+                {...register('email')}
+                type="email"
+                placeholder="you@example.com"
+                className={`w-full bg-white/5 border rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:bg-white/10 transition-all ${errors.email ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-emerald-500/50'}`}
+              />
+            </div>
+            {errors.email && <p className="mt-1.5 text-xs text-rose-500 items-center flex gap-1"><span className="w-1 h-1 rounded-full bg-rose-500" /> {errors.email.message}</p>}
+          </div>
 
-          <Box>
-            <TextField
-              {...register('password')}
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              fullWidth
-              size="small"
-              placeholder="At least 6 characters"
-              error={!!errors.password}
-              helperText={errors.password?.message}
-              InputLabelProps={{
-                sx: {
-                  color: '#94A3B8',
-                  '&.Mui-focused': {
-                    color: '#10B981'
-                  }
-                }
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LockIcon sx={{ fontSize: 20, color: '#10B981', opacity: 0.7 }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                      size="small"
-                      sx={{ 
-                        color: '#94A3B8',
-                        '&:hover': {
-                          color: '#10B981',
-                          backgroundColor: 'rgba(16, 185, 129, 0.1)'
-                        }
-                      }}
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiInputBase-root': {
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                  borderRadius: 2,
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  },
-                  '&.Mui-focused': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
-                  }
-                },
-                '& .MuiInputBase-input': {
-                  color: '#F1F5F9',
-                  '&::placeholder': {
-                    color: '#64748B',
-                    opacity: 1
-                  },
-                  '&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus, &:-webkit-autofill:active': {
-                    WebkitBoxShadow: '0 0 0 100px #1E293B inset !important',
-                    WebkitTextFillColor: '#F1F5F9 !important',
-                    caretColor: '#F1F5F9',
-                    transition: 'background-color 5000s ease-in-out 0s'
-                  }
-                },
-              }}
-            />
-            {!errors.password && (
-              <Typography
-                variant="caption"
-                sx={{
-                  display: 'block',
-                  mt: 0.75,
-                  fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                  color: '#64748B',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5
-                }}
+          {/* Phone Field */}
+          <div>
+            <label className="block text-slate-300 text-sm font-medium mb-2">Phone Number</label>
+            <div className="relative group">
+              <Phone className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.phoneNumber ? 'text-rose-500' : 'text-slate-400 group-focus-within:text-emerald-400'}`} size={20} />
+              <input
+                {...register('phoneNumber')}
+                type="tel"
+                placeholder="10-digit mobile number"
+                className={`w-full bg-white/5 border rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:bg-white/10 transition-all ${errors.phoneNumber ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-emerald-500/50'}`}
+              />
+            </div>
+            <p className={`mt-1.5 text-xs flex items-center gap-1 ${errors.phoneNumber ? 'text-rose-500' : 'text-slate-500'}`}>
+              {errors.phoneNumber ? (
+                <><span className="w-1 h-1 rounded-full bg-rose-500" /> {errors.phoneNumber.message}</>
+              ) : (
+                "Required for group member syncing"
+              )}
+            </p>
+          </div>
+
+          {/* Password Field */}
+          <div>
+            <label className="block text-slate-300 text-sm font-medium mb-2">Password</label>
+            <div className="relative group">
+              <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.password ? 'text-rose-500' : 'text-slate-400 group-focus-within:text-emerald-400'}`} size={20} />
+              <input
+                {...register('password')}
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                className={`w-full bg-white/5 border rounded-2xl py-3.5 pl-12 pr-12 text-white placeholder-slate-500 focus:outline-none focus:bg-white/10 transition-all ${errors.password ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-emerald-500/50'}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
               >
-                🔒 Use letters, numbers & symbols for security
-              </Typography>
-            )}
-          </Box>
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+            <p className={`mt-1.5 text-xs flex items-center gap-1 ${errors.password ? 'text-rose-500' : 'text-slate-500'}`}>
+              {errors.password ? (
+                <><span className="w-1 h-1 rounded-full bg-rose-500" /> {errors.password.message}</>
+              ) : (
+                <><CheckCircle2 size={12} className="text-emerald-400" /> Min 8 chars with uppercase, lowercase, number & special character</>
+              )}
+            </p>
+          </div>
 
-          <Button
+          {/* Submit Button */}
+          <button
             type="submit"
-            variant="contained"
-            fullWidth
             disabled={loading}
-            sx={{
-              mt: 1.5,
-              py: { xs: 1.4, sm: 1.6 },
-              borderRadius: 2.5,
-              fontWeight: 700,
-              fontSize: { xs: '0.9rem', sm: '1rem' },
-              textTransform: 'none',
-              minHeight: { xs: 48, sm: 52 },
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-              boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                boxShadow: '0 12px 28px rgba(16, 185, 129, 0.4)',
-                transform: 'translateY(-2px)',
-              },
-              '&:active': {
-                transform: 'translateY(0px)',
-              },
-              '&:disabled': {
-                background: 'rgba(16, 185, 129, 0.3)',
-                color: 'rgba(255, 255, 255, 0.5)'
-              }
-            }}
+            className="w-full bg-gradient-to-r from-emerald-500 to-purple-600 text-white font-bold py-4 rounded-2xl hover:shadow-lg hover:shadow-purple-500/30 transition-all flex items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <CircularProgress size={20} color="inherit" />
-                Creating account...
+                <span>Creating Account...</span>
               </Box>
             ) : (
-              'Create Account'
+              <>
+                <span>Create Account</span>
+                <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
+              </>
             )}
-          </Button>
-        </Stack>
-      </form>
+          </button>
 
-      {/* Footer */}
-      <Typography
-        variant="body2"
-        sx={{
-          mt: { xs: 2.5, sm: 3 },
-          textAlign: 'center',
-          fontSize: { xs: '0.75rem', sm: '0.875rem' },
-          color: '#94A3B8'
-        }}
-      >
-        Already have an account?{' '}
-        <Link
-          component={RouterLink}
-          to="/login"
-          sx={{
-            fontWeight: 600,
-            textDecoration: 'none',
-            color: '#10B981',
-            '&:hover': { 
-              textDecoration: 'underline',
-              color: '#34D399'
-            },
-          }}
-        >
-          Log in
-        </Link>
-      </Typography>
-    </Box>
+          <p className="text-center text-sm text-slate-400">
+            Already have an account?{' '}
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="text-emerald-400 font-semibold hover:text-emerald-300 transition-colors underline decoration-emerald-500/30 underline-offset-4"
+            >
+              Log in
+            </button>
+          </p>
+        </form>
+      </div>
+    </div>
   );
 }
