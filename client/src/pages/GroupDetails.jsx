@@ -309,18 +309,6 @@ export default function GroupDetails() {
 
     const fetchGroupDetails = async (isSilent = false) => {
         try {
-            // Optimization: If we have the group in our list but not in currentGroup, 
-            // pre-populate it so the UI doesn't show a blank loader
-            const { groups } = useGroupStore.getState();
-            if (!group) {
-                const existingGroup = groups.find(g => g._id === id);
-                if (existingGroup) {
-                    // This will trigger a re-render with basic info (name, etc)
-                    // while fetchFromStore runs in background
-                    useGroupStore.setState({ currentGroup: { ...existingGroup, expenses: [] } });
-                }
-            }
-
             await fetchFromStore(id, isSilent);
             setError(null);
         } catch (err) {
@@ -755,8 +743,16 @@ export default function GroupDetails() {
     // Initial Load: Show full page loader only if we don't have group data yet
     // Subsequent refreshes (silent) will not trigger this, keeping UI and Dialogs mounted
     if (loading && !group) return <PageLoader message="Loading Group Details..." />;
-    if (error && !group) return <Alert severity="error">{error}</Alert>;
-    if (!group && !loading) return <Alert severity="warning">Group not found</Alert>;
+    if (error && !group) return (
+        <PageContainer>
+            <Alert severity="error" sx={{ borderRadius: '16px', mt: 4 }}>{error}</Alert>
+        </PageContainer>
+    );
+    if (!group) return (
+        <PageContainer>
+            <Alert severity="warning" sx={{ borderRadius: '16px', mt: 4 }}>Group not found or you don't have access.</Alert>
+        </PageContainer>
+    );
 
     return (
         <PageContainer>
