@@ -9,8 +9,6 @@ import {
     Stack,
     Divider,
     Paper,
-    Divider,
-    Paper,
     Slide,
     useTheme,
     useMediaQuery
