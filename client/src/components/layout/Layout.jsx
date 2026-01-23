@@ -5,7 +5,7 @@
  * Modern fintech design with glassmorphic sidebar and Lucide icons.
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Box, Drawer, IconButton, Typography, useTheme, useMediaQuery, alpha, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { Logout as LogoutIcon, DeleteForever as DeleteIcon } from '@mui/icons-material';
@@ -61,6 +61,14 @@ export function Layout({ children }) {
   const { user, logout, deleteAccount } = useAuthStore();
   const { mode } = useThemeContext();
   const isDark = mode === 'dark';
+  const contentRef = useRef(null);
+
+  // Auto-scroll to top on route change
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.scrollTo(0, 0);
+    }
+  }, [location.pathname]);
 
   const themeColors = {
     bgPrimary: isDark ? '#0F172A' : '#F8FAFC',
@@ -259,7 +267,15 @@ export function Layout({ children }) {
 
                 <div className="flex items-center gap-1.5 z-10">
                   {badge && (
-                    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-bold text-emerald-400 uppercase tracking-tight">
+                    <span className={`
+                      inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-tight shadow-sm
+                      ${badge === 'Live'
+                        ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400 animate-in fade-in zoom-in duration-500'
+                        : 'border-white/10 bg-white/5 text-slate-400'}
+                    `}>
+                      {badge === 'Live' && (
+                        <span className="flex h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
+                      )}
                       {badge}
                     </span>
                   )}
@@ -407,6 +423,15 @@ export function Layout({ children }) {
               onClose={handleMenuClose}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              PaperProps={{
+                sx: {
+                  bgcolor: isDark ? '#0f172a' : '#ffffff',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                  borderRadius: '12px',
+                  boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : '0 8px 24px rgba(0,0,0,0.1)',
+                  mt: 1
+                }
+              }}
             >
               <MenuItem onClick={handleLogout} sx={{ gap: 1 }}>
                 <ListItemIcon sx={{ minWidth: 'auto !important' }}>
@@ -420,6 +445,7 @@ export function Layout({ children }) {
 
         {/* Scrollable Content Pane */}
         <Box
+          ref={contentRef}
           sx={{
             flex: 1,
             overflowY: 'auto', // ONLY THIS AREA SCROLLS

@@ -145,41 +145,51 @@ const getGroupDetails = async (req, res) => {
         const expenses = await GroupExpense.find({ group: req.params.id })
             .populate('paidBy', 'name email')
             .populate('splits.user', 'name email')
-            .sort({ date: -1 });
+            .sort({ date: -1, createdAt: -1 });
 
-        // Fix expenses for shadow members
+        // Fix expenses for shadow members - ensure we don't lose IDs when populate fails
         const fixedExpenses = expenses.map(exp => {
+            const rawPaidBy = exp.get('paidBy', null, { getters: false }); // Original ID
             const expense = exp.toObject();
 
-            // Fix paidBy if populate failed
+            // Fix paidBy if populate failed (common for shadow members)
             if (!expense.paidBy || !expense.paidBy.name) {
-                // Try to use stored paidByName first
+                // Use stored paidByName if available, and restore the original ID
                 if (expense.paidByName) {
-                    expense.paidBy = { _id: expense.paidBy, name: expense.paidByName };
+                    expense.paidBy = { _id: rawPaidBy, name: expense.paidByName };
                 } else {
-                    // Fallback to group members
-                    const payer = group.members.find(m =>
-                        (m.userId?._id?.toString() || m.userId?.toString()) === (expense.paidBy?.toString() || expense.paidBy?._id?.toString())
-                    );
+                    // Fallback: look up in group members using the raw ID
+                    const payer = group.members.find(m => {
+                        const mId = m.userId?._id?.toString() || m.userId?.toString() || m._id?.toString();
+                        return mId === rawPaidBy?.toString();
+                    });
+                    
                     if (payer) {
-                        expense.paidBy = { _id: expense.paidBy, name: payer.name, email: payer.email };
+                        expense.paidBy = { _id: rawPaidBy, name: payer.name, email: payer.email };
+                    } else if (rawPaidBy) {
+                        // Last resort: just keep the ID
+                        expense.paidBy = { _id: rawPaidBy, name: 'Unknown' };
                     }
                 }
             }
 
-            // Fix splits
-            expense.splits = expense.splits.map(split => {
+            // Fix splits similarly
+            expense.splits = expense.splits.map((split, index) => {
+                const rawSplitUser = exp.splits[index].get('user', null, { getters: false }); // Original ID
+
                 if (!split.user || !split.user.name) {
-                    // Try to use stored userName first
                     if (split.userName) {
-                        split.user = { _id: split.user, name: split.userName };
+                        split.user = { _id: rawSplitUser, name: split.userName };
                     } else {
-                        // Fallback to group members
-                        const member = group.members.find(m =>
-                            (m.userId?._id?.toString() || m.userId?.toString()) === (split.user?.toString() || split.user?._id?.toString())
-                        );
+                        const member = group.members.find(m => {
+                            const mId = m.userId?._id?.toString() || m.userId?.toString() || m._id?.toString();
+                            return mId === rawSplitUser?.toString();
+                        });
+                        
                         if (member) {
-                            split.user = { _id: split.user, name: member.name, email: member.email };
+                            split.user = { _id: rawSplitUser, name: member.name, email: member.email };
+                        } else if (rawSplitUser) {
+                            split.user = { _id: rawSplitUser, name: 'Unknown' };
                         }
                     }
                 }
@@ -385,13 +395,20 @@ const removeMember = async (req, res) => {
         });
         
         let memberBalance = 0;
+        let paidTotal = 0;
+        let owedTotal = 0;
+
+        console.log(`\n🔍 Calculating balance for member: ${memberToRemove.name} (ID: ${targetUserId})`);
+        console.log(`📊 Total expenses to check: ${allExpenses.length}`);
 
         for (const exp of allExpenses) {
             const payerId = getSafeId(exp.paidBy);
             
             // If this member paid the expense, they are owed (+)
             if (payerId === targetUserId) {
+                paidTotal += exp.amount;
                 memberBalance += exp.amount;
+                console.log(`  ✅ Paid: ₹${exp.amount} (${exp.description || exp.category})`);
             }
 
             // If this member is in splits, they owe (-)
@@ -399,14 +416,22 @@ const removeMember = async (req, res) => {
                 exp.splits.forEach(split => {
                     const splitUserId = getSafeId(split.user);
                     if (splitUserId === targetUserId) {
+                        owedTotal += split.amount;
                         memberBalance -= split.amount;
+                        console.log(`  ❌ Owes: ₹${split.amount} (${exp.description || exp.category})`);
                     }
                 });
             }
         }
 
-        // BLOCK removal if unsettled balance (with ₹1 tolerance for rounding)
-        if (Math.abs(memberBalance) > 1) {
+        console.log(`\n💰 Final Balance Calculation:`);
+        console.log(`   Total Paid: ₹${paidTotal.toFixed(2)}`);
+        console.log(`   Total Owed: ₹${owedTotal.toFixed(2)}`);
+        console.log(`   Net Balance: ₹${memberBalance.toFixed(2)}`);
+        console.log(`   Absolute Balance: ₹${Math.abs(memberBalance).toFixed(2)}`);
+
+        // BLOCK removal if unsettled balance (with ₹5 tolerance for rounding/settlement errors)
+        if (Math.abs(memberBalance) > 5) {
             res.status(400);
             const owesOrOwed = memberBalance > 0 ? 'is owed' : 'owes';
             throw new Error(

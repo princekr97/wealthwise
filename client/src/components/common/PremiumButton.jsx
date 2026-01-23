@@ -1,235 +1,184 @@
 /**
- * @file AnimatedButton.jsx
- * @description Premium animated button with stars, glow effects, and gradient borders
- * Inspired by space-themed design, adapted for WealthWise brand
+ * @file PremiumButton.jsx
+ * @description Refined 'Linear' style button with 1px precision borders, 
+ * elegant glass animations, and a rich dark mode aesthetic.
  */
 
 import React from 'react';
-import { Button } from '@mui/material';
+import { Button, Box } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
 
 // ============================================
 // ANIMATIONS
 // ============================================
 
-const gradientShift = keyframes`
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+const shineSweep = keyframes`
+  0% { transform: translateX(-150%) skewX(-25deg); opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { transform: translateX(150%) skewX(-25deg); opacity: 0; }
 `;
 
-const pulse = keyframes`
-  0% {
-    transform: scale(0.75);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
-  }
-  100% {
-    transform: scale(0.75);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-  }
-`;
-
-const animStar = keyframes`
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(-135rem);
-  }
-`;
-
-const animStarRotate = keyframes`
-  from {
-    transform: rotate(360deg);
-  }
-  to {
-    transform: rotate(0);
-  }
+const glowPulse = keyframes`
+  0%, 100% { opacity: 0.3; filter: blur(12px); transform: scale(1); }
+  50% { opacity: 0.6; filter: blur(16px); transform: scale(1.05); }
 `;
 
 // ============================================
 // STYLED COMPONENTS
 // ============================================
 
-const StarsContainer = styled('div')({
-    position: 'absolute',
-    zIndex: -1,
-    width: '100%',
-    height: '100%',
-    overflow: 'hidden',
-    transition: '0.5s',
-    backdropFilter: 'blur(1rem)',
-    borderRadius: '5rem',
-});
+const StyledButton = styled(Button)(({ theme, variant = 'primary' }) => {
+  const isPrimary = variant === 'primary';
+  const accentColor = isPrimary ? '#10B981' : '#3B82F6';
+  const glowColor = isPrimary ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)';
 
-const Stars = styled('div')({
-    position: 'relative',
-    background: 'transparent',
-    width: '200rem',
-    height: '200rem',
-    '&::after': {
-        content: '""',
-        position: 'absolute',
-        top: '-10rem',
-        left: '-100rem',
-        width: '100%',
-        height: '100%',
-        animation: `${animStarRotate} 90s linear infinite`,
-        backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1%)',
-        backgroundSize: '50px 50px',
-    },
-    '&::before': {
-        content: '""',
-        position: 'absolute',
-        top: 0,
-        left: '-50%',
-        width: '170%',
-        height: '500%',
-        animation: `${animStar} 60s linear infinite`,
-        backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1%)',
-        backgroundSize: '50px 50px',
-        opacity: 0.5,
-    },
-});
-
-const Glow = styled('div')({
-    position: 'absolute',
-    display: 'flex',
-    width: '12rem',
-    height: '100%',
-    left: 0,
-    top: 0,
-});
-
-const Circle = styled('div')(({ index }) => ({
-    width: '100%',
-    height: '30px',
-    filter: 'blur(2rem)',
-    animation: `${pulse} 4s infinite`,
-    zIndex: -1,
-    background: index === 1
-        ? 'rgba(16, 185, 129, 0.636)'  // Emerald
-        : 'rgba(6, 182, 212, 0.704)',   // Cyan
-}));
-
-const AnimatedButton = styled(Button)(({ variant = 'primary' }) => ({
-    position: 'relative',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minWidth: '13rem',
-    overflow: 'hidden',
-    height: '3rem',
-    backgroundSize: '300% 300%',
-    cursor: 'pointer',
-    backdropFilter: 'blur(1rem)',
-    borderRadius: '5rem',
-    transition: '0.5s',
-    animation: `${gradientShift} 5s ease infinite`,
-    border: 'double 4px transparent',
-    backgroundImage:
-        variant === 'primary'
-            ? 'linear-gradient(#0f172a, #0f172a), linear-gradient(137.48deg, #10B981 10%, #06B6D4 45%, #3B82F6 67%, #8B5CF6 87%)'
-            : 'linear-gradient(#1e293b, #1e293b), linear-gradient(137.48deg, #8B5CF6 10%, #3B82F6 45%, #06B6D4 67%, #10B981 87%)',
-    backgroundOrigin: 'border-box',
-    backgroundClip: 'content-box, border-box',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-    fontSize: '0.875rem',
+  return {
+    // Reset MUI
+    textTransform: 'none',
+    borderRadius: '10px', // Precise corner radius
+    padding: '10px 24px',
+    minWidth: 'auto',
     fontWeight: 700,
-    letterSpacing: '0.15em',
-    color: '#ffffff',
-    textShadow: '0 0 4px rgba(255, 255, 255, 0.5)',
-    textTransform: 'uppercase',
+    fontSize: '0.875rem',
+    letterSpacing: '-0.02em',
+    color: '#F8FAFC',
+    position: 'relative',
+    overflow: 'hidden',
+    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+
+    // Background - Elegant Dark Slate with subtle top highlights
+    backgroundColor: '#0F172A',
+    backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, transparent 100%)',
+
+    // Thin 1px High-Precision Border
+    border: `1px solid rgba(255, 255, 255, 0.08)`,
+    boxShadow: `0 1px 1px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)`,
+
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      inset: 0,
+      borderRadius: 'inherit',
+      padding: '1px', // Border thickness
+      background: `linear-gradient(135deg, ${accentColor} 0%, rgba(255,255,255,0.1) 50%, ${accentColor} 100%)`,
+      WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+      WebkitMaskComposite: 'xor',
+      maskComposite: 'exclude',
+      opacity: 0.4,
+      transition: 'opacity 0.3s ease',
+    },
 
     '&:hover': {
-        transform: 'scale(1.05)',
-        '& .stars-container': {
-            zIndex: 1,
-            backgroundColor: '#0f172a',
-        },
+      backgroundColor: '#1E293B',
+      transform: 'translateY(-1.5px)',
+      boxShadow: `0 10px 20px -10px ${glowColor}, inset 0 1px 0 rgba(255,255,255,0.1)`,
+
+      '&::before': {
+        opacity: 1,
+      },
+
+      '& .shine-element': {
+        animation: `${shineSweep} 1.5s infinite ease-in-out`,
+      },
+
+      '& .glow-element': {
+        opacity: 0.8,
+        animation: `${glowPulse} 2s infinite ease-in-out`,
+      }
     },
 
     '&:active': {
-        border: 'double 4px #10B981',
-        backgroundOrigin: 'border-box',
-        backgroundClip: 'content-box, border-box',
-        animation: 'none',
-        '& .glow-circle': {
-            background: '#10B981',
-        },
+      transform: 'scale(0.97)',
+      backgroundColor: '#0F172A',
     },
 
     '&.Mui-disabled': {
-        opacity: 0.5,
-        cursor: 'not-allowed',
-        transform: 'none',
-    },
+      opacity: 0.4,
+      borderColor: 'rgba(255,255,255,0.1)',
+      backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    }
+  };
+});
+
+const ShineElement = styled('div')({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)',
+  zIndex: 1,
+  pointerEvents: 'none',
+  transform: 'translateX(-150%) skewX(-25deg)',
+});
+
+const GlowElement = styled('div')(({ color }) => ({
+  position: 'absolute',
+  inset: '-20px',
+  background: `radial-gradient(circle at center, ${color}, transparent 70%)`,
+  zIndex: -1,
+  opacity: 0,
+  transition: 'opacity 0.4s ease',
+  pointerEvents: 'none',
 }));
 
 // ============================================
 // MAIN COMPONENT
 // ============================================
 
-/**
- * Premium animated button with star effects
- * @param {Object} props - Button props
- * @param {string} props.children - Button text
- * @param {Function} props.onClick - Click handler
- * @param {string} props.variant - 'primary' or 'secondary'
- * @param {boolean} props.disabled - Disabled state
- * @param {boolean} props.fullWidth - Full width button
- * @param {Object} props.sx - Additional MUI sx styles
- * @returns {JSX.Element}
- * 
- * @example
- * <AnimatedButton onClick={handleClick}>
- *   Save Changes
- * </AnimatedButton>
- */
 const PremiumButton = ({
-    children,
-    onClick,
-    variant = 'primary',
-    disabled = false,
-    fullWidth = false,
-    startIcon,
-    endIcon,
-    type = 'button',
-    ...props
+  children,
+  onClick,
+  variant = 'primary',
+  disabled = false,
+  fullWidth = false,
+  startIcon,
+  endIcon,
+  type = 'button',
+  sx = {},
+  ...props
 }) => {
-    return (
-        <AnimatedButton
-            onClick={onClick}
-            variant={variant}
-            disabled={disabled}
-            fullWidth={fullWidth}
-            startIcon={startIcon}
-            endIcon={endIcon}
-            type={type}
-            {...props}
-        >
-            <strong style={{ zIndex: 2 }}>{children}</strong>
+  const isPrimary = variant === 'primary';
+  const accentColor = isPrimary ? '#10B981' : '#3B82F6';
+  const glowColor = isPrimary ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)';
 
-            <StarsContainer className="stars-container">
-                <Stars />
-            </StarsContainer>
+  return (
+    <StyledButton
+      onClick={onClick}
+      variant={variant}
+      disabled={disabled}
+      fullWidth={fullWidth}
+      type={type}
+      sx={sx}
+      disableRipple={false}
+      {...props}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, position: 'relative', zIndex: 2 }}>
+        {startIcon && (
+          <Box component="span" sx={{ display: 'flex', alignItems: 'center', '& svg': { width: 18, height: 18, opacity: 0.8 } }}>
+            {startIcon}
+          </Box>
+        )}
 
-            <Glow>
-                <Circle className="glow-circle" index={1} />
-                <Circle className="glow-circle" index={2} />
-            </Glow>
-        </AnimatedButton>
-    );
+        <Box component="span">
+          {children}
+        </Box>
+
+        {endIcon && (
+          <Box component="span" sx={{ display: 'flex', alignItems: 'center', '& svg': { width: 18, height: 18, opacity: 0.8 } }}>
+            {endIcon}
+          </Box>
+        )}
+      </Box>
+
+      {/* Shine Effect */}
+      <ShineElement className="shine-element" />
+
+      {/* Background Glow */}
+      <GlowElement className="glow-element" color={glowColor} />
+    </StyledButton>
+  );
 };
 
 export default PremiumButton;
+

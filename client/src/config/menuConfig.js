@@ -24,7 +24,8 @@ export const menuConfig = {
     label: 'Groups',
     icon: 'Groups',
     roles: ['*'],
-    order: 2
+    order: 2,
+    badge: 'Live'
   },
 
   expenses: {
@@ -108,7 +109,8 @@ export const getMenuItems = (userRole = 'user') => {
       key,
       to: config.path,
       label: config.label,
-      icon: config.icon
+      icon: config.icon,
+      badge: config.badge
     }));
 };
 

@@ -24,7 +24,7 @@ import {
 } from '@mui/icons-material';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { toast } from 'sonner';
-import { groupService } from '../../services/groupService';
+import { useGroupStore } from '../../store/groupStore';
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
     '& .MuiDialog-paper': {
@@ -39,6 +39,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
 
 export default function AddGroupDialog({ open, onClose, onGroupCreated, group }) {
     const isEditMode = !!group;
+    const { createGroup, updateGroup } = useGroupStore();
 
     const { control, handleSubmit, reset, watch } = useForm({
         defaultValues: {
@@ -75,14 +76,14 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
     const onSubmit = async (data) => {
         try {
             if (isEditMode) {
-                await groupService.updateGroup(group._id, {
+                await updateGroup(group._id, {
                     name: data.name,
                     type: data.type
                 });
                 toast.success('Group updated successfully');
             } else {
                 const validMembers = data.members.filter(m => m.name.trim() !== '' && (m.phone?.trim() !== '' || m.email?.trim() !== ''));
-                await groupService.createGroup({
+                await createGroup({
                     ...data,
                     members: validMembers
                 });

@@ -22,38 +22,47 @@ import {
     Add as AddIcon,
     Group as GroupIcon,
     ArrowForward as ArrowForwardIcon,
-    ExpandMore as ExpandMoreIcon
+    ExpandMore as ExpandMoreIcon,
+    TrendingUp as TrendingUpIcon,
+    TrendingDown as TrendingDownIcon,
+    Event as CalendarIcon,
+    LocationOn as MapPinIcon,
+    People as UsersIcon,
+    MonetizationOn as MoneyIcon,
+    AccountBalance as BalanceIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { groupService } from '../services/groupService';
 import PageContainer from '../components/layout/PageContainer';
 import PageHeader from '../components/layout/PageHeader';
+import PremiumButton from '../components/common/PremiumButton';
 import AddGroupDialog from '../components/groups/AddGroupDialog';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, formatDate } from '../utils/formatters';
 import SummaryCardGrid from '../components/layout/SummaryCardGrid';
 import SummaryCard from '../components/layout/SummaryCard';
 import PageLoader from '../components/common/PageLoader';
 import { useAuthStore } from '../store/authStore';
+import { useGroupStore } from '../store/groupStore';
 import { getAvatarConfig } from '../utils/avatarHelper';
 
 
 export default function Groups() {
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const [groups, setGroups] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const {
+        groups,
+        loading,
+        groupStats: stats,
+        groupBalances,
+        fetchGroups: fetchGroupsFromStore,
+        setStats,
+        setBalances,
+        isStale
+    } = useGroupStore();
+
+    const [localLoading, setLocalLoading] = useState(false);
     const [error, setError] = useState(null);
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-    const [groupBalances, setGroupBalances] = useState({});
-
-    // Global Stats
-    const [stats, setStats] = useState({
-        totalOwed: 0,
-        totalOwe: 0,
-        netBalance: 0,
-        todaySpending: 0,
-        monthSpending: 0
-    });
 
     // Pre-compute user identity set (performance optimization)
     const myIdentifiers = React.useMemo(() => {
@@ -67,34 +76,38 @@ export default function Groups() {
         return ids;
     }, [user?._id, user?.email, user?.name]);
 
-    // Fetch groups on mount
+    // Initial fetch
     useEffect(() => {
         if (user) {
-            fetchGroups();
+            // Only show full loader if data is stale or empty
+            const shouldForce = groups.length === 0;
+            fetchGroups(shouldForce);
         }
-    }, [user]);
+    }, [user?._id]);
 
-    // Refresh data when user returns to this page (e.g., navigating back from group details)
+    // Refresh data silently when user returns to this page
     useEffect(() => {
         const handleFocus = () => {
-            if (user) {
-                fetchGroups();
+            if (user && isStale()) {
+                fetchGroups(false, true); // Silent background refresh if stale
             }
         };
 
         window.addEventListener('focus', handleFocus);
         return () => window.removeEventListener('focus', handleFocus);
-    }, [user]);
+    }, [user?._id]);
 
-    const fetchGroups = async () => {
+    const fetchGroups = async (force = false, silent = false) => {
+        // Prevent multiple simultaneous fetches if not forced
+        if (!force && !isStale() && groups.length > 0) return;
+
         try {
-            setLoading(true);
-            const groupsData = await groupService.getGroups();
-            setGroups(groupsData);
+            if (!silent) setLocalLoading(true);
 
-            // Calculate Global Stats
-            // Note: This fetches details for each group (N+1 pattern)
-            // TODO: Optimize with backend endpoint that returns pre-calculated stats
+            // Get base group list
+            const groupsData = await fetchGroupsFromStore(force, silent);
+
+            // Note: Recalculating stats locally for now until backend supports pre-calculated stats
             let totalOwed = 0;
             let totalOwe = 0;
             let todaySpending = 0;
@@ -105,13 +118,11 @@ export default function Groups() {
             const details = await Promise.all(promises);
             const balances = {};
 
-            // Use pre-computed myIdentifiers from useMemo
             const extendedIdentifiers = new Set(myIdentifiers);
 
             details.forEach(groupDetail => {
                 if (!groupDetail || !groupDetail.expenses) return;
 
-                // Extend identity set with group-specific member IDs
                 if (groupDetail.members) {
                     const myIdStr = String(user._id);
                     const myEmail = user.email ? user.email.toLowerCase() : '';
@@ -132,11 +143,8 @@ export default function Groups() {
                 }
 
                 let myGroupBalance = 0;
-
                 groupDetail.expenses.forEach(exp => {
                     const amount = exp.amount;
-
-                    // 1. Did I Pay?
                     let isPayer = false;
                     const payer = exp.paidBy;
                     if (payer) {
@@ -151,11 +159,8 @@ export default function Groups() {
                         if (!isPayer && exp.paidByName && extendedIdentifiers.has(exp.paidByName.toLowerCase().trim())) isPayer = true;
                     }
 
-                    if (isPayer) {
-                        myGroupBalance += amount;
-                    }
+                    if (isPayer) myGroupBalance += amount;
 
-                    // 2. Did I Split?
                     if (exp.splits) {
                         exp.splits.forEach(split => {
                             let isSplitUser = false;
@@ -177,20 +182,11 @@ export default function Groups() {
 
                             if (isSplitUser) {
                                 myGroupBalance -= split.amount;
-
-                                // Calculate Spending Stats
-                                // Exclude Settlements (Debt Repayments/Receivals) from "Spending"
                                 if (exp.date && exp.category !== 'Settlement') {
                                     const expDate = new Date(exp.date);
                                     if (!isNaN(expDate.getTime())) {
-                                        // Check Today
-                                        if (expDate.toDateString() === today.toDateString()) {
-                                            todaySpending += split.amount;
-                                        }
-                                        // Check This Month
-                                        if (expDate.getMonth() === today.getMonth() && expDate.getFullYear() === today.getFullYear()) {
-                                            monthSpending += split.amount;
-                                        }
+                                        if (expDate.toDateString() === today.toDateString()) todaySpending += split.amount;
+                                        if (expDate.getMonth() === today.getMonth() && expDate.getFullYear() === today.getFullYear()) monthSpending += split.amount;
                                     }
                                 }
                             }
@@ -198,16 +194,13 @@ export default function Groups() {
                     }
                 });
 
-                // Floating point fix
                 myGroupBalance = Math.round(myGroupBalance * 100) / 100;
-
                 if (myGroupBalance > 0.01) totalOwed += myGroupBalance;
                 else if (myGroupBalance < -0.01) totalOwe += Math.abs(myGroupBalance);
-
                 balances[groupDetail._id] = myGroupBalance;
             });
-            setGroupBalances(balances);
 
+            setBalances(balances);
             setStats({
                 totalOwed,
                 totalOwe,
@@ -219,12 +212,8 @@ export default function Groups() {
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to fetch groups');
         } finally {
-            setLoading(false);
+            setLocalLoading(false);
         }
-    };
-
-    const handleGroupCreated = () => {
-        fetchGroups();
     };
 
     const getTypeEmoji = (type) => {
@@ -269,6 +258,12 @@ export default function Groups() {
         backgroundColor: 'rgba(255,255,255,0.01)'
     };
 
+    const handleGroupCreated = () => {
+        fetchGroups(true);
+    };
+
+    if (localLoading && groups.length === 0) return <PageLoader message="Loading Groups..." />;
+
     return (
         <PageContainer>
             <PageHeader
@@ -282,7 +277,7 @@ export default function Groups() {
             <Box sx={{ mb: 3, mt: 1 }}>
                 <Box
                     sx={{
-                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)',
+                        background: 'linear-gradient(135deg, rgba(65, 118, 202, 0.1) 0%, rgba(2, 30, 21, 0.1) 100%)',
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                         borderRadius: '20px',
                         p: { xs: 3, sm: 4 },
@@ -405,7 +400,7 @@ export default function Groups() {
                                 }
                             }}
                         >
-                            <Typography sx={{ fontSize: '1.5rem', mb: 0.5 }}>📈</Typography>
+                            <TrendingUpIcon sx={{ fontSize: '1.6rem', mb: 0.5, color: '#10B981', filter: 'drop-shadow(0 4px 6px rgba(16, 185, 129, 0.2))' }} />
                             <Typography
                                 sx={{
                                     fontSize: '1.4rem',
@@ -449,7 +444,7 @@ export default function Groups() {
                                 }
                             }}
                         >
-                            <Typography sx={{ fontSize: '1.5rem', mb: 0.5 }}>📉</Typography>
+                            <TrendingDownIcon sx={{ fontSize: '1.6rem', mb: 0.5, color: '#EF4444', filter: 'drop-shadow(0 4px 6px rgba(239, 68, 68, 0.2))' }} />
                             <Typography
                                 sx={{
                                     fontSize: '1.4rem',
@@ -496,7 +491,14 @@ export default function Groups() {
                                 }
                             }}
                         >
-                            <Typography sx={{ fontSize: '1.5rem', mb: 0.5 }}>⚖️</Typography>
+                            <BalanceIcon sx={{
+                                fontSize: '1.6rem',
+                                mb: 0.5,
+                                color: stats.netBalance >= 0 ? '#3B82F6' : '#EF4444',
+                                filter: stats.netBalance >= 0
+                                    ? 'drop-shadow(0 4px 6px rgba(59, 130, 246, 0.2))'
+                                    : 'drop-shadow(0 4px 6px rgba(239, 68, 68, 0.2))'
+                            }} />
                             <Typography
                                 sx={{
                                     fontSize: '1.4rem',
@@ -525,175 +527,271 @@ export default function Groups() {
             )}
 
             {/* Active Groups Section */}
-            <Box sx={{ mt: 2 }}> {/* Reduced mt from 2.5 */}
+            <Box sx={{ mt: 2 }}>
                 <Typography
                     sx={{
-                        fontSize: '0.9rem', // Reduced from 1rem
+                        fontSize: '0.9rem',
                         fontWeight: 600,
-                        mb: 1, // Reduced from 1.5
+                        mb: 1,
                         color: '#FFFFFF'
                     }}
                 >
                     Active Groups
                 </Typography>
 
-                {loading ? (
+                {loading && groups.length === 0 ? (
                     <PageLoader message="Loading Groups..." />
                 ) : groups.length === 0 ? (
                     /* Clean Empty State */
                     <Box
                         sx={{
                             textAlign: 'center',
-                            py: 4, // Reduced from 6
+                            py: 4,
                             backgroundColor: 'rgba(255,255,255,0.03)',
                             borderRadius: '10px',
                             border: '1px dashed rgba(255,255,255,0.1)'
                         }}
                     >
-                        <GroupIcon sx={{ fontSize: 32, color: '#6B7280', mb: 1.5, opacity: 0.6 }} /> {/* Reduced size */}
+                        <GroupIcon sx={{ fontSize: 32, color: '#6B7280', mb: 1.5, opacity: 0.6 }} />
                         <Typography sx={{ fontSize: '0.95rem', fontWeight: 600, color: '#FFFFFF', mb: 0.5 }}>
                             No groups yet
                         </Typography>
                         <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8', mb: 2 }}>
                             Create a group to start splitting expenses
                         </Typography>
-                        <Button
-                            variant="contained"
+                        <PremiumButton
+                            variant="primary"
                             startIcon={<AddIcon />}
                             onClick={() => setIsAddDialogOpen(true)}
-                            sx={{
-                                backgroundColor: '#14B8A6',
-                                color: '#FFFFFF',
-                                fontWeight: 600,
-                                textTransform: 'none',
-                                borderRadius: '8px',
-                                px: 2,
-                                py: 1,
-                                fontSize: '0.85rem',
-                                '&:hover': {
-                                    backgroundColor: '#0D9488'
-                                }
-                            }}
+                            sx={{ mt: 1 }}
                         >
                             Create your first group
-                        </Button>
+                        </PremiumButton>
                     </Box>
                 ) : (
-                    /* Clean List View */
+                    /* Clean List View with improved clusters */
+                    <Stack spacing={1}>
+                        {groups.map((group) => {
+                            const balance = groupBalances[group._id] || 0;
+                            const isOwed = balance > 0.01;
+                            const isOwe = balance < -0.01;
 
-                    <Stack spacing={1}> {/* Reduced spacing */}
-                        {groups.map((group) => (
-                            <Card
-                                key={group._id}
-                                sx={{
-                                    backgroundColor: 'rgba(255,255,255,0.03)',
-                                    border: '1px solid rgba(255,255,255,0.08)',
-                                    borderRadius: '10px', // Reduced radius
-                                    cursor: 'pointer',
-                                    transition: 'all 0.15s ease',
-                                    '&:hover': {
-                                        backgroundColor: 'rgba(255,255,255,0.05)',
-                                        borderColor: 'rgba(255,255,255,0.15)'
-                                    },
-                                    '&:active': {
-                                        backgroundColor: 'rgba(255,255,255,0.06)'
-                                    }
-                                }}
-                                onClick={() => navigate(`/app/groups/${group._id}`)}
-                            >
-                                <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}> {/* Reduced padding */}
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}> {/* Reduced gap */}
-                                        {/* Group Icon - 32px circle (Reduced from 40) */}
-                                        <Box
-                                            sx={{
-                                                width: 32,
-                                                height: 32,
-                                                borderRadius: '50%',
-                                                backgroundColor: 'rgba(20, 184, 166, 0.15)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontSize: '1rem', // Reduced font
+                            return (
+                                <Box
+                                    key={group._id}
+                                    onClick={() => navigate(`/app/groups/${group._id}`)}
+                                    sx={{
+                                        position: 'relative',
+                                        background: 'rgba(30, 41, 59, 0.25)',
+                                        backdropFilter: 'blur(24px)',
+                                        borderRadius: '24px',
+                                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                                        transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                                        cursor: 'pointer',
+                                        overflow: 'hidden',
+                                        '&:hover': {
+                                            background: 'rgba(30, 41, 59, 0.45)',
+                                            borderColor: 'rgba(255, 255, 255, 0.12)',
+                                            transform: 'translateY(-4px)',
+                                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+                                            '& .action-arrow-box': {
+                                                background: 'rgba(255,255,255,0.1)',
+                                                color: '#F8FAFC',
+                                                transform: 'scale(1.1)'
+                                            },
+                                            '& .accent-bar': { opacity: 1 }
+                                        }
+                                    }}
+                                >
+                                    <Box sx={{ p: 2 }}>
+                                        {/* Row 1: Identity & Action */}
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', minWidth: 0 }}>
+                                                {/* Icon Box */}
+                                                <Box sx={{
+                                                    width: 44, height: 44,
+                                                    borderRadius: '14px',
+                                                    background: 'linear-gradient(135deg, rgba(65, 105, 225, 0.15) 0%, rgba(138, 43, 226, 0.15) 100%)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '1.4rem',
+                                                    boxShadow: '0 8px 24px -8px rgba(0,0,0,0.4)',
+                                                    flexShrink: 0
+                                                }}>
+                                                    {getTypeEmoji(group.type)}
+                                                </Box>
+
+                                                <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                    <Typography sx={{
+                                                        fontSize: '1.1rem',
+                                                        fontWeight: 900,
+                                                        color: '#F8FAFC',
+                                                        mb: 0.4,
+                                                        letterSpacing: '-0.02em',
+                                                        lineHeight: 1.2,
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis'
+                                                    }}>
+                                                        {group.name}
+                                                    </Typography>
+                                                    <Box sx={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: 0.75,
+                                                        py: 0.5, px: 1.25, bg: 'rgba(255,255,255,0.03)', borderRadius: '8px',
+                                                        border: '1px solid rgba(255,255,255,0.05)'
+                                                    }}>
+                                                        <MapPinIcon sx={{ fontSize: 13, color: '#64748B' }} />
+                                                        <Typography sx={{
+                                                            fontSize: '0.65rem',
+                                                            fontWeight: 800,
+                                                            color: '#94A3B8',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.1em'
+                                                        }}>
+                                                            {group.type}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Box>
+
+                                            <Box className="action-arrow-box" sx={{
+                                                width: 34, height: 34,
+                                                borderRadius: '10px', bg: 'rgba(255, 255, 255, 0.03)',
+                                                border: '1px solid rgba(255,255,255,0.05)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                color: '#475569', transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                                                 flexShrink: 0
-                                            }}
-                                        >
-                                            {getTypeEmoji(group.type)}
+                                            }}>
+                                                <ArrowForwardIcon sx={{ fontSize: 16 }} />
+                                            </Box>
                                         </Box>
 
-                                        {/* Group Details */}
-                                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                                            <Typography
-                                                sx={{
-                                                    fontSize: '0.8rem', // Reduced from 0.95
-                                                    fontWeight: 600,
-                                                    color: '#FFFFFF',
-                                                    mb: 0,
-                                                    lineHeight: 1.3
-                                                }}
-                                            >
-                                                {group.name}
-                                            </Typography>
-                                            <Typography
-                                                sx={{
-                                                    fontSize: '0.65rem', // Reduced from 0.75
-                                                    color: '#94A3B8',
-                                                    fontWeight: 400
-                                                }}
-                                            >
-                                                {group.type} · {group.members.length} members
-                                            </Typography>
+                                        {/* Row 2: Members & Financial Status */}
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flexShrink: 1 }}>
+                                                <AvatarGroup
+                                                    max={3}
+                                                    sx={{
+                                                        '& .MuiAvatar-root': {
+                                                            width: 28, height: 28,
+                                                            border: '2px solid #0F172A !important',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 900,
+                                                            background: 'rgba(30, 41, 59, 0.8)'
+                                                        },
+                                                        '& .MuiAvatarGroup-avatar': {
+                                                            background: '#d5aa1bff !important',
+                                                            color: '#0F172A !important',
+                                                            border: 'none !important',
+                                                            fontWeight: 900
+                                                        }
+                                                    }}
+                                                >
+                                                    {group.members.map((member, idx) => {
+                                                        const { url, initials, backgroundColor } = getAvatarConfig(member.name);
+                                                        return (
+                                                            <Avatar key={member._id || idx} src={url} sx={{ background: backgroundColor }}>
+                                                                {initials}
+                                                            </Avatar>
+                                                        );
+                                                    })}
+                                                </AvatarGroup>
 
-                                            {/* Overlapping Avatars */}
-                                            <AvatarGroup
-                                                max={4}
-                                                sx={{
-                                                    mt: 0.75,
-                                                    justifyContent: 'flex-start',
-                                                    '& .MuiAvatar-root': {
-                                                        width: 20,
-                                                        height: 20,
-                                                        fontSize: '0.6rem',
-                                                        border: '2px solid rgba(15, 23, 42, 1)',
-                                                        backgroundColor: '#14B8A6',
-                                                        fontWeight: 600
-                                                    }
-                                                }}
-                                            >
-                                                {group.members.map((member, idx) => {
-                                                    const { url, initials, backgroundColor } = getAvatarConfig(member.name);
-                                                    return (
-                                                        <Avatar
-                                                            key={member._id || member.userId || member.email || idx}
-                                                            alt={member.name}
-                                                            src={url}
-                                                            sx={{
-                                                                width: 20,
-                                                                height: 20,
-                                                                border: '2px solid rgba(15, 23, 42, 1)',
-                                                                background: `linear-gradient(135deg, ${backgroundColor}, ${alpha(backgroundColor, 0.7)})`,
-                                                                fontSize: '0.6rem',
-                                                                fontWeight: 600
-                                                            }}
-                                                        >
-                                                            {initials}
-                                                        </Avatar>
-                                                    );
-                                                })}
-                                            </AvatarGroup>
+                                                <Box sx={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 0.8,
+                                                    px: 0.8,
+                                                    py: 0.2,
+                                                    borderRadius: '8px',
+                                                    background: 'rgba(148, 163, 184, 0.08)',
+                                                    border: '1px solid rgba(148, 163, 184, 0.12)',
+                                                    ml: 0.5
+                                                }}>
+                                                    <UsersIcon sx={{ fontSize: 14, color: '#94A3B8' }} />
+                                                    <Typography sx={{
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: 800,
+                                                        color: '#CBD5E1',
+                                                        lineHeight: 1
+                                                    }}>
+                                                        {group.members.length}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+
+                                            {/* Right side: Redesigned Ultra-Compact Status Badge */}
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
+                                                <Box sx={{
+                                                    px: 1.2, py: 0.6, borderRadius: '8px',
+                                                    background: isOwed ? 'rgba(52, 211, 153, 0.06)' : isOwe ? 'rgba(248, 113, 113, 0.06)' : 'rgba(255, 255, 255, 0.02)',
+                                                    border: '1px solid',
+                                                    borderColor: isOwed ? 'rgba(52, 211, 153, 0.15)' : isOwe ? 'rgba(248, 113, 113, 0.15)' : 'rgba(255, 255, 255, 0.06)',
+                                                    display: 'flex', alignItems: 'center', gap: 0.5
+                                                }}>
+                                                    {isOwed ? (
+                                                        <TrendingUpIcon sx={{ fontSize: 13, color: '#34D399' }} />
+                                                    ) : isOwe ? (
+                                                        <TrendingDownIcon sx={{ fontSize: 13, color: '#F87171' }} />
+                                                    ) : null}
+                                                    <Typography sx={{
+                                                        fontSize: '0.9rem',
+                                                        fontWeight: 900,
+                                                        color: isOwed ? '#34D399' : isOwe ? '#F87171' : '#475569',
+                                                        letterSpacing: '-0.01em',
+                                                        fontFamily: "'Outfit', sans-serif"
+                                                    }}>
+                                                        {isOwed ? '+' : isOwe ? '-' : ''}₹{Math.abs(balance).toLocaleString()}
+                                                    </Typography>
+                                                </Box>
+                                                <Typography sx={{
+                                                    fontSize: '0.5rem',
+                                                    fontWeight: 800,
+                                                    color: isOwed ? '#34D399' : isOwe ? '#F87171' : '#475569',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.05em',
+                                                    mt: 0.25,
+                                                    opacity: 0.7
+                                                }}>
+                                                    {isOwed ? 'RECEIVE' : isOwe ? 'YOU OWE' : 'SETTLED'}
+                                                </Typography>
+                                            </Box>
                                         </Box>
 
-                                        {/* Arrow Icon */}
-                                        <ArrowForwardIcon
-                                            sx={{
-                                                color: '#6B7280',
-                                                fontSize: '1rem', // Reduced
-                                                flexShrink: 0
-                                            }}
-                                        />
+                                        {/* Row 3: Meta Alignment */}
+                                        <Box sx={{
+                                            mt: 1.5, pt: 1.5,
+                                            borderTop: '1px solid rgba(255,255,255,0.06)',
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                        }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: '#64748B' }}>
+                                                <CalendarIcon sx={{ fontSize: 14, opacity: 0.6 }} />
+                                                <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>{formatDate(group.createdAt)}</Typography>
+                                            </Box>
+                                            <Typography sx={{
+                                                fontSize: '0.7rem', fontWeight: 800,
+                                                color: '#3B82F6', textTransform: 'uppercase',
+                                                letterSpacing: '0.08em',
+                                                display: 'flex', alignItems: 'center', gap: 0.5,
+                                                transition: 'all 0.2s ease',
+                                                '&:hover': { color: '#60A5FA', transform: 'translateX(2px)' }
+                                            }}>
+                                                View Details <ArrowForwardIcon sx={{ fontSize: 12, ml: 0.5 }} />
+                                            </Typography>
+                                        </Box>
                                     </Box>
-                                </CardContent>
-                            </Card>
-                        ))}
+
+                                    {/* Hover Accent Line */}
+                                    <Box className="accent-bar" sx={{
+                                        position: 'absolute', bottom: 0, left: '10%', right: '10%',
+                                        height: 3, opacity: 0,
+                                        background: 'linear-gradient(90deg, #34D399 0%, #3B82F6 50%, #8B5CF6 100%)',
+                                        borderRadius: '100px 100px 0 0',
+                                        transition: 'all 0.4s ease'
+                                    }} />
+                                </Box>
+                            );
+                        })}
                     </Stack>
                 )}
             </Box>
@@ -703,6 +801,6 @@ export default function Groups() {
                 onClose={() => setIsAddDialogOpen(false)}
                 onGroupCreated={handleGroupCreated}
             />
-        </PageContainer >
+        </PageContainer>
     );
 }

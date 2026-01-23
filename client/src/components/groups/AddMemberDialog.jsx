@@ -142,8 +142,31 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
     const [isSubmittingBulk, setIsSubmittingBulk] = useState(false);
 
     const onSubmit = (data) => {
-        setPendingMembers(prev => [...prev, { ...data, tempId: Date.now() }]);
-        toast.success(`${data.name} added to staging list`);
+        const phone = data.phone.trim();
+
+        // 1. Check if it's the current user (robust check for both field names)
+        const currentUserPhone = currentUser?.phone || currentUser?.phoneNumber;
+        if (currentUserPhone === phone) {
+            toast.error("You are already the creator/member of this group");
+            return;
+        }
+
+        // 2. Check existing group members
+        const isAlreadyMember = group?.members?.some(m => m.phone === phone);
+        if (isAlreadyMember) {
+            toast.error(`${data.name} (${phone}) is already in this group`);
+            return;
+        }
+
+        // 3. Check pending members list
+        const isAlreadyPending = pendingMembers.some(m => m.phone === phone);
+        if (isAlreadyPending) {
+            toast.error(`${phone} is already in your staging list`);
+            return;
+        }
+
+        setPendingMembers(prev => [...prev, { ...data, phone, tempId: Date.now() }]);
+        toast.success(`Added ${data.name} to staging list`);
         reset();
     };
 
@@ -247,7 +270,7 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
             <DialogContent sx={{
                 p: 0,
                 background: 'transparent',
-                overflowY: 'auto',
+                overflow: 'hidden', // Parent is now a containment box, children handle scroll
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'relative'
@@ -265,78 +288,99 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
                     pointerEvents: 'none'
                 }} />
 
-                {/* Tabs */}
-                <Box sx={{ px: 3, pt: 3, pb: 1, position: 'relative', zIndex: 1 }}>
-                    <Stack direction="row" spacing={1} sx={{
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
-                        borderRadius: '16px',
-                        p: 0.75,
-                        border: isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.05)',
-                        backdropFilter: 'blur(10px)'
+                {/* Tabs - Modern Fintech Redesign */}
+                <Box sx={{ px: '14px', pt: '14px', pb: 1, position: 'relative', zIndex: 1 }}>
+                    <Stack direction="row" spacing={0.5} sx={{
+                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(241, 245, 249, 0.8)',
+                        borderRadius: '20px',
+                        p: 0.5,
+                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.05)',
+                        backdropFilter: 'blur(16px)',
+                        boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.05)' : 'none'
                     }}>
+                        {/* Add New Tab */}
                         <Box
                             onClick={() => setActiveTab('add')}
                             sx={{
                                 flex: 1,
-                                px: 2,
                                 py: 1.25,
                                 cursor: 'pointer',
                                 color: activeTab === 'add' ? 'white' : isDark ? '#94A3B8' : '#64748B',
                                 fontWeight: 700,
-                                fontSize: '0.85rem',
-                                borderRadius: '12px',
-                                backgroundColor: activeTab === 'add' ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
-                                border: activeTab === 'add' ? '1px solid rgba(139, 92, 246, 0.2)' : '1px solid transparent',
-                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                fontSize: '0.8rem',
+                                letterSpacing: '0.3px',
+                                textTransform: 'uppercase',
+                                borderRadius: '16px',
+                                position: 'relative',
+                                background: activeTab === 'add'
+                                    ? 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)'
+                                    : 'transparent',
+                                border: activeTab === 'add' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid transparent',
+                                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 gap: 1,
-                                boxShadow: activeTab === 'add' ? '0 4px 12px rgba(139, 92, 246, 0.2)' : 'none',
+                                boxShadow: activeTab === 'add' ? '0 8px 20px -4px rgba(139, 92, 246, 0.4)' : 'none',
                                 '&:hover': {
                                     color: activeTab === 'add' ? 'white' : isDark ? 'white' : '#000000',
-                                    backgroundColor: activeTab === 'add' ? 'rgba(139, 92, 246, 0.2)' : isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(139, 92, 246, 0.08)'
+                                    background: activeTab === 'add'
+                                        ? 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)'
+                                        : isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)'
                                 }
                             }}
                         >
-                            <PersonAddIcon sx={{ fontSize: 18 }} />
+                            <PersonAddIcon sx={{ fontSize: 16, opacity: activeTab === 'add' ? 1 : 0.7 }} />
                             Add New
                         </Box>
+
+                        {/* Members Tab */}
                         <Box
                             onClick={() => setActiveTab('members')}
                             sx={{
                                 flex: 1,
-                                px: 2,
                                 py: 1.25,
                                 cursor: 'pointer',
                                 color: activeTab === 'members' ? 'white' : isDark ? '#94A3B8' : '#64748B',
                                 fontWeight: 700,
-                                fontSize: '0.85rem',
-                                borderRadius: '12px',
-                                backgroundColor: activeTab === 'members' ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
-                                border: activeTab === 'members' ? '1px solid rgba(139, 92, 246, 0.2)' : '1px solid transparent',
-                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                fontSize: '0.8rem',
+                                letterSpacing: '0.3px',
+                                textTransform: 'uppercase',
+                                borderRadius: '16px',
+                                position: 'relative',
+                                background: activeTab === 'members'
+                                    ? 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)'
+                                    : 'transparent',
+                                border: activeTab === 'members' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid transparent',
+                                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 gap: 1,
-                                boxShadow: activeTab === 'members' ? '0 4px 12px rgba(139, 92, 246, 0.2)' : 'none',
+                                boxShadow: activeTab === 'members' ? '0 8px 20px -4px rgba(139, 92, 246, 0.4)' : 'none',
                                 '&:hover': {
                                     color: activeTab === 'members' ? 'white' : isDark ? 'white' : '#000000',
-                                    backgroundColor: activeTab === 'members' ? 'rgba(139, 92, 246, 0.2)' : isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(139, 92, 246, 0.08)'
+                                    background: activeTab === 'members'
+                                        ? 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)'
+                                        : isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)'
                                 }
                             }}
                         >
-                            <GroupIcon sx={{ fontSize: 18 }} />
+                            <GroupIcon sx={{ fontSize: 16, opacity: activeTab === 'members' ? 1 : 0.7 }} />
                             Members
                             <Box sx={{
-                                px: 1,
-                                py: 0.25,
+                                minWidth: 20,
+                                height: 20,
+                                px: 0.6,
                                 borderRadius: '6px',
-                                background: activeTab === 'members' ? 'rgba(139, 92, 246, 0.3)' : isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-                                fontSize: '0.75rem',
-                                fontWeight: 800,
-                                lineHeight: 1
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: activeTab === 'members' ? 'rgba(255, 255, 255, 0.2)' : isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                fontSize: '0.7rem',
+                                fontWeight: 900,
+                                color: 'white'
                             }}>{group?.members?.length || 0}</Box>
                         </Box>
                     </Stack>
@@ -344,7 +388,18 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
 
                 {/* Add Form */}
                 {activeTab === 'add' && (
-                    <Box sx={{ px: 3, pt: 2, pb: 4, flex: 1, minHeight: '350px', background: 'transparent', position: 'relative', zIndex: 1 }}>
+                    <Box sx={{
+                        px: '14px',
+                        pt: '14px',
+                        pb: 4,
+                        height: '500px', // Fixed height to prevent jumps
+                        overflowY: 'auto', // Independent scroll
+                        background: 'transparent',
+                        position: 'relative',
+                        zIndex: 1,
+                        '&::-webkit-scrollbar': { width: '4px' },
+                        '&::-webkit-scrollbar-thumb': { background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', borderRadius: '10px' }
+                    }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
                             <Typography sx={{
                                 color: isDark ? '#94A3B8' : '#64748B',
@@ -481,9 +536,15 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
                 {/* Members List */}
                 {activeTab === 'members' && (
                     <Box sx={{
-                        flex: 1, minHeight: '350px', px: 3, py: 2, background: 'transparent', position: 'relative', zIndex: 1,
+                        height: '500px', // Matches Add tab height
+                        px: '14px',
+                        py: 2,
+                        overflowY: 'auto',
+                        background: 'transparent',
+                        position: 'relative',
+                        zIndex: 1,
                         '&::-webkit-scrollbar': { width: '4px' },
-                        '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }
+                        '&::-webkit-scrollbar-thumb': { background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', borderRadius: '10px' }
                     }}>
                         {group?.members?.length === 0 ? (
                             <Box sx={{ textAlign: 'center', py: 8, opacity: 0.6 }}>
@@ -648,7 +709,7 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
             {/* Bulk Save Footer */}
             {activeTab === 'add' && pendingMembers.length > 0 && (
                 <Box sx={{
-                    px: 3,
+                    px: '14px',
                     py: 2,
                     borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.05)',
                     background: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',

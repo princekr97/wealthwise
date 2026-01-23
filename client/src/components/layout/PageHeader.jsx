@@ -72,7 +72,7 @@ export default function PageHeader({
                         onClick={onAction}
                         sx={{
                             minWidth: isMobile ? '9rem' : '11.7rem',
-                            fontSize: isMobile ? '0.675rem' : '0.7875rem',
+                            fontSize: isMobile ? '0.9rem' : '1.0rem',
                             px: isMobile ? 1.8 : 2.7,
                             py: isMobile ? 0.9 : 1.08
                         }}

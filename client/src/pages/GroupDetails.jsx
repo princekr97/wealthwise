@@ -31,7 +31,8 @@ import {
     DialogContent,
     DialogActions,
     ListItemIcon,
-    Collapse
+    Collapse,
+    Fade
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -78,17 +79,18 @@ import AddGroupExpenseDialog from '../components/groups/AddGroupExpenseDialog';
 import SettleDebtDialog from '../components/groups/SettleDebtDialog';
 import ExpenseDetailsDialog from '../components/groups/ExpenseDetailsDialog';
 import AddGroupDialog from '../components/groups/AddGroupDialog';
-import AddMemberDialog from '../components/groups/AddMemberDialog'; // Step 595
+import AddMemberDialog from '../components/groups/AddMemberDialog';
 import GroupAnalytics from '../components/groups/GroupAnalytics';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
+import { useAuthStore } from '../store/authStore';
+import { useGroupStore } from '../store/groupStore';
 import { generateGroupReport, generateGroupCSV } from '../utils/groupReport';
 import { formatCurrency } from '../utils/formatters';
 import { calculateSettlements } from '../utils/settlementCalculator';
 import { getCategoryStyle } from '../utils/categoryHelper';
 import { SettlementSuggestionsList } from '../components/groups/SettlementSuggestionCard';
 import { toast } from 'sonner';
-import { useAuthStore } from '../store/authStore';
 
 
 
@@ -255,11 +257,23 @@ export default function GroupDetails() {
         }
     }, [authUser]);
 
-    const [group, setGroup] = useState(null);
-    const [expenses, setExpenses] = useState([]);
+    const {
+        currentGroup: storeGroup,
+        loading: storeLoading,
+        fetchGroupDetails: fetchFromStore,
+        invalidateGroups,
+        deleteGroup: deleteFromStore
+    } = useGroupStore();
+
+    // Prevent Flickering: Ensure the group in store belongs to the current URL ID
+    // If not, we treat it as a loading state to avoid showing Group A data on Group B's page
+    const group = (storeGroup?._id === id || storeGroup?.id === id) ? storeGroup : null;
+    const loading = storeLoading || !group;
+
+    const expenses = group?.expenses || [];
+
     const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null });
     const [selectedExpense, setSelectedExpense] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [tabValue, setTabValue] = useState(0);
     const [prevTabValue, setPrevTabValue] = useState(0);
@@ -267,7 +281,9 @@ export default function GroupDetails() {
 
     // Refresh handler for expense updates - only called when expense is actually added/updated
     const handleExpenseAdded = async () => {
-        await fetchGroupDetails(); // Refresh only when changes are made
+        // Use a silent refresh (no full page loader) for better UX
+        invalidateGroups(); // Invalidate main list for fresh balances
+        await fetchGroupDetails(true);
     };
 
     const handleExpenseDialogClose = () => {
@@ -283,20 +299,33 @@ export default function GroupDetails() {
     const [editingExpense, setEditingExpense] = useState(null);
 
     useEffect(() => {
-        window.scrollTo(0, 0);
         fetchGroupDetails();
+
+        // Cleanup when leaving page or switching group
+        return () => {
+            // Optional: clear current group if needed
+        };
     }, [id]);
 
-    const fetchGroupDetails = async () => {
+    const fetchGroupDetails = async (isSilent = false) => {
         try {
-            setLoading(true);
-            const data = await groupService.getGroupDetails(id);
-            setGroup(data);
-            setExpenses(data.expenses || []);
+            // Optimization: If we have the group in our list but not in currentGroup, 
+            // pre-populate it so the UI doesn't show a blank loader
+            const { groups } = useGroupStore.getState();
+            if (!group) {
+                const existingGroup = groups.find(g => g._id === id);
+                if (existingGroup) {
+                    // This will trigger a re-render with basic info (name, etc)
+                    // while fetchFromStore runs in background
+                    useGroupStore.setState({ currentGroup: { ...existingGroup, expenses: [] } });
+                }
+            }
+
+            await fetchFromStore(id, isSilent);
+            setError(null);
         } catch (err) {
+            console.error('Fetch group details error:', err);
             setError(err.response?.data?.message || 'Failed to fetch group details');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -423,6 +452,7 @@ export default function GroupDetails() {
                 try {
                     await groupService.deleteExpense(id, expenseId);
                     toast.success('Expense deleted');
+                    invalidateGroups(); // Invalidate list cache
                     fetchGroupDetails();
                     setSelectedExpense(null);
                     setConfirmDialog(prev => ({ ...prev, open: false }));
@@ -443,7 +473,7 @@ export default function GroupDetails() {
 
     const handleDeleteGroup = async () => {
         try {
-            await groupService.deleteGroup(id);
+            await deleteFromStore(id);
             toast.success('Group deleted');
             navigate('/app/groups');
         } catch (err) {
@@ -457,6 +487,7 @@ export default function GroupDetails() {
             console.log('Removing member:', memberToDelete, 'from group:', id);
             await groupService.removeMember(id, memberToDelete);
             toast.success('Member removed');
+            invalidateGroups(); // Invalidate list cache
             setMemberToDelete(null);
             fetchGroupDetails();
         } catch (err) {
@@ -475,36 +506,51 @@ export default function GroupDetails() {
 
     /**
      * Get payer name for an expense with multiple fallbacks
-     * @param {Object} expense - The expense object
-     * @returns {string} Payer name or 'You' if current user
+     * Matches user identification logic in AddGroupExpenseDialog
      */
     const getPayerName = React.useCallback((expense) => {
         if (!expense) return 'Unknown';
 
-        const payerId = expense.paidBy?._id || expense.paidBy;
+        // 1. Check if paidBy is populated or just an ID
+        const payerObj = expense.paidBy;
+        const payerId = payerObj?._id || payerObj;
 
-        // Check if it's the current user
-        if (payerId && user && String(payerId) === String(user._id)) {
-            return 'You';
+        // 2. Identify if it's "Me" using multiple criteria (ID, Email, Phone)
+        if (user) {
+            const isMeById = payerId && String(payerId) === String(user._id);
+            const isMeByName = (expense.paidByName === 'You') ||
+                (payerObj?.name === 'You');
+
+            // Check for shadow user matching if ID doesn't match
+            let isMeByShadow = false;
+            if (!isMeById && group?.members) {
+                const member = group.members.find(m => {
+                    const mId = m.userId?._id || m.userId || m._id;
+                    return String(mId) === String(payerId);
+                });
+
+                if (member) {
+                    // Match by email if exists
+                    if (user.email && member.email && member.email.toLowerCase() === user.email.toLowerCase()) isMeByShadow = true;
+                    // Match by phone if exists
+                    if (user.phone && member.phone && member.phone === user.phone) isMeByShadow = true;
+                }
+            }
+
+            if (isMeById || isMeByName || isMeByShadow) return 'You';
         }
 
-        // Check paidBy.name (if populated)
-        if (expense.paidBy?.name) {
-            return expense.paidBy.name;
-        }
+        // 3. Try to use explicit name stored in expense
+        if (expense.paidByName && expense.paidByName !== 'Unknown') return expense.paidByName;
+        if (payerObj?.name) return payerObj.name;
 
-        // Check stored paidByName
-        if (expense.paidByName) {
-            return expense.paidByName;
-        }
-
-        // Fallback to group members
+        // 4. Fallback to finding member in group
         if (payerId && group?.members) {
-            const payer = group.members.find(m => {
+            const member = group.members.find(m => {
                 const mId = m.userId?._id || m.userId || m._id;
                 return String(mId) === String(payerId);
             });
-            if (payer) return payer.name;
+            if (member) return member.name;
         }
 
         return 'Unknown';
@@ -706,783 +752,794 @@ export default function GroupDetails() {
     // State for expanded balance card
     const [expandedBalance, setExpandedBalance] = useState(false);
 
-    if (loading) return <PageLoader message="Loading Group Details..." />;
-    if (error) return <Alert severity="error">{error}</Alert>;
-    if (!group) return <Alert severity="warning">Group not found</Alert>;
+    // Initial Load: Show full page loader only if we don't have group data yet
+    // Subsequent refreshes (silent) will not trigger this, keeping UI and Dialogs mounted
+    if (loading && !group) return <PageLoader message="Loading Group Details..." />;
+    if (error && !group) return <Alert severity="error">{error}</Alert>;
+    if (!group && !loading) return <Alert severity="warning">Group not found</Alert>;
 
     return (
         <PageContainer>
-            {/* 1. Custom Header & Navigation - Creative Fintech Layout */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, pt: 2, px: { xs: 0, sm: 2 } }}>
-                <Box
-                    onClick={() => navigate('/app/groups')}
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 40,
-                        height: 40,
-                        borderRadius: '12px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                        backdropFilter: 'blur(12px)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        cursor: 'pointer',
-                        color: '#94A3B8',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        '&:hover': {
-                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                            borderColor: 'rgba(255, 255, 255, 0.15)',
-                            color: 'white',
-                            transform: 'translateX(-3px)'
-                        }
-                    }}
-                >
-                    <ArrowBackIcon sx={{ fontSize: 18 }} />
-                </Box>
-
-                {/* Header Action Icons - Minimalist Premium Design */}
-                <Stack direction="row" spacing={1} alignItems="center">
-                    <Box
-                        title="Add Expense"
-                        onClick={() => setIsExpenseDialogOpen(true)}
-                        sx={{
-                            width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', borderRadius: '12px',
-                            background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
-                            color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            '&:hover': {
-                                background: 'rgba(255, 255, 255, 0.08)',
-                                border: '1px solid rgba(255, 255, 255, 0.15)',
-                                color: 'white',
-                                transform: 'translateY(-2px)'
-                            }
-                        }}
-                    >
-                        <AddExpenseIcon sx={{ fontSize: 20 }} />
-                    </Box>
-
-                    <Box
-                        title="Add Member"
-                        onClick={() => setIsAddMemberDialogOpen(true)}
-                        sx={{
-                            width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', borderRadius: '12px',
-                            background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
-                            color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            '&:hover': {
-                                background: 'rgba(255, 255, 255, 0.08)',
-                                border: '1px solid rgba(255, 255, 255, 0.15)',
-                                color: 'white',
-                                transform: 'translateY(-2px)'
-                            }
-                        }}
-                    >
-                        <AddMemberIcon sx={{ fontSize: 20 }} />
-                    </Box>
-
-                    <Box
-                        title="Trip Report & Export"
-                        onClick={() => !previewLoading && handlePreviewReport()}
-                        sx={{
-                            width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: previewLoading ? 'wait' : 'pointer', borderRadius: '12px',
-                            background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
-                            color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            '&:hover': {
-                                background: 'rgba(255, 255, 255, 0.08)',
-                                border: '1px solid rgba(255, 255, 255, 0.15)',
-                                color: 'white',
-                                transform: 'translateY(-2px)'
-                            }
-                        }}
-                    >
-                        {previewLoading ? <CircularProgress size={16} color="inherit" /> : <ReportIcon sx={{ fontSize: 20 }} />}
-                    </Box>
-
-                    <Box
-                        title="More Options"
-                        onClick={handleMenuClick}
-                        sx={{
-                            width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', borderRadius: '12px',
-                            background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
-                            color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            '&:hover': {
-                                background: 'rgba(255, 255, 255, 0.08)',
-                                border: '1px solid rgba(255, 255, 255, 0.15)',
-                                color: 'white',
-                                transform: 'translateY(-2px)'
-                            }
-                        }}
-                    >
-                        <MoreVertIcon sx={{ fontSize: 20 }} />
-                    </Box>
-                </Stack>
-            </Box>
-
-            <Menu
-                anchorEl={anchorEl}
-                open={openMenu}
-                onClose={handleMenuClose}
-                PaperProps={{
-                    sx: {
-                        mt: 1.5,
-                        background: 'rgba(15, 23, 42, 0.85)', // Deep slate with opacity
-                        backdropFilter: 'blur(20px)', // Strong blur for glass effect
-                        border: '1px solid rgba(255, 255, 255, 0.1)', // Subtle light border
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05)', // Deep shadow + slight inner glow
-                        borderRadius: '16px',
-                        minWidth: '220px',
-                        padding: '8px',
-                        overflow: 'visible', // For any potential pop-outs (if needed later)
-                        '&:before': { // Small arrow pointer
-                            content: '""',
-                            display: 'block',
-                            position: 'absolute',
-                            top: 0,
-                            right: 14,
-                            width: 10,
-                            height: 10,
-                            bgcolor: 'rgba(15, 23, 42, 0.85)',
-                            transform: 'translateY(-50%) rotate(45deg)',
-                            zIndex: 0,
-                            borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
-                            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                        }
-                    }
-                }}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            >
-                <Typography variant="overline" sx={{ px: 2, py: 1, color: '#64748b', fontWeight: 700, letterSpacing: '1px', fontSize: '0.7rem' }}>
-                    ACTIONS
-                </Typography>
-
-                <MenuItem
-                    onClick={() => { handleMenuClose(); setIsEditDialogOpen(true); }}
-                    sx={{
-                        py: 1.5,
-                        px: 2,
-                        borderRadius: '10px',
-                        mb: 0.5,
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                            background: 'linear-gradient(90deg, rgba(163, 230, 53, 0.1) 0%, rgba(163, 230, 53, 0.05) 100%)',
-                            borderLeft: '3px solid #a3e635',
-                            paddingLeft: '13px' // Compensate for border
-                        }
-                    }}
-                >
-                    <ListItemIcon sx={{ color: '#a3e635', minWidth: '36px !important' }}>
-                        <EditIcon fontSize="small" />
-                    </ListItemIcon>
-                    <Box>
-                        <Typography variant="body2" fontWeight={600} sx={{ color: '#e2e8f0' }}>Edit Group</Typography>
-                        <Typography variant="caption" sx={{ color: '#64748b' }}>Rename or change icon</Typography>
-                    </Box>
-                </MenuItem>
-
-                <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', my: 1 }} />
-
-                <MenuItem
-                    onClick={() => {
-                        handleMenuClose(); setConfirmDialog({
-                            open: true,
-                            title: 'Delete Group',
-                            message: 'Are you sure you want to delete this group? This action cannot be undone.',
-                            onConfirm: handleDeleteGroup
-                        });
-                    }}
-                    sx={{
-                        py: 1.5,
-                        px: 2,
-                        borderRadius: '10px',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                            background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
-                            borderLeft: '3px solid #ef4444',
-                            paddingLeft: '13px'
-                        }
-                    }}
-                >
-                    <ListItemIcon sx={{ color: '#f87171', minWidth: '36px !important' }}>
-                        <DeleteIcon fontSize="small" />
-                    </ListItemIcon>
-                    <Box>
-                        <Typography variant="body2" fontWeight={600} sx={{ color: '#f87171' }}>Delete Group</Typography>
-                        <Typography variant="caption" sx={{ color: 'rgba(248, 113, 113, 0.6)' }}>Irreversible action</Typography>
-                    </Box>
-                </MenuItem>
-            </Menu>
-
-            {/* 2. Group Summary Card - Creative Premium Glass */}
-            <Box sx={{ px: { xs: 0, sm: 2 }, mb: 3 }}>
-                <Box
-                    onClick={() => setExpandedBalance(!expandedBalance)}
-                    sx={{
-                        position: 'relative',
-                        overflow: 'hidden',
-                        p: 3,
-                        borderRadius: '24px',
-                        cursor: 'pointer',
-                        background: 'linear-gradient(135deg, rgba(164, 127, 98, 0.36) 0%, rgba(28, 28, 67, 0.45) 100%)', // Deep Slate Glass
-                        backdropFilter: 'blur(20px)',
-                        // border: '1px solid rgba(246, 244, 249, 0.06)',
-                        boxShadow: '0 20px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.05)',
-                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                        '&:hover': {
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)'
-                        }
-                    }}
-                >
-                    {/* Decorative Glow */}
-                    <Box sx={{
-                        position: 'absolute',
-                        top: -50,
-                        right: -50,
-                        width: 180,
-                        height: 180,
-                        borderRadius: '50%',
-                        background: 'radial-gradient(circle, rgba(78, 69, 138, 0.03) 0%, transparent 70%)', // Neutral Glow
-                        zIndex: 0,
-                        opacity: 0.8
-                    }} />
-
-                    <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                        <Box>
-                            <Typography variant="h3" sx={{ fontWeight: 800, fontSize: { xs: '1.75rem', sm: '2rem' }, color: '#F8FAFC', letterSpacing: '-0.5px', lineHeight: 1.1, mb: 1 }}>
-                                {group.name}
-                            </Typography>
-                            <Box sx={{
-                                display: 'inline-flex',
-                                px: 1.5,
-                                py: 0.5,
-                                borderRadius: '10px',
-                                background: 'rgba(255, 255, 255, 0.03)',
+            <Fade in={!!group} timeout={500}>
+                <Box sx={{ width: '100%' }}>
+                    {/* 1. Custom Header & Navigation - Creative Fintech Layout */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, pt: 2, px: { xs: 0, sm: 2 } }}>
+                        <Box
+                            onClick={() => navigate('/app/groups')}
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 40,
+                                height: 40,
+                                borderRadius: '12px',
+                                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                                backdropFilter: 'blur(12px)',
                                 border: '1px solid rgba(255, 255, 255, 0.08)',
+                                cursor: 'pointer',
                                 color: '#94A3B8',
-                                fontSize: '0.7rem',
-                                fontWeight: 700,
-                                textTransform: 'uppercase',
-                                letterSpacing: '1px'
-                            }}>
-                                {group.members.length} members
-                            </Box>
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                                    borderColor: 'rgba(255, 255, 255, 0.15)',
+                                    color: 'white',
+                                    transform: 'translateX(-3px)'
+                                }
+                            }}
+                        >
+                            <ArrowBackIcon sx={{ fontSize: 18 }} />
                         </Box>
 
+                        {/* Header Action Icons - Minimalist Premium Design */}
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Box
+                                title="Add Expense"
+                                onClick={() => setIsExpenseDialogOpen(true)}
+                                sx={{
+                                    width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', borderRadius: '12px',
+                                    background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    '&:hover': {
+                                        background: 'rgba(255, 255, 255, 0.08)',
+                                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                                        color: 'white',
+                                        transform: 'translateY(-2px)'
+                                    }
+                                }}
+                            >
+                                <AddExpenseIcon sx={{ fontSize: 20 }} />
+                            </Box>
 
-                        <Box sx={{ textAlign: 'right' }}>
-                            <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#94A3B8', mb: 0.5, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                {myBalance >= 0 ? 'You are owed' : 'You owe'}
-                            </Typography>
-                            <Typography sx={{
-                                fontSize: { xs: '1.5rem', sm: '2rem' },
-                                fontWeight: 800,
-                                color: myBalance >= 0 ? '#34D399' : '#F87171',
-                                lineHeight: 1,
-                                letterSpacing: '-1px'
-                            }}>
-                                {formatCurrency(Math.abs(myBalance))}
-                            </Typography>
+                            <Box
+                                title="Add Member"
+                                onClick={() => setIsAddMemberDialogOpen(true)}
+                                sx={{
+                                    width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', borderRadius: '12px',
+                                    background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    '&:hover': {
+                                        background: 'rgba(255, 255, 255, 0.08)',
+                                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                                        color: 'white',
+                                        transform: 'translateY(-2px)'
+                                    }
+                                }}
+                            >
+                                <AddMemberIcon sx={{ fontSize: 20 }} />
+                            </Box>
 
-                            {expandedBalance ? (
-                                <ExpandMoreIcon sx={{ color: '#94A3B8', ml: 'auto', mt: 0.5, fontSize: '1.5rem', transform: 'rotate(180deg)', transition: 'transform 0.3s' }} />
-                            ) : (
-                                <ExpandMoreIcon sx={{ color: '#94A3B8', ml: 'auto', mt: 0.5, fontSize: '1.5rem', transition: 'transform 0.3s' }} />
+                            <Box
+                                title="Trip Report & Export"
+                                onClick={() => !previewLoading && handlePreviewReport()}
+                                sx={{
+                                    width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: previewLoading ? 'wait' : 'pointer', borderRadius: '12px',
+                                    background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    '&:hover': {
+                                        background: 'rgba(255, 255, 255, 0.08)',
+                                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                                        color: 'white',
+                                        transform: 'translateY(-2px)'
+                                    }
+                                }}
+                            >
+                                {previewLoading ? <CircularProgress size={16} color="inherit" /> : <ReportIcon sx={{ fontSize: 20 }} />}
+                            </Box>
+
+                            <Box
+                                title="More Options"
+                                onClick={handleMenuClick}
+                                sx={{
+                                    width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', borderRadius: '12px',
+                                    background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    '&:hover': {
+                                        background: 'rgba(255, 255, 255, 0.08)',
+                                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                                        color: 'white',
+                                        transform: 'translateY(-2px)'
+                                    }
+                                }}
+                            >
+                                <MoreVertIcon sx={{ fontSize: 20 }} />
+                            </Box>
+                        </Stack>
+                    </Box>
+
+                    <Menu
+                        anchorEl={anchorEl}
+                        open={openMenu}
+                        onClose={handleMenuClose}
+                        PaperProps={{
+                            sx: {
+                                mt: 1.5,
+                                background: 'rgba(15, 23, 42, 0.85)', // Deep slate with opacity
+                                backdropFilter: 'blur(20px)', // Strong blur for glass effect
+                                border: '1px solid rgba(255, 255, 255, 0.1)', // Subtle light border
+                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05)', // Deep shadow + slight inner glow
+                                borderRadius: '16px',
+                                minWidth: '220px',
+                                padding: '8px',
+                                overflow: 'visible', // For any potential pop-outs (if needed later)
+                                '&:before': { // Small arrow pointer
+                                    content: '""',
+                                    display: 'block',
+                                    position: 'absolute',
+                                    top: 0,
+                                    right: 14,
+                                    width: 10,
+                                    height: 10,
+                                    bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                    transform: 'translateY(-50%) rotate(45deg)',
+                                    zIndex: 0,
+                                    borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                                }
+                            }
+                        }}
+                        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                    >
+                        <Typography variant="overline" sx={{ px: 2, py: 1, color: '#64748b', fontWeight: 700, letterSpacing: '1px', fontSize: '0.7rem' }}>
+                            ACTIONS
+                        </Typography>
+
+                        <MenuItem
+                            onClick={() => { handleMenuClose(); setIsEditDialogOpen(true); }}
+                            sx={{
+                                py: 1.5,
+                                px: 2,
+                                borderRadius: '10px',
+                                mb: 0.5,
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    background: 'linear-gradient(90deg, rgba(163, 230, 53, 0.1) 0%, rgba(163, 230, 53, 0.05) 100%)',
+                                    borderLeft: '3px solid #a3e635',
+                                    paddingLeft: '13px' // Compensate for border
+                                }
+                            }}
+                        >
+                            <ListItemIcon sx={{ color: '#a3e635', minWidth: '36px !important' }}>
+                                <EditIcon fontSize="small" />
+                            </ListItemIcon>
+                            <Box>
+                                <Typography variant="body2" fontWeight={600} sx={{ color: '#e2e8f0' }}>Edit Group</Typography>
+                                <Typography variant="caption" sx={{ color: '#64748b' }}>Rename or change icon</Typography>
+                            </Box>
+                        </MenuItem>
+
+                        <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', my: 1 }} />
+
+                        <MenuItem
+                            onClick={() => {
+                                handleMenuClose(); setConfirmDialog({
+                                    open: true,
+                                    title: 'Delete Group',
+                                    message: 'Are you sure you want to delete this group? This action cannot be undone.',
+                                    onConfirm: handleDeleteGroup
+                                });
+                            }}
+                            sx={{
+                                py: 1.5,
+                                px: 2,
+                                borderRadius: '10px',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
+                                    borderLeft: '3px solid #ef4444',
+                                    paddingLeft: '13px'
+                                }
+                            }}
+                        >
+                            <ListItemIcon sx={{ color: '#f87171', minWidth: '36px !important' }}>
+                                <DeleteIcon fontSize="small" />
+                            </ListItemIcon>
+                            <Box>
+                                <Typography variant="body2" fontWeight={600} sx={{ color: '#f87171' }}>Delete Group</Typography>
+                                <Typography variant="caption" sx={{ color: 'rgba(248, 113, 113, 0.6)' }}>Irreversible action</Typography>
+                            </Box>
+                        </MenuItem>
+                    </Menu>
+
+                    {/* 2. Group Summary Card - Creative Premium Glass */}
+                    <Box sx={{ px: { xs: 0, sm: 2 }, mb: 3 }}>
+                        <Box
+                            onClick={() => setExpandedBalance(!expandedBalance)}
+                            sx={{
+                                position: 'relative',
+                                overflow: 'hidden',
+                                p: 3,
+                                borderRadius: '24px',
+                                cursor: 'pointer',
+                                background: 'linear-gradient(135deg, rgba(164, 127, 98, 0.36) 0%, rgba(28, 28, 67, 0.45) 100%)', // Deep Slate Glass
+                                backdropFilter: 'blur(20px)',
+                                // border: '1px solid rgba(246, 244, 249, 0.06)',
+                                boxShadow: '0 20px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.05)',
+                                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                '&:hover': {
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                                }
+                            }}
+                        >
+                            {/* Decorative Glow */}
+                            <Box sx={{
+                                position: 'absolute',
+                                top: -50,
+                                right: -50,
+                                width: 180,
+                                height: 180,
+                                borderRadius: '50%',
+                                background: 'radial-gradient(circle, rgba(78, 69, 138, 0.03) 0%, transparent 70%)', // Neutral Glow
+                                zIndex: 0,
+                                opacity: 0.8
+                            }} />
+
+                            <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                                <Box>
+                                    <Typography variant="h3" sx={{ fontWeight: 800, fontSize: { xs: '1.25rem', sm: '1.5rem' }, color: '#F8FAFC', letterSpacing: '-0.5px', lineHeight: 1.1, mb: 1 }}>
+                                        {group.name}
+                                    </Typography>
+                                    <Box sx={{
+                                        display: 'inline-flex',
+                                        px: 1.5,
+                                        py: 0.5,
+                                        borderRadius: '10px',
+                                        background: 'rgba(255, 255, 255, 0.03)',
+                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                        color: '#94A3B8',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '1px'
+                                    }}>
+                                        {group.members.length} members
+                                    </Box>
+                                </Box>
+
+
+                                <Box sx={{ textAlign: 'right' }}>
+                                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 600, color: '#94A3B8', mb: 0.5, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        {myBalance >= 0 ? 'You are owed' : 'You owe'}
+                                    </Typography>
+                                    <Typography sx={{
+                                        fontSize: { xs: '1.2rem', sm: '1.5rem' },
+                                        fontWeight: 800,
+                                        color: myBalance >= 0 ? '#34D399' : '#F87171',
+                                        lineHeight: 1,
+                                        letterSpacing: '-1px'
+                                    }}>
+                                        {formatCurrency(Math.abs(myBalance))}
+                                    </Typography>
+
+                                    {expandedBalance ? (
+                                        <ExpandMoreIcon sx={{ color: '#94A3B8', ml: 'auto', mt: 0.5, fontSize: '1.5rem', transform: 'rotate(180deg)', transition: 'transform 0.3s' }} />
+                                    ) : (
+                                        <ExpandMoreIcon sx={{ color: '#94A3B8', ml: 'auto', mt: 0.5, fontSize: '1.5rem', transition: 'transform 0.3s' }} />
+                                    )}
+                                </Box>
+                            </Box>
+
+                            {/* Expanded Balance Details */}
+                            {expandedBalance && (
+                                <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid rgba(255,255,255,0.1)', position: 'relative', zIndex: 1 }}>
+                                    <Stack spacing={1.5}>
+                                        {(() => {
+                                            // Convert balances to array and sort: Receivers (Positive) first, then Payers (Negative)
+                                            const sortedBalances = Object.entries(balances)
+                                                .filter(([_, val]) => Math.abs(val) > 0.01) // Hide zero balances
+                                                .sort(([, a], [, b]) => b - a); // Descending (Positives -> Negatives)
+
+                                            return sortedBalances.map(([memberId, bal]) => {
+                                                // Find member details
+                                                const member = group.members.find(m => {
+                                                    const mId = (m.userId && typeof m.userId === 'object' && m.userId._id)
+                                                        ? String(m.userId._id) : String(m.userId || m.email || m.name);
+                                                    return mId === memberId;
+                                                });
+                                                const originalName = member?.name || 'Unknown';
+
+                                                // Check if this row is Me
+                                                const isMe = member && (
+                                                    (member.userId && String(member.userId._id || member.userId) === String(user?._id)) ||
+                                                    (member.email && user?.email && member.email.toLowerCase() === user.email.toLowerCase())
+                                                );
+
+                                                const name = isMe ? 'You' : originalName;
+                                                const isReceiver = bal >= 0;
+
+                                                return (
+                                                    <Box key={memberId} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', color: '#CBD5E1' }}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                                                            <Box
+                                                                sx={{
+                                                                    width: 28,
+                                                                    height: 28,
+                                                                    borderRadius: '50%',
+                                                                    marginRight: 1.5,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    background: `linear-gradient(135deg, ${getAvatarColor(originalName)}, ${alpha(getAvatarColor(originalName), 0.7)})`,
+                                                                    overflow: 'hidden',
+                                                                    boxShadow: `0 2px 8px ${alpha(getAvatarColor(originalName), 0.25)}`
+                                                                }}
+                                                            >
+                                                                <img
+                                                                    src={`https://api.dicebear.com/7.x/notionists/svg?seed=${originalName}`}
+                                                                    alt={originalName}
+                                                                    style={{ width: '100%', height: '100%' }}
+                                                                />
+                                                            </Box>
+                                                            <Typography sx={{ fontSize: '0.9rem', fontWeight: 500 }}>
+                                                                {name} <span style={{ opacity: 0.6, fontSize: '0.8rem', marginLeft: '4px' }}>{isReceiver ? 'gets back' : 'pays'}</span>
+                                                            </Typography>
+                                                        </Box>
+                                                        <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: isReceiver ? '#34D399' : '#F87171' }}>
+                                                            {formatCurrency(Math.abs(bal))}
+                                                        </Typography>
+                                                    </Box>
+                                                );
+                                            });
+                                        })()}
+                                    </Stack>
+                                </Box>
                             )}
                         </Box>
                     </Box>
 
-                    {/* Expanded Balance Details */}
-                    {expandedBalance && (
-                        <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid rgba(255,255,255,0.1)', position: 'relative', zIndex: 1 }}>
-                            <Stack spacing={1.5}>
-                                {(() => {
-                                    // Convert balances to array and sort: Receivers (Positive) first, then Payers (Negative)
-                                    const sortedBalances = Object.entries(balances)
-                                        .filter(([_, val]) => Math.abs(val) > 0.01) // Hide zero balances
-                                        .sort(([, a], [, b]) => b - a); // Descending (Positives -> Negatives)
 
-                                    return sortedBalances.map(([memberId, bal]) => {
-                                        // Find member details
-                                        const member = group.members.find(m => {
-                                            const mId = (m.userId && typeof m.userId === 'object' && m.userId._id)
-                                                ? String(m.userId._id) : String(m.userId || m.email || m.name);
-                                            return mId === memberId;
-                                        });
-                                        const originalName = member?.name || 'Unknown';
 
-                                        // Check if this row is Me
-                                        const isMe = member && (
-                                            (member.userId && String(member.userId._id || member.userId) === String(user?._id)) ||
-                                            (member.email && user?.email && member.email.toLowerCase() === user.email.toLowerCase())
-                                        );
+                    {/* 4. Tabs Navigation - Creative Pill Design */}
+                    <Box sx={{ mb: 3, px: { xs: 0, sm: 2 } }}>
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{
+                                background: 'rgba(15, 23, 42, 0.4)', // Muted Slate
+                                backdropFilter: 'blur(10px)',
+                                borderRadius: '16px',
+                                p: 0.5,
+                                border: '1px solid rgba(255, 255, 255, 0.05)',
+                                display: 'flex',
+                                width: '100%',
+                                position: 'relative'
+                            }}
+                        >
+                            {[
+                                { label: 'Dashboard', icon: <DashboardIcon sx={{ fontSize: '1.25rem' }} /> },
+                                { label: 'Expenses', icon: <HistoryIcon sx={{ fontSize: '1.25rem' }} /> },
+                                { label: 'Balances', icon: <BalanceIcon sx={{ fontSize: '1.25rem' }} /> }
+                            ].map((tab, index) => (
+                                <Tooltip key={tab.label} title={tab.label} arrow>
+                                    <Box
+                                        onClick={() => handleTabChange(index)}
+                                        sx={{
+                                            flex: 1,
+                                            py: 1.5,
+                                            cursor: 'pointer',
+                                            color: tabValue === index ? 'white' : 'rgba(255,255,255,0.4)',
+                                            borderRadius: '12px',
+                                            background: tabValue === index ? 'rgba(30, 41, 59, 0.9)' : 'transparent',
+                                            boxShadow: tabValue === index ? '0 8px 16px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1)' : 'none',
+                                            transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            border: tabValue === index ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid transparent',
+                                            '&:hover': {
+                                                color: 'white',
+                                                background: tabValue === index ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.05)',
+                                                transform: tabValue === index ? 'none' : 'translateY(-2px)'
+                                            }
+                                        }}
+                                    >
+                                        {tab.icon}
+                                    </Box>
+                                </Tooltip>
+                            ))}
+                        </Stack>
+                    </Box>
 
-                                        const name = isMe ? 'You' : originalName;
-                                        const isReceiver = bal >= 0;
+                    {/* 5. Content Sections - Optimized Sliding Container */}
+                    <Box
+                        sx={{
+                            position: 'relative',
+                            overflow: 'hidden',
+                            px: { xs: 0, sm: 2 }
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                transform: `translateX(-${tabValue * 100}%)`,
+                                willChange: 'transform'
+                            }}
+                        >
+                            {/* TAB 0: DASHBOARD - Only render when active or adjacent */}
+                            <Box
+                                sx={{
+                                    minWidth: '100%',
+                                    pb: 3,
+                                    opacity: tabValue === 0 ? 1 : 0.3,
+                                    transition: 'opacity 0.3s ease-out',
+                                    pointerEvents: tabValue === 0 ? 'auto' : 'none'
+                                }}
+                            >
+                                {tabValue === 0 && (
+                                    <GroupAnalytics
+                                        expenses={expenses}
+                                        members={group.members}
+                                        currency={group.currency}
+                                        currentUser={user}
+                                    />
+                                )}
+                            </Box>
 
-                                        return (
-                                            <Box key={memberId} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', color: '#CBD5E1' }}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                                                    <Box
-                                                        sx={{
-                                                            width: 28,
-                                                            height: 28,
-                                                            borderRadius: '50%',
-                                                            marginRight: 1.5,
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            background: `linear-gradient(135deg, ${getAvatarColor(originalName)}, ${alpha(getAvatarColor(originalName), 0.7)})`,
-                                                            overflow: 'hidden',
-                                                            boxShadow: `0 2px 8px ${alpha(getAvatarColor(originalName), 0.25)}`
-                                                        }}
-                                                    >
-                                                        <img
-                                                            src={`https://api.dicebear.com/7.x/notionists/svg?seed=${originalName}`}
-                                                            alt={originalName}
-                                                            style={{ width: '100%', height: '100%' }}
-                                                        />
-                                                    </Box>
-                                                    <Typography sx={{ fontSize: '0.9rem', fontWeight: 500 }}>
-                                                        {name} <span style={{ opacity: 0.6, fontSize: '0.8rem', marginLeft: '4px' }}>{isReceiver ? 'gets back' : 'pays'}</span>
-                                                    </Typography>
-                                                </Box>
-                                                <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: isReceiver ? '#34D399' : '#F87171' }}>
-                                                    {formatCurrency(Math.abs(bal))}
+                            {/* TAB 1: EXPENSES - Only render when active or adjacent */}
+                            <Box
+                                sx={{
+                                    minWidth: '100%',
+                                    pb: 3,
+                                    opacity: tabValue === 1 ? 1 : 0.3,
+                                    transition: 'opacity 0.3s ease-out',
+                                    pointerEvents: tabValue === 1 ? 'auto' : 'none'
+                                }}
+                            >
+                                {(tabValue === 1) && (
+                                    <Stack spacing={0}>
+                                        {expenses.length === 0 ? (
+                                            <Box sx={{ textAlign: 'center', py: 6, opacity: 0.6 }}>
+                                                <Typography variant="h2" sx={{ mb: 1.5, fontSize: '2.5rem' }}>📝</Typography>
+                                                <Typography variant="h6" sx={{ fontSize: '1.1rem' }}>No expenses yet</Typography>
+                                                <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>Add your first expense to get started!</Typography>
+                                            </Box>
+                                        ) : (
+                                            expenses.slice()
+                                                .sort((a, b) => {
+                                                    const dateDiff = new Date(b.date) - new Date(a.date);
+                                                    if (dateDiff !== 0) return dateDiff;
+                                                    // Case: Same day - Sort by creation time (most recent first)
+                                                    return new Date(b.createdAt) - new Date(a.createdAt);
+                                                })
+                                                .map((expense) => (
+                                                    <ExpenseItem
+                                                        key={expense._id}
+                                                        expense={expense}
+                                                        onClick={setSelectedExpense}
+                                                        getPayerName={getPayerName}
+                                                        getCategoryIcon={getCategoryIcon}
+                                                        formatCurrency={formatCurrency}
+                                                        getCategoryStyle={getCategoryStyle}
+                                                    />
+                                                ))
+                                        )}
+                                    </Stack>
+                                )}
+                            </Box>
+
+                            {/* TAB 2: BALANCES - Only render when active or adjacent */}
+                            <Box
+                                sx={{
+                                    minWidth: '100%',
+                                    pb: 3,
+                                    opacity: tabValue === 2 ? 1 : 0.3,
+                                    transition: 'opacity 0.3s ease-out',
+                                    pointerEvents: tabValue === 2 ? 'auto' : 'none'
+                                }}
+                            >
+                                {(tabValue === 2) && (
+                                    <>
+                                        {/* Settlement Suggestions Section */}
+                                        {settlements.length > 0 ? (
+                                            // Show only settlement suggestions (cleaner, more actionable)
+                                            <SettlementSuggestionsList
+                                                settlements={settlements}
+                                                onSettle={(settlement) => {
+                                                    setSelectedSettlement(settlement);
+                                                    setIsSettleDialogOpen(true);
+                                                }}
+                                                onSettleAll={async () => {
+                                                    try {
+                                                        const settlementPayloads = settlements.map(settlement => ({
+                                                            payerId: settlement.from.userId,
+                                                            receiverId: settlement.to.userId,
+                                                            amount: settlement.amount,
+                                                            payerName: settlement.from.name,
+                                                            receiverName: settlement.to.name
+                                                        }));
+
+                                                        await groupService.bulkSettleDebts(id, settlementPayloads);
+
+                                                        toast.success(`${settlements.length} settlements recorded!`);
+                                                        await fetchGroupDetails();
+                                                    } catch (error) {
+                                                        console.error('Settlement error:', error);
+                                                        toast.error('Failed to record settlements');
+                                                    }
+                                                }}
+                                            />
+                                        ) : (
+                                            // Show "All Settled" message when no settlements needed
+                                            <Box
+                                                sx={{
+                                                    p: { xs: 3, sm: 4 },
+                                                    textAlign: 'center',
+                                                    background: 'rgba(255, 255, 255, 0.02)',
+                                                    borderRadius: 3,
+                                                    border: '1px dashed rgba(255, 255, 255, 0.1)'
+                                                }}
+                                            >
+                                                <Typography variant="h2" sx={{ fontSize: '3rem', mb: 2 }}>🎉</Typography>
+                                                <Typography variant="h6" sx={{ color: 'text.primary', mb: 1, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                                    All Settled Up!
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: { xs: '0.85rem', sm: '0.875rem' } }}>
+                                                    No outstanding balances in this group.
                                                 </Typography>
                                             </Box>
-                                        );
-                                    });
-                                })()}
-                            </Stack>
+                                        )}
+                                    </>
+                                )}
+                            </Box>
                         </Box>
-                    )}
-                </Box>
-            </Box>
+                    </Box>
 
+                    {/* --- Dialogs (Hidden) --- */}
+                    <AddGroupExpenseDialog
+                        open={isExpenseDialogOpen}
+                        onClose={handleExpenseDialogClose}
+                        group={group}
+                        currentUser={user}
+                        onAddMemberClick={() => setIsAddMemberDialogOpen(true)}
+                        initialExpense={editingExpense}
+                        onExpenseAdded={handleExpenseAdded}
+                    />
 
+                    <AddMemberDialog
+                        open={isAddMemberDialogOpen}
+                        onClose={() => setIsAddMemberDialogOpen(false)}
+                        groupId={group?._id}
+                        onMemberAdded={fetchGroupDetails}
+                        group={group}
+                        currentUser={user}
+                        onRemoveMember={(memberId) => setMemberToDelete(memberId)}
+                    />
 
-            {/* 4. Tabs Navigation - Creative Pill Design */}
-            <Box sx={{ mb: 3, px: { xs: 0, sm: 2 } }}>
-                <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{
-                        background: 'rgba(15, 23, 42, 0.4)', // Muted Slate
-                        backdropFilter: 'blur(10px)',
-                        borderRadius: '16px',
-                        p: 0.5,
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
-                        display: 'flex',
-                        width: '100%',
-                        position: 'relative'
-                    }}
-                >
-                    {[
-                        { label: 'Dashboard', icon: <DashboardIcon sx={{ fontSize: '1.25rem' }} /> },
-                        { label: 'Expenses', icon: <HistoryIcon sx={{ fontSize: '1.25rem' }} /> },
-                        { label: 'Balances', icon: <BalanceIcon sx={{ fontSize: '1.25rem' }} /> }
-                    ].map((tab, index) => (
-                        <Tooltip key={tab.label} title={tab.label} arrow>
-                            <Box
-                                onClick={() => handleTabChange(index)}
+                    <ExpenseDetailsDialog
+                        open={Boolean(selectedExpense)}
+                        onClose={() => setSelectedExpense(null)}
+                        expense={selectedExpense}
+                        currentUser={user}
+                        groupMembers={group?.members}
+                        onDelete={handleDeleteExpense}
+                        onEdit={handleEditExpense}
+                    />
+
+                    <SettleDebtDialog
+                        open={isSettleDialogOpen}
+                        onClose={() => {
+                            setIsSettleDialogOpen(false);
+                            setSelectedSettlement(null);
+                            // Don't refresh here - onSettled callback handles it when settlement succeeds
+                        }}
+                        group={group}
+                        currentUser={user}
+                        balances={balances}
+                        onSettled={fetchGroupDetails}
+                        initialSettlement={selectedSettlement}
+                    />
+
+                    <AddGroupDialog
+                        open={isEditDialogOpen}
+                        onClose={() => setIsEditDialogOpen(false)}
+                        onGroupCreated={() => {
+                            setIsEditDialogOpen(false);
+                            fetchGroupDetails();
+                        }}
+                        group={group}
+                    />
+
+                    {/* PDF download is now triggered directly from the download icon button */}
+
+                    <ConfirmDialog
+                        open={isDeleteDialogOpen}
+                        onClose={() => setIsDeleteDialogOpen(false)}
+                        onConfirm={handleDeleteGroup}
+                        title="Delete Group"
+                        message="Are you sure you want to delete this group? All expenses and data will be permanently removed."
+                    />
+
+                    <Dialog
+                        open={!!memberToDelete}
+                        onClose={() => setMemberToDelete(null)}
+                        maxWidth="xs"
+                        fullWidth
+                        PaperProps={{
+                            sx: {
+                                borderRadius: '20px',
+                                background: '#1E293B',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+                                overflow: 'hidden'
+                            }
+                        }}
+                    >
+                        <Box sx={{ p: 3 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
+                                <Box sx={{ width: 40, height: 40, borderRadius: '10px', background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
+                                    <DeleteIcon sx={{ color: 'white', fontSize: 20 }} />
+                                </Box>
+                                <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#F1F5F9' }}>Remove Member</Typography>
+                                <IconButton onClick={() => setMemberToDelete(null)} size="small" sx={{ color: '#94A3B8', '&:hover': { color: '#F1F5F9', background: 'rgba(255,255,255,0.08)' } }}>
+                                    <CloseIcon fontSize="small" />
+                                </IconButton>
+                            </Box>
+                            <Typography sx={{ color: '#CBD5E1', mb: 3, fontSize: '0.9rem', lineHeight: 1.6 }}>
+                                Are you sure you want to remove this member? ALL expenses paid by them or involving them will be PERMANENTLY DELETED.
+                            </Typography>
+                            <Button onClick={handleRemoveMember} fullWidth sx={{ py: 1.2, borderRadius: '12px', background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)', color: '#FFFFFF', fontWeight: 700, fontSize: '0.9rem', textTransform: 'none', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.35)', '&:hover': { background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)', transform: 'translateY(-1px)', boxShadow: '0 6px 16px rgba(239, 68, 68, 0.45)' } }}>
+                                Remove Member
+                            </Button>
+                        </Box>
+                    </Dialog>
+
+                    <ConfirmDialog
+                        open={confirmDialog.open}
+                        onClose={() => setConfirmDialog(prev => ({ ...prev, open: false }))}
+                        onConfirm={confirmDialog.onConfirm}
+                        title={confirmDialog.title}
+                        message={confirmDialog.message}
+                    />
+                    {/* PDF Preview Dialog - Ultra Clean */}
+                    <Dialog
+                        open={previewOpen}
+                        onClose={handleClosePreview}
+                        maxWidth="lg"
+                        fullWidth
+                        disableScrollLock={false}
+                        PaperProps={{
+                            sx: {
+                                height: '85vh',
+                                background: '#0f172a',
+                                color: 'white',
+                                borderRadius: '16px',
+                                overflow: 'hidden',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                                display: 'flex',
+                                flexDirection: 'column'
+                            }
+                        }}
+                        sx={{
+                            '& .MuiBackdrop-root': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)'
+                            }
+                        }}
+                    >
+                        {/* Minimal Header - Icons Only */}
+                        <Box sx={{
+                            padding: '12px 20px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: '#0f172a',
+                            borderBottom: '1px solid rgba(255,255,255,0.08)',
+                            flexShrink: 0,
+                            minHeight: '60px'
+                        }}>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                {/* Share Icon */}
+                                <IconButton
+                                    onClick={handleShareReport}
+                                    title="Share PDF"
+                                    disabled={shareLoading}
+                                    sx={{
+                                        background: 'rgba(255, 255, 255, 0.05)',
+                                        color: '#34d399', // Green
+                                        border: '1px solid rgba(52, 211, 153, 0.2)',
+                                        transition: 'all 0.2s',
+                                        '&:hover': {
+                                            background: 'rgba(52, 211, 153, 0.15)',
+                                            borderColor: '#34d399',
+                                            transform: 'translateY(-1px)'
+                                        }
+                                    }}
+                                >
+                                    {shareLoading ? <CircularProgress size={16} color="inherit" /> : <ShareIcon fontSize="small" />}
+                                </IconButton>
+
+                                {/* Download Icon */}
+                                <IconButton
+                                    onClick={handleDownloadReport}
+                                    title="Download PDF"
+                                    sx={{
+                                        background: 'rgba(255, 255, 255, 0.05)',
+                                        color: '#38bdf8', // Light Blue
+                                        border: '1px solid rgba(56, 189, 248, 0.2)',
+                                        transition: 'all 0.2s',
+                                        '&:hover': {
+                                            background: 'rgba(56, 189, 248, 0.15)',
+                                            borderColor: '#38bdf8',
+                                            transform: 'translateY(-1px)'
+                                        }
+                                    }}
+                                >
+                                    <DownloadIcon fontSize="small" />
+                                </IconButton>
+                            </Box>
+
+                            {/* Right: Close Icon */}
+                            <IconButton
+                                onClick={handleClosePreview}
+                                size="small"
                                 sx={{
-                                    flex: 1,
-                                    py: 1.5,
-                                    cursor: 'pointer',
-                                    color: tabValue === index ? 'white' : 'rgba(255,255,255,0.4)',
-                                    borderRadius: '12px',
-                                    background: tabValue === index ? 'rgba(30, 41, 59, 0.9)' : 'transparent',
-                                    boxShadow: tabValue === index ? '0 8px 16px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1)' : 'none',
-                                    transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    color: '#64748b',
+                                    '&:hover': { color: 'white', background: 'rgba(255,255,255,0.1)' }
+                                }}
+                            >
+                                <CloseIcon />
+                            </IconButton>
+                        </Box>
+
+                        {/* PDF Viewer (Toolbar Hidden) */}
+                        <Box sx={{
+                            flexGrow: 1,
+                            height: 'calc(85vh - 60px)', // Full dialog height minus header
+                            background: '#1e293b',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}>
+                            {pdfUrl ? (
+                                <iframe
+                                    src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`}
+                                    width="100%"
+                                    height="100%"
+                                    style={{ border: 'none', display: 'block' }}
+                                    title="Trip Report Preview"
+                                />
+                            ) : (
+                                <Box sx={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    border: tabValue === index ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid transparent',
-                                    '&:hover': {
-                                        color: 'white',
-                                        background: tabValue === index ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.05)',
-                                        transform: tabValue === index ? 'none' : 'translateY(-2px)'
-                                    }
-                                }}
-                            >
-                                {tab.icon}
-                            </Box>
-                        </Tooltip>
-                    ))}
-                </Stack>
-            </Box>
-
-            {/* 5. Content Sections - Optimized Sliding Container */}
-            <Box
-                sx={{
-                    position: 'relative',
-                    overflow: 'hidden',
-                    px: { xs: 0, sm: 2 }
-                }}
-            >
-                <Box
-                    sx={{
-                        display: 'flex',
-                        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        transform: `translateX(-${tabValue * 100}%)`,
-                        willChange: 'transform'
-                    }}
-                >
-                    {/* TAB 0: DASHBOARD - Only render when active or adjacent */}
-                    <Box
-                        sx={{
-                            minWidth: '100%',
-                            pb: 3,
-                            opacity: tabValue === 0 ? 1 : 0.3,
-                            transition: 'opacity 0.3s ease-out',
-                            pointerEvents: tabValue === 0 ? 'auto' : 'none'
-                        }}
-                    >
-                        {tabValue === 0 && (
-                            <GroupAnalytics
-                                expenses={expenses}
-                                members={group.members}
-                                currency={group.currency}
-                                currentUser={user}
-                            />
-                        )}
-                    </Box>
-
-                    {/* TAB 1: EXPENSES - Only render when active or adjacent */}
-                    <Box
-                        sx={{
-                            minWidth: '100%',
-                            pb: 3,
-                            opacity: tabValue === 1 ? 1 : 0.3,
-                            transition: 'opacity 0.3s ease-out',
-                            pointerEvents: tabValue === 1 ? 'auto' : 'none'
-                        }}
-                    >
-                        {(tabValue === 1) && (
-                            <Stack spacing={0}>
-                                {expenses.length === 0 ? (
-                                    <Box sx={{ textAlign: 'center', py: 6, opacity: 0.6 }}>
-                                        <Typography variant="h2" sx={{ mb: 1.5, fontSize: '2.5rem' }}>📝</Typography>
-                                        <Typography variant="h6" sx={{ fontSize: '1.1rem' }}>No expenses yet</Typography>
-                                        <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>Add your first expense to get started!</Typography>
-                                    </Box>
-                                ) : (
-                                    expenses.slice()
-                                        .sort((a, b) => new Date(b.date) - new Date(a.date))
-                                        .map((expense) => (
-                                            <ExpenseItem
-                                                key={expense._id}
-                                                expense={expense}
-                                                onClick={setSelectedExpense}
-                                                getPayerName={getPayerName}
-                                                getCategoryIcon={getCategoryIcon}
-                                                formatCurrency={formatCurrency}
-                                                getCategoryStyle={getCategoryStyle}
-                                            />
-                                        ))
-                                )}
-                            </Stack>
-                        )}
-                    </Box>
-
-                    {/* TAB 2: BALANCES - Only render when active or adjacent */}
-                    <Box
-                        sx={{
-                            minWidth: '100%',
-                            pb: 3,
-                            opacity: tabValue === 2 ? 1 : 0.3,
-                            transition: 'opacity 0.3s ease-out',
-                            pointerEvents: tabValue === 2 ? 'auto' : 'none'
-                        }}
-                    >
-                        {(tabValue === 2) && (
-                            <>
-                                {/* Settlement Suggestions Section */}
-                                {settlements.length > 0 ? (
-                                    // Show only settlement suggestions (cleaner, more actionable)
-                                    <SettlementSuggestionsList
-                                        settlements={settlements}
-                                        onSettle={(settlement) => {
-                                            setSelectedSettlement(settlement);
-                                            setIsSettleDialogOpen(true);
-                                        }}
-                                        onSettleAll={async () => {
-                                            try {
-                                                const settlementPayloads = settlements.map(settlement => ({
-                                                    payerId: settlement.from.userId,
-                                                    receiverId: settlement.to.userId,
-                                                    amount: settlement.amount,
-                                                    payerName: settlement.from.name,
-                                                    receiverName: settlement.to.name
-                                                }));
-
-                                                await groupService.bulkSettleDebts(id, settlementPayloads);
-
-                                                toast.success(`${settlements.length} settlements recorded!`);
-                                                await fetchGroupDetails();
-                                            } catch (error) {
-                                                console.error('Settlement error:', error);
-                                                toast.error('Failed to record settlements');
-                                            }
-                                        }}
-                                    />
-                                ) : (
-                                    // Show "All Settled" message when no settlements needed
-                                    <Box
-                                        sx={{
-                                            p: { xs: 3, sm: 4 },
-                                            textAlign: 'center',
-                                            background: 'rgba(255, 255, 255, 0.02)',
-                                            borderRadius: 3,
-                                            border: '1px dashed rgba(255, 255, 255, 0.1)'
-                                        }}
-                                    >
-                                        <Typography variant="h2" sx={{ fontSize: '3rem', mb: 2 }}>🎉</Typography>
-                                        <Typography variant="h6" sx={{ color: 'text.primary', mb: 1, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
-                                            All Settled Up!
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: { xs: '0.85rem', sm: '0.875rem' } }}>
-                                            No outstanding balances in this group.
-                                        </Typography>
-                                    </Box>
-                                )}
-                            </>
-                        )}
-                    </Box>
-                </Box>
-            </Box>
-
-            {/* --- Dialogs (Hidden) --- */}
-            < AddGroupExpenseDialog
-                open={isExpenseDialogOpen}
-                onClose={handleExpenseDialogClose}
-                group={group}
-                currentUser={user}
-                onAddMemberClick={() => setIsAddMemberDialogOpen(true)}
-                initialExpense={editingExpense}
-                onExpenseAdded={handleExpenseAdded}
-            />
-
-            <AddMemberDialog
-                open={isAddMemberDialogOpen}
-                onClose={() => setIsAddMemberDialogOpen(false)}
-                groupId={group?._id}
-                onMemberAdded={fetchGroupDetails}
-                group={group}
-                currentUser={user}
-                onRemoveMember={(memberId) => setMemberToDelete(memberId)}
-            />
-
-            <ExpenseDetailsDialog
-                open={Boolean(selectedExpense)}
-                onClose={() => setSelectedExpense(null)}
-                expense={selectedExpense}
-                currentUser={user}
-                groupMembers={group?.members}
-                onDelete={handleDeleteExpense}
-                onEdit={handleEditExpense}
-            />
-
-            <SettleDebtDialog
-                open={isSettleDialogOpen}
-                onClose={() => {
-                    setIsSettleDialogOpen(false);
-                    setSelectedSettlement(null);
-                    // Don't refresh here - onSettled callback handles it when settlement succeeds
-                }}
-                group={group}
-                currentUser={user}
-                balances={balances}
-                onSettled={fetchGroupDetails}
-                initialSettlement={selectedSettlement}
-            />
-
-            <AddGroupDialog
-                open={isEditDialogOpen}
-                onClose={() => setIsEditDialogOpen(false)}
-                onGroupCreated={() => {
-                    setIsEditDialogOpen(false);
-                    fetchGroupDetails();
-                }}
-                group={group}
-            />
-
-            {/* PDF download is now triggered directly from the download icon button */}
-
-            <ConfirmDialog
-                open={isDeleteDialogOpen}
-                onClose={() => setIsDeleteDialogOpen(false)}
-                onConfirm={handleDeleteGroup}
-                title="Delete Group"
-                message="Are you sure you want to delete this group? All expenses and data will be permanently removed."
-            />
-
-            <Dialog
-                open={!!memberToDelete}
-                onClose={() => setMemberToDelete(null)}
-                maxWidth="xs"
-                fullWidth
-                PaperProps={{
-                    sx: {
-                        borderRadius: '20px',
-                        background: '#1E293B',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
-                        overflow: 'hidden'
-                    }
-                }}
-            >
-                <Box sx={{ p: 3 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
-                        <Box sx={{ width: 40, height: 40, borderRadius: '10px', background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
-                            <DeleteIcon sx={{ color: 'white', fontSize: 20 }} />
+                                    height: '100%',
+                                    color: '#64748b'
+                                }}>
+                                    <Typography>Loading PDF...</Typography>
+                                </Box>
+                            )}
                         </Box>
-                        <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#F1F5F9' }}>Remove Member</Typography>
-                        <IconButton onClick={() => setMemberToDelete(null)} size="small" sx={{ color: '#94A3B8', '&:hover': { color: '#F1F5F9', background: 'rgba(255,255,255,0.08)' } }}>
-                            <CloseIcon fontSize="small" />
-                        </IconButton>
-                    </Box>
-                    <Typography sx={{ color: '#CBD5E1', mb: 3, fontSize: '0.9rem', lineHeight: 1.6 }}>
-                        Are you sure you want to remove this member? ALL expenses paid by them or involving them will be PERMANENTLY DELETED.
-                    </Typography>
-                    <Button onClick={handleRemoveMember} fullWidth sx={{ py: 1.2, borderRadius: '12px', background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)', color: '#FFFFFF', fontWeight: 700, fontSize: '0.9rem', textTransform: 'none', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.35)', '&:hover': { background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)', transform: 'translateY(-1px)', boxShadow: '0 6px 16px rgba(239, 68, 68, 0.45)' } }}>
-                        Remove Member
-                    </Button>
+                    </Dialog>
                 </Box>
-            </Dialog>
-
-            <ConfirmDialog
-                open={confirmDialog.open}
-                onClose={() => setConfirmDialog(prev => ({ ...prev, open: false }))}
-                onConfirm={confirmDialog.onConfirm}
-                title={confirmDialog.title}
-                message={confirmDialog.message}
-            />
-            {/* PDF Preview Dialog - Ultra Clean */}
-            <Dialog
-                open={previewOpen}
-                onClose={handleClosePreview}
-                maxWidth="lg"
-                fullWidth
-                disableScrollLock={false}
-                PaperProps={{
-                    sx: {
-                        height: '85vh',
-                        background: '#0f172a',
-                        color: 'white',
-                        borderRadius: '16px',
-                        overflow: 'hidden',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-                        display: 'flex',
-                        flexDirection: 'column'
-                    }
-                }}
-                sx={{
-                    '& .MuiBackdrop-root': {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)'
-                    }
-                }}
-            >
-                {/* Minimal Header - Icons Only */}
-                <Box sx={{
-                    padding: '12px 20px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    background: '#0f172a',
-                    borderBottom: '1px solid rgba(255,255,255,0.08)',
-                    flexShrink: 0,
-                    minHeight: '60px'
-                }}>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                        {/* Share Icon */}
-                        <IconButton
-                            onClick={handleShareReport}
-                            title="Share PDF"
-                            disabled={shareLoading}
-                            sx={{
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                color: '#34d399', // Green
-                                border: '1px solid rgba(52, 211, 153, 0.2)',
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                    background: 'rgba(52, 211, 153, 0.15)',
-                                    borderColor: '#34d399',
-                                    transform: 'translateY(-1px)'
-                                }
-                            }}
-                        >
-                            {shareLoading ? <CircularProgress size={16} color="inherit" /> : <ShareIcon fontSize="small" />}
-                        </IconButton>
-
-                        {/* Download Icon */}
-                        <IconButton
-                            onClick={handleDownloadReport}
-                            title="Download PDF"
-                            sx={{
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                color: '#38bdf8', // Light Blue
-                                border: '1px solid rgba(56, 189, 248, 0.2)',
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                    background: 'rgba(56, 189, 248, 0.15)',
-                                    borderColor: '#38bdf8',
-                                    transform: 'translateY(-1px)'
-                                }
-                            }}
-                        >
-                            <DownloadIcon fontSize="small" />
-                        </IconButton>
-                    </Box>
-
-                    {/* Right: Close Icon */}
-                    <IconButton
-                        onClick={handleClosePreview}
-                        size="small"
-                        sx={{
-                            color: '#64748b',
-                            '&:hover': { color: 'white', background: 'rgba(255,255,255,0.1)' }
-                        }}
-                    >
-                        <CloseIcon />
-                    </IconButton>
-                </Box>
-
-                {/* PDF Viewer (Toolbar Hidden) */}
-                <Box sx={{
-                    flexGrow: 1,
-                    height: 'calc(85vh - 60px)', // Full dialog height minus header
-                    background: '#1e293b',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column'
-                }}>
-                    {pdfUrl ? (
-                        <iframe
-                            src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`}
-                            width="100%"
-                            height="100%"
-                            style={{ border: 'none', display: 'block' }}
-                            title="Trip Report Preview"
-                        />
-                    ) : (
-                        <Box sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            height: '100%',
-                            color: '#64748b'
-                        }}>
-                            <Typography>Loading PDF...</Typography>
-                        </Box>
-                    )}
-                </Box>
-            </Dialog>
+            </Fade>
         </PageContainer >
     );
 }

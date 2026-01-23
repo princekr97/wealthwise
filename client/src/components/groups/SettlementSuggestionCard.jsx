@@ -469,7 +469,7 @@ export function SettlementSuggestionsList({ settlements, onSettle, onSettleAll, 
                     }
                 }}
             >
-                <DialogContent sx={{ p: 3, textAlign: 'center' }}>
+                <DialogContent sx={{ p: '14px !important', textAlign: 'center' }}>
                     {settling ? (
                         <Box>
                             <CircularProgress size={60} sx={{ color: '#8b5cf6', mb: 2 }} />

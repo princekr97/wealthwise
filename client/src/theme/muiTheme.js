@@ -482,9 +482,9 @@ export const createMuiTheme = (mode) => createTheme({
     MuiDialogContent: {
       styleOverrides: {
         root: {
-          padding: '28px',  // Extra padding for breathing room
-          paddingTop: '28px !important',
-          '&.MuiDialogContent-dividers': { 
+          padding: '14px',  // Compact padding for launch
+          paddingTop: '14px !important',
+          '&.MuiDialogContent-dividers': {
             borderColor: colors.glassBorder,
             borderTop: 'none'
           }

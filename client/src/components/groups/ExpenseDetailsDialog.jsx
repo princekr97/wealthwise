@@ -141,11 +141,15 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
         return name.length > 6 ? name.substring(0, 6) + '...' : name;
     };
 
+    // Date/Time Formatting with Timezone awareness
     const dateObj = new Date(expense.date);
+    // Use high-precision createdAt for the time, fallback to dateObj
+    const timeObj = expense.createdAt ? new Date(expense.createdAt) : dateObj;
+
     const formattedDate = dateObj.toLocaleDateString('en-GB', {
         day: 'numeric', month: 'short', year: 'numeric'
     });
-    const formattedTime = dateObj.toLocaleTimeString('en-GB', {
+    const formattedTime = timeObj.toLocaleTimeString('en-GB', {
         hour: '2-digit', minute: '2-digit'
     });
 
@@ -207,7 +211,7 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
                 }
             }}
         >
-            <DialogContent sx={{ p: '20px !important', color: 'white' }}> {/* Reduced padding from 24px */}
+            <DialogContent sx={{ p: '14px !important', color: 'white' }}> {/* Reduced padding to 14px */}
                 {/* Close Icon */}
                 <IconButton
                     onClick={onClose}

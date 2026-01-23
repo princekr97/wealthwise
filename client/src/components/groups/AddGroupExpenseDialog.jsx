@@ -313,6 +313,30 @@ const getMemberId = (member) => {
     return member._id;
 };
 
+// Check if a member corresponds to the current logged-in user (by ID, phone, or email)
+const isCurrentMember = (member, currentUser) => {
+    if (!currentUser) return false;
+    const memberId = String(getMemberId(member));
+    const currentId = String(currentUser._id);
+
+    // Check ID
+    if (memberId === currentId) return true;
+
+    // Check Phone
+    if (currentUser.phone) {
+        const memberPhone = member.phone || member.userId?.phone;
+        if (memberPhone && memberPhone === currentUser.phone) return true;
+    }
+
+    // Check Email
+    if (currentUser.email) {
+        const memberEmail = member.email || member.userId?.email;
+        if (memberEmail && memberEmail.toLowerCase() === currentUser.email.toLowerCase()) return true;
+    }
+
+    return false;
+};
+
 export default function AddGroupExpenseDialog({ open, onClose, group, currentUser, onAddMemberClick, initialExpense, onExpenseAdded }) {
     const theme = useTheme();
     const [splitType, setSplitType] = useState('equal'); // 'equal' | 'custom'
@@ -347,8 +371,18 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
         if (open) {
             setIsInitializing(true);
             if (initialExpense) {
-                const splitMode = initialExpense.splitType || 'equal';
-                setSplitType(splitMode);
+                // Intelligently detect split type based on actual splits
+                let detectedSplitType = 'equal';
+                if (initialExpense.splits && initialExpense.splits.length > 0) {
+                    const nonZeroSplits = initialExpense.splits.filter(s => s.amount > 0);
+                    if (nonZeroSplits.length > 0) {
+                        // Check if all non-zero splits have the same amount (within 0.02 tolerance for rounding)
+                        const firstAmount = nonZeroSplits[0].amount;
+                        const allEqual = nonZeroSplits.every(s => Math.abs(s.amount - firstAmount) <= 0.02);
+                        detectedSplitType = allEqual ? 'equal' : 'custom';
+                    }
+                }
+                setSplitType(detectedSplitType);
 
                 const fullSplits = members.map(m => {
                     const mId = String(getMemberId(m));
@@ -356,8 +390,26 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
 
                     // Match by ID or Name (for shadow members where user might be null in DB)
                     const existingSplit = initialExpense.splits?.find(s => {
-                        const sId = String(s.user?._id || s.user);
-                        if (sId !== "null" && sId !== "undefined") return sId === mId;
+                        // Try to extract user ID from split
+                        let sId = null;
+                        if (s.user) {
+                            if (typeof s.user === 'object') {
+                                // Check if _id exists and is not null
+                                if (s.user._id && s.user._id !== null) {
+                                    sId = String(s.user._id);
+                                }
+                                // If _id is null, we'll use name matching below
+                            } else {
+                                sId = String(s.user);
+                            }
+                        }
+
+                        // Try ID match first
+                        if (sId && sId !== "null" && sId !== "undefined" && sId !== "") {
+                            if (sId === mId) return true;
+                        }
+
+                        // Fallback to name matching for shadow members
                         return s.userName?.toLowerCase().trim() === mName;
                     });
 
@@ -368,25 +420,76 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                     };
                 });
 
+                // Extract paidBy ID properly
+
+                let paidById = '';
+                if (initialExpense.paidBy) {
+                    if (typeof initialExpense.paidBy === 'object') {
+                        // Check if _id exists and is not null
+                        if (initialExpense.paidBy._id && initialExpense.paidBy._id !== null) {
+                            paidById = String(initialExpense.paidBy._id);
+                        } else if (initialExpense.paidBy.name) {
+                            // Shadow member - find by name in members array
+                            const matchingMember = members.find(m =>
+                                m.name?.toLowerCase().trim() === initialExpense.paidBy.name?.toLowerCase().trim()
+                            );
+                            if (matchingMember) {
+                                paidById = String(getMemberId(matchingMember));
+                            }
+                        }
+                    } else {
+                        paidById = String(initialExpense.paidBy);
+                    }
+                }
+
+
                 reset({
                     description: initialExpense.description,
                     amount: initialExpense.amount,
                     category: initialExpense.category || '',
-                    paidBy: (initialExpense.paidBy?._id || initialExpense.paidBy)?.toString() || '',
+                    paidBy: paidById,
                     date: initialExpense.date ? new Date(initialExpense.date).toISOString().split('T')[0] : getTodayDateString(),
                     splits: fullSplits
                 });
 
                 // Set selected members from existing splits
-                if (initialExpense.splits) {
+                if (initialExpense.splits && members.length > 0) {
+
                     const selectedIds = initialExpense.splits
                         .filter(s => s.amount > 0)
                         .map(s => {
-                            const sId = String(s.user?._id || s.user);
-                            if (sId !== "null" && sId !== "undefined") return sId;
-                            // Fallback to name matching in members list for shadow members
-                            const matchingMember = members.find(m => m.name?.toLowerCase().trim() === s.userName?.toLowerCase().trim());
-                            return matchingMember ? String(getMemberId(matchingMember)) : null;
+
+                            // Extract user ID from split
+                            let userId = null;
+                            if (s.user) {
+                                if (typeof s.user === 'object') {
+                                    // Check if _id exists and is not null
+                                    if (s.user._id && s.user._id !== null) {
+                                        userId = String(s.user._id);
+                                    }
+                                    // If _id is null, we'll fall through to name matching below
+                                } else {
+                                    userId = String(s.user);
+                                }
+                            }
+
+                            // Validate the extracted ID
+                            if (userId && userId !== 'null' && userId !== 'undefined' && userId !== '') {
+                                return userId;
+                            }
+
+                            // Fallback to name matching for shadow members
+                            if (s.userName) {
+                                const matchingMember = members.find(m =>
+                                    m.name?.toLowerCase().trim() === s.userName?.toLowerCase().trim()
+                                );
+                                if (matchingMember) {
+                                    const matchedId = String(getMemberId(matchingMember));
+                                    return matchedId;
+                                }
+                            }
+
+                            return null;
                         })
                         .filter(Boolean);
 
@@ -404,10 +507,13 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
 
                 // Find matching member ID for current user to ensure dropdown value match
                 let defaultPayer = '';
-                if (currentUser && group?.members) {
-                    const matchingMember = group.members.find(m => String(getMemberId(m)) === String(currentUser._id));
+                if (currentUser && members.length > 0) {
+
+                    // Find member matching current user (checks ID, Phone, Email)
+                    const matchingMember = members.find(m => isCurrentMember(m, currentUser));
+
                     if (matchingMember) {
-                        defaultPayer = getMemberId(matchingMember);
+                        defaultPayer = String(getMemberId(matchingMember));
                     }
                 }
 
@@ -419,6 +525,9 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                     date: getTodayDateString(),
                     splits: []
                 });
+
+                // For NEW expenses, we're NOT in first load mode
+                isFirstLoad.current = false;
             }
             setIsInitializing(false);
         } else {
@@ -500,6 +609,72 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
         // Update internal form splits
         setValue('splits', newSplits, { shouldValidate: true });
 
+    }, [amount, members, selectedMemberIds, setValue, splitType, initialExpense]);
+
+    // Handle CUSTOM mode: When selection changes, redistribute remaining amount
+    useEffect(() => {
+        if (!amount || members.length === 0 || splitType !== 'custom') return;
+
+        // Skip on initial load of existing expense to preserve saved values
+        if (initialExpense && isFirstLoad.current) {
+            // Once we have both amount and members, we consider the next tick as 'ready'
+            if (amount && selectedMemberIds.length > 0) {
+                isFirstLoad.current = false;
+            }
+            return;
+        }
+
+        const totalAmount = parseFloat(amount);
+        if (isNaN(totalAmount) || totalAmount <= 0) return;
+
+        const activeMembers = selectedMemberIds.length;
+
+        if (activeMembers === 0) {
+            // Zero out everyone if no one is selected
+            const zeroSplits = members.map(m => ({
+                user: getMemberId(m),
+                userName: m.name,
+                amount: 0
+            }));
+            setValue('splits', zeroSplits);
+            return;
+        }
+
+        // Distribute the FULL amount among selected members
+        const amountPerPerson = totalAmount / activeMembers;
+        const roundedAmount = Math.floor(amountPerPerson * 100) / 100;
+        const currentTotal = roundedAmount * activeMembers;
+        const remainder = parseFloat((totalAmount - currentTotal).toFixed(2));
+
+        let remainderAdded = false;
+
+        const newSplits = members.map((member) => {
+            const mId = String(getMemberId(member));
+            const isSelected = selectedMemberIds.includes(mId);
+
+            if (!isSelected) {
+                return {
+                    user: getMemberId(member),
+                    userName: member.name,
+                    amount: 0
+                };
+            }
+
+            let splitAmount = roundedAmount;
+            // Distribute remainder to first selected person
+            if (!remainderAdded) {
+                splitAmount = parseFloat((roundedAmount + remainder).toFixed(2));
+                remainderAdded = true;
+            }
+
+            return {
+                user: getMemberId(member),
+                userName: member.name,
+                amount: splitAmount
+            };
+        });
+
+        setValue('splits', newSplits, { shouldValidate: true });
     }, [amount, members, selectedMemberIds, setValue, splitType, initialExpense]);
 
 
@@ -619,17 +794,22 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
             TransitionComponent={Fade}
             transitionDuration={300}
             disableScrollLock={false}
+            hideBackdrop={false}
             scroll="paper"
             maxWidth="sm"
             fullWidth
             fullScreen={false}
             sx={{
                 '& .MuiBackdrop-root': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)'
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    backdropFilter: 'blur(4px)'
                 },
                 '& .MuiDialog-paper': {
                     maxHeight: { xs: '90vh', sm: '85vh' },
                     m: { xs: 2, sm: 3 }
+                },
+                '& .MuiDialog-container': {
+                    overscrollBehavior: 'contain'
                 }
             }}
         >
@@ -659,7 +839,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
             </HeaderBox>
 
             <DialogContent sx={{
-                p: '1.5rem !important',
+                p: '14px !important',
                 // bgcolor: '#1E293B',
                 background: 'rgba(30, 41, 59, 0.95)',
                 backdropFilter: 'blur(24px)',
@@ -675,7 +855,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                         <Controller
                             name="description"
                             control={control}
-                            rules={{ required: 'Required' }}
+                            rules={{ required: 'Description is required' }}
                             render={({ field }) => (
                                 <CustomTextField
                                     {...field}
@@ -694,7 +874,10 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             <Controller
                                 name="amount"
                                 control={control}
-                                rules={{ required: 'Required' }}
+                                rules={{
+                                    required: 'Amount is required',
+                                    min: { value: 0.01, message: 'Amount must be greater than 0' }
+                                }}
                                 render={({ field }) => (
                                     <CustomTextField
                                         {...field}
@@ -714,6 +897,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             <Controller
                                 name="category"
                                 control={control}
+                                rules={{ required: 'Category is required' }}
                                 render={({ field }) => (
                                     <CustomSelect
                                         {...field}
@@ -811,7 +995,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             <Controller
                                 name="paidBy"
                                 control={control}
-                                rules={{ required: 'Required' }}
+                                rules={{ required: 'Please select who paid' }}
                                 render={({ field }) => (
                                     <CustomSelect
                                         {...field}
@@ -822,7 +1006,9 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                             if (!selected) return <Typography sx={{ fontSize: '0.85rem', color: '#64748b' }}>Select Member</Typography>;
                                             const member = members.find(m => String(getMemberId(m)) === String(selected));
                                             if (!member) return selected;
-                                            const isMe = currentUser && String(getMemberId(member)) === String(currentUser._id);
+
+                                            // Check if this member is the current user
+                                            const isMe = isCurrentMember(member, currentUser);
                                             return (
                                                 <Stack direction="row" alignItems="center" spacing={1} sx={{ overflow: 'hidden' }}>
                                                     <Avatar
@@ -870,7 +1056,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                                     >
                                         <MenuItem value="" disabled sx={{ fontSize: '0.85rem', color: '#64748b !important' }}>Select Member</MenuItem>
                                         {members.map(member => {
-                                            const isMe = currentUser && String(getMemberId(member)) === String(currentUser._id);
+                                            const isMe = isCurrentMember(member, currentUser);
                                             return (
                                                 <MenuItem
                                                     key={member._id}
@@ -901,7 +1087,7 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
                             <Controller
                                 name="date"
                                 control={control}
-                                rules={{ required: 'Required' }}
+                                rules={{ required: 'Date is required' }}
                                 render={({ field }) => (
                                     <CustomTextField
                                         {...field}
