@@ -17,7 +17,10 @@ import {
     Box,
     alpha,
     styled,
-    IconButton
+    IconButton,
+    CircularProgress,
+    useTheme,
+    useMediaQuery
 } from '@mui/material';
 import {
     Handshake as HandshakeIcon,
@@ -59,6 +62,11 @@ const SettleButton = styled(Button)(({ theme }) => ({
     },
     '&:active': {
         transform: 'translateY(0)'
+    },
+    '&:disabled': {
+        background: 'rgba(139, 92, 246, 0.3)',
+        color: 'rgba(255, 255, 255, 0.5)',
+        boxShadow: 'none'
     }
 }));
 
@@ -92,7 +100,9 @@ const AmountInput = styled(TextField)(({ theme }) => ({
 }));
 
 export default function SettleDebtDialog({ open, onClose, group, currentUser, balances, onSettled, initialSettlement }) {
-    const { control, handleSubmit, watch, setValue } = useForm({
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const { control, handleSubmit, watch, setValue, formState: { isSubmitting } } = useForm({
         defaultValues: { payerId: '', receiverId: '', amount: '' }
     });
 
@@ -128,29 +138,68 @@ export default function SettleDebtDialog({ open, onClose, group, currentUser, ba
         }
     };
 
+    // Helper to robustly identify if an ID belongs to the current user
+    const isMe = (targetId) => {
+        if (!currentUser || !targetId) return false;
+
+        // 1. Direct ID Match
+        const currentUserId = currentUser._id || currentUser.id;
+        if (String(targetId) === String(currentUserId)) return true;
+
+        // 2. Lookup in group members (to check phone links)
+        if (group && group.members) {
+            const member = group.members.find(m => {
+                const mId = m._id || m.id;
+                const mUserId = m.userId && typeof m.userId === 'object' ? (m.userId._id || m.userId.id) : m.userId;
+                return (mId && String(mId) === String(targetId)) || (mUserId && String(mUserId) === String(targetId));
+            });
+
+            if (member) {
+                // Check Phone
+                const userPhone = currentUser.phone || currentUser.phoneNumber;
+                if (userPhone && member.phone && member.phone === userPhone) return true;
+                if (userPhone && member.userId?.phone && member.userId.phone === userPhone) return true;
+
+                // Check Email
+                if (currentUser.email) {
+                    const mEmail = member.email || member.userId?.email;
+                    if (mEmail && mEmail.toLowerCase() === currentUser.email.toLowerCase()) return true;
+                }
+            }
+        }
+        return false;
+    };
+
     const oppositeUser = React.useMemo(() => {
         if (!group || !payerId || !receiverId || !currentUser) return null;
-        const targetId = String(payerId) === String(currentUser._id) ? receiverId : payerId;
+        const targetId = isMe(payerId) ? receiverId : payerId;
         return group.members.find(m => String(m.userId?._id || m.userId || m._id) === targetId);
     }, [group, payerId, receiverId, currentUser]);
 
     return (
         <Dialog
             open={open}
-            onClose={onClose}
+            onClose={(event, reason) => {
+                if (reason === 'escapeKeyDown') {
+                    onClose();
+                }
+                // Ignore 'backdropClick' - prevents closing when clicking outside
+            }}
             maxWidth="xs"
             fullWidth
+            fullScreen={isMobile}
             disableScrollLock={false}
             scroll="body"
             PaperProps={{
                 sx: {
-                    borderRadius: '28px',
+                    borderRadius: isMobile ? 0 : '28px',
                     p: 1,
                     backgroundImage: 'none',
                     bgcolor: '#0F172A', // Deeper slate for better contrast
                     border: '1px solid rgba(255, 255, 255, 0.08)',
                     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : 0
                 }
             }}
             sx={{
@@ -160,7 +209,12 @@ export default function SettleDebtDialog({ open, onClose, group, currentUser, ba
                 }
             }}
         >
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 1, pr: 1 }}>
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                pt: isMobile ? 'calc(8px + env(safe-area-inset-top))' : 1,
+                pr: 1
+            }}>
                 <IconButton
                     onClick={onClose}
                     size="small"
@@ -241,8 +295,16 @@ export default function SettleDebtDialog({ open, onClose, group, currentUser, ba
                         fullWidth
                         onClick={handleSubmit(onSubmit)}
                         variant="contained"
+                        disabled={isSubmitting}
                     >
-                        Settle Up
+                        {isSubmitting ? (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <CircularProgress size={20} sx={{ color: '#FFFFFF' }} />
+                                <span>Settling...</span>
+                            </Box>
+                        ) : (
+                            'Settle Up'
+                        )}
                     </SettleButton>
 
                     {/* Disclaimer Section */}

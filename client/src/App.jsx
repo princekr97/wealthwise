@@ -71,6 +71,7 @@ export default function App() {
             color: '#fff',
             padding: '16px',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            zIndex: 99999, // Ensure toast is always on top
           },
           className: 'modern-toast',
           success: {

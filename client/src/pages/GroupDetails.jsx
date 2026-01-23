@@ -520,8 +520,9 @@ export default function GroupDetails() {
                 if (member) {
                     // Match by email if exists
                     if (user.email && member.email && member.email.toLowerCase() === user.email.toLowerCase()) isMeByShadow = true;
-                    // Match by phone if exists
-                    if (user.phone && member.phone && member.phone === user.phone) isMeByShadow = true;
+                    // Match by phone if exists (check both phone and phoneNumber)
+                    const userPhone = user.phone || user.phoneNumber;
+                    if (userPhone && member.phone && member.phone === userPhone) isMeByShadow = true;
                 }
             }
 
@@ -636,6 +637,11 @@ export default function GroupDetails() {
             const mUserId = m.userId && (m.userId._id || m.userId);
             if (mUserId && String(mUserId) === String(user._id)) return true;
             if (m.email && user.email && m.email.toLowerCase() === user.email.toLowerCase()) return true;
+
+            // Check Phone
+            const userPhone = user.phone || user.phoneNumber;
+            if (userPhone && m.phone && m.phone === userPhone) return true;
+
             return false;
         });
 
@@ -792,7 +798,7 @@ export default function GroupDetails() {
                                 title="Add Expense"
                                 onClick={() => setIsExpenseDialogOpen(true)}
                                 sx={{
-                                    width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     cursor: 'pointer', borderRadius: '12px',
                                     background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
                                     color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -804,14 +810,14 @@ export default function GroupDetails() {
                                     }
                                 }}
                             >
-                                <AddExpenseIcon sx={{ fontSize: 20 }} />
+                                <AddExpenseIcon sx={{ fontSize: 22 }} />
                             </Box>
 
                             <Box
                                 title="Add Member"
                                 onClick={() => setIsAddMemberDialogOpen(true)}
                                 sx={{
-                                    width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     cursor: 'pointer', borderRadius: '12px',
                                     background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
                                     color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -823,15 +829,15 @@ export default function GroupDetails() {
                                     }
                                 }}
                             >
-                                <AddMemberIcon sx={{ fontSize: 20 }} />
+                                <AddMemberIcon sx={{ fontSize: 22 }} />
                             </Box>
 
                             <Box
-                                title="Trip Report & Export"
-                                onClick={() => !previewLoading && handlePreviewReport()}
+                                title="Download PDF"
+                                onClick={() => !exporting && handleDownloadReport()}
                                 sx={{
-                                    width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    cursor: previewLoading ? 'wait' : 'pointer', borderRadius: '12px',
+                                    width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: exporting ? 'wait' : 'pointer', borderRadius: '12px',
                                     background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
                                     color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                     '&:hover': {
@@ -842,14 +848,14 @@ export default function GroupDetails() {
                                     }
                                 }}
                             >
-                                {previewLoading ? <CircularProgress size={16} color="inherit" /> : <ReportIcon sx={{ fontSize: 20 }} />}
+                                {exporting ? <CircularProgress size={18} color="inherit" /> : <DownloadIcon sx={{ fontSize: 22 }} />}
                             </Box>
 
                             <Box
                                 title="More Options"
                                 onClick={handleMenuClick}
                                 sx={{
-                                    width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     cursor: 'pointer', borderRadius: '12px',
                                     background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
                                     color: '#94A3B8', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -861,7 +867,7 @@ export default function GroupDetails() {
                                     }
                                 }}
                             >
-                                <MoreVertIcon sx={{ fontSize: 20 }} />
+                                <MoreVertIcon sx={{ fontSize: 22 }} />
                             </Box>
                         </Stack>
                     </Box>
@@ -903,6 +909,30 @@ export default function GroupDetails() {
                         <Typography variant="overline" sx={{ px: 2, py: 1, color: '#64748b', fontWeight: 700, letterSpacing: '1px', fontSize: '0.7rem' }}>
                             ACTIONS
                         </Typography>
+
+                        <MenuItem
+                            onClick={() => { handleMenuClose(); handlePreviewReport(); }}
+                            sx={{
+                                py: 1.5,
+                                px: 2,
+                                borderRadius: '10px',
+                                mb: 0.5,
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)',
+                                    borderLeft: '3px solid #3b82f6',
+                                    paddingLeft: '13px'
+                                }
+                            }}
+                        >
+                            <ListItemIcon sx={{ color: '#60a5fa', minWidth: '36px !important' }}>
+                                <ReportIcon fontSize="small" />
+                            </ListItemIcon>
+                            <Box>
+                                <Typography variant="body2" fontWeight={600} sx={{ color: '#e2e8f0' }}>Preview Report</Typography>
+                                <Typography variant="caption" sx={{ color: '#64748b' }}>View PDF before download</Typography>
+                            </Box>
+                        </MenuItem>
 
                         <MenuItem
                             onClick={() => { handleMenuClose(); setIsEditDialogOpen(true); }}
@@ -1063,7 +1093,8 @@ export default function GroupDetails() {
                                                 // Check if this row is Me
                                                 const isMe = member && (
                                                     (member.userId && String(member.userId._id || member.userId) === String(user?._id)) ||
-                                                    (member.email && user?.email && member.email.toLowerCase() === user.email.toLowerCase())
+                                                    (member.email && user?.email && member.email.toLowerCase() === user.email.toLowerCase()) ||
+                                                    (member.phone && (user?.phone || user?.phoneNumber) && member.phone === (user?.phone || user?.phoneNumber))
                                                 );
 
                                                 const name = isMe ? 'You' : originalName;

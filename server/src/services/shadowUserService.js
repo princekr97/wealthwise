@@ -15,6 +15,7 @@
  */
 
 import Group from '../models/groupModel.js';
+import crypto from 'crypto';
 
 /**
  * Link shadow members to real user account
@@ -23,54 +24,60 @@ import Group from '../models/groupModel.js';
  */
 export const linkShadowMembersToUser = async (user) => {
     try {
-        const { _id: userId, email, phone } = user;
+        const { _id: userId, email, phoneNumber: phone } = user;
 
-        // Find all groups where this user exists as a shadow member
-        // (userId is null but email or phone matches)
-        const groupsWithShadowUser = await Group.find({
-            $or: [
-                {
-                    'members': {
-                        $elemMatch: {
-                            email: email ? email.toLowerCase() : null,
-                            $or: [
-                                { userId: { $exists: false } },
-                                { userId: null }
-                            ]
-                        }
-                    }
-                },
-                {
-                    'members': {
-                        $elemMatch: {
-                            phone: phone || null,
-                            $or: [
-                                { userId: { $exists: false } },
-                                { userId: null }
-                            ]
-                        }
-                    }
-                }
-            ]
-        });
+        console.log(`🔗 Attempting to link shadow members for user: ${userId}, phone: ${phone}, email: ${email}`);
+
+        // Find ALL groups where a member has matching phone or email
+        // We don't care about userId - we match by phone/email only
+        const query = {
+            $or: []
+        };
+
+        // Match by phone (primary key)
+        if (phone) {
+            query.$or.push({ 'members.phone': phone });
+        }
+
+        // Match by email (secondary key)
+        if (email) {
+            query.$or.push({ 'members.email': email.toLowerCase() });
+        }
+
+        if (query.$or.length === 0) {
+            console.log('⚠️  No phone or email to match');
+            return {
+                success: false,
+                linkedGroupsCount: 0,
+                groupNames: [],
+                message: 'No contact information available for linking'
+            };
+        }
+
+        const groupsWithMatchingMembers = await Group.find(query);
+        console.log(`📊 Found ${groupsWithMatchingMembers.length} groups with matching phone/email`);
 
         let linkedCount = 0;
         const linkedGroupNames = [];
 
-        // Update each shadow member with the real userId
-        for (const group of groupsWithShadowUser) {
+        // Update each matching member with the real userId
+        for (const group of groupsWithMatchingMembers) {
             let groupUpdated = false;
 
             group.members.forEach(member => {
-                // Match by email or phone
-                const emailMatch = email && member.email && member.email.toLowerCase() === email.toLowerCase();
+                // Match by phone (primary) or email (secondary)
                 const phoneMatch = phone && member.phone && member.phone === phone;
+                const emailMatch = email && member.email && member.email.toLowerCase() === email.toLowerCase();
 
-                // If match found and member is still shadow (no userId)
-                if ((emailMatch || phoneMatch) && !member.userId) {
+                // If phone/email matches AND userId is different (shadow or old)
+                if ((phoneMatch || emailMatch) && String(member.userId) !== String(userId)) {
+                    const oldUserId = member.userId;
                     member.userId = userId;
+                    member.isShadowUser = false;
                     groupUpdated = true;
-                    console.log(`✅ Linked shadow member "${member.name}" to user ${userId} in group "${group.name}"`);
+                    console.log(`✅ Linked member "${member.name}" in group "${group.name}"`);
+                    console.log(`   Phone: ${member.phone}, Email: ${member.email}`);
+                    console.log(`   Old userId: ${oldUserId} → New userId: ${userId}`);
                 }
             });
 
@@ -81,17 +88,21 @@ export const linkShadowMembersToUser = async (user) => {
             }
         }
 
+        const message = linkedCount > 0 
+            ? `Welcome! You've been automatically added to ${linkedCount} group(s): ${linkedGroupNames.join(', ')}`
+            : 'No existing groups found';
+
+        console.log(`🎉 Linking complete: ${linkedCount} groups linked`);
+
         return {
             success: true,
             linkedGroupsCount: linkedCount,
             groupNames: linkedGroupNames,
-            message: linkedCount > 0 
-                ? `Welcome! You've been automatically added to ${linkedCount} group(s): ${linkedGroupNames.join(', ')}`
-                : 'No existing groups found'
+            message
         };
 
     } catch (error) {
-        console.error('Shadow user linking error:', error);
+        console.error('❌ Shadow user linking error:', error);
         return {
             success: false,
             linkedGroupsCount: 0,

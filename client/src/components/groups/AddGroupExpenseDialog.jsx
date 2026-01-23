@@ -38,7 +38,8 @@ import {
     FormControlLabel,
     Switch,
     CircularProgress,
-    useTheme
+    useTheme,
+    useMediaQuery
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -136,10 +137,12 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
 const HeaderBox = styled(Box)(({ theme }) => ({
     background: theme.palette.mode === 'dark' ? '#1E293B' : '#FFFFFF',
     padding: '1.25rem 1.5rem',
+    paddingTop: 'calc(1.25rem + env(safe-area-inset-top))', // Handle Safe Area (Notch)
     borderBottom: `1px solid ${theme.palette.divider}`,
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    flexShrink: 0 // Prevent header from shrinking
 }));
 
 const CloseButton = styled(IconButton)(({ theme }) => ({
@@ -323,9 +326,10 @@ const isCurrentMember = (member, currentUser) => {
     if (memberId === currentId) return true;
 
     // Check Phone
-    if (currentUser.phone) {
+    const currentUserPhone = currentUser.phone || currentUser.phoneNumber;
+    if (currentUserPhone) {
         const memberPhone = member.phone || member.userId?.phone;
-        if (memberPhone && memberPhone === currentUser.phone) return true;
+        if (memberPhone && memberPhone === currentUserPhone) return true;
     }
 
     // Check Email
@@ -339,6 +343,7 @@ const isCurrentMember = (member, currentUser) => {
 
 export default function AddGroupExpenseDialog({ open, onClose, group, currentUser, onAddMemberClick, initialExpense, onExpenseAdded }) {
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [splitType, setSplitType] = useState('equal'); // 'equal' | 'custom'
     const [members, setMembers] = useState([]);
     const [selectedMemberIds, setSelectedMemberIds] = useState([]); // Track selected members for split
@@ -790,26 +795,38 @@ export default function AddGroupExpenseDialog({ open, onClose, group, currentUse
     return (
         <StyledDialog
             open={open}
-            onClose={onClose}
+            fullScreen={isMobile}
+            onClose={(event, reason) => {
+                if (reason === 'escapeKeyDown') {
+                    onClose();
+                }
+                // Ignore 'backdropClick' - prevents closing when clicking outside
+            }}
             TransitionComponent={Fade}
             transitionDuration={300}
             disableScrollLock={false}
-            hideBackdrop={false}
+            disableEscapeKeyDown={false}
+            keepMounted={false}
             scroll="paper"
             maxWidth="sm"
             fullWidth
-            fullScreen={false}
             sx={{
                 '& .MuiBackdrop-root': {
                     backgroundColor: 'rgba(0, 0, 0, 0.85)',
                     backdropFilter: 'blur(4px)'
                 },
                 '& .MuiDialog-paper': {
-                    maxHeight: { xs: '90vh', sm: '85vh' },
-                    m: { xs: 2, sm: 3 }
+                    borderRadius: isMobile ? 0 : '16px',
+                    margin: isMobile ? 0 : { xs: 2, sm: 3 },
+                    width: isMobile ? '100%' : undefined,
+                    maxWidth: isMobile ? '100%' : '690px',
+                    maxHeight: isMobile ? '100%' : { xs: '90vh', sm: '85vh' },
+                    overflowY: 'auto',
+                    paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : 0
                 },
                 '& .MuiDialog-container': {
-                    overscrollBehavior: 'contain'
+                    overscrollBehavior: 'contain',
+                    '&::-webkit-scrollbar': { display: 'none' }
                 }
             }}
         >

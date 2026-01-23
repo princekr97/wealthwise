@@ -135,6 +135,10 @@ export default function Groups() {
                         }
                         if (!isMe && m.email && m.email.toLowerCase() === myEmail) isMe = true;
 
+                        // Check Phone
+                        const userPhone = user.phone || user.phoneNumber;
+                        if (!isMe && userPhone && m.phone && m.phone === userPhone) isMe = true;
+
                         if (isMe) {
                             if (m._id) extendedIdentifiers.add(String(m._id));
                             if (m.name) extendedIdentifiers.add(m.name.toLowerCase().trim());

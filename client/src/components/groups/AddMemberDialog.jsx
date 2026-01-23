@@ -10,7 +10,9 @@ import {
     Typography,
     Box,
     Fade,
-    useTheme
+    useTheme,
+    CircularProgress,
+    useMediaQuery
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -49,6 +51,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
 
 const HeaderBox = styled(Box)(({ theme }) => ({
     padding: '16px 20px',
+    paddingTop: 'calc(16px + env(safe-area-inset-top))', // Handle Safe Area (Notch)
     background: theme.palette.mode === 'dark'
         ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)'
         : 'linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%)',
@@ -90,6 +93,7 @@ const ModernTextField = styled(TextField)(({ theme }) => ({
 
 export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded, group, currentUser, onRemoveMember }) {
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const isDark = theme.palette.mode === 'dark';
     const [activeTab, setActiveTab] = useState('add');
     const [pendingMembers, setPendingMembers] = useState([]);
@@ -202,15 +206,33 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
     return (
         <StyledDialog
             open={open}
-            onClose={onClose}
+            fullScreen={isMobile}
+            onClose={(event, reason) => {
+                if (reason === 'escapeKeyDown') {
+                    onClose();
+                }
+                // Ignore 'backdropClick' - prevents closing when clicking outside
+            }}
             TransitionComponent={Fade}
             TransitionProps={{ timeout: 400 }}
             disableScrollLock={false}
+            disableEscapeKeyDown={false}
             keepMounted={false}
             scroll="paper"
             sx={{
                 '& .MuiBackdrop-root': {
                     backgroundColor: 'rgba(0, 0, 0, 0.85)'
+                },
+                '& .MuiDialog-paper': {
+                    overflowY: 'auto',
+                    borderRadius: isMobile ? 0 : '24px',
+                    margin: isMobile ? 0 : 32,
+                    maxHeight: isMobile ? '100%' : 'calc(100% - 96px)',
+                    paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : 0
+                },
+                '& .MuiDialog-container': {
+                    overscrollBehavior: 'contain',
+                    '&::-webkit-scrollbar': { display: 'none' }
                 }
             }}
         >
@@ -559,12 +581,14 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
                                     const isAUser = currentUser && (
                                         (a.userId?._id && String(a.userId._id) === String(currentUser._id)) ||
                                         (a.userId && String(a.userId) === String(currentUser._id)) ||
-                                        (a.email && currentUser.email && a.email.toLowerCase() === currentUser.email.toLowerCase())
+                                        (a.email && currentUser.email && a.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+                                        (a.phone && (currentUser.phone || currentUser.phoneNumber) && a.phone === (currentUser.phone || currentUser.phoneNumber))
                                     );
                                     const isBUser = currentUser && (
                                         (b.userId?._id && String(b.userId._id) === String(currentUser._id)) ||
                                         (b.userId && String(b.userId) === String(currentUser._id)) ||
-                                        (b.email && currentUser.email && b.email.toLowerCase() === currentUser.email.toLowerCase())
+                                        (b.email && currentUser.email && b.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+                                        (b.phone && (currentUser.phone || currentUser.phoneNumber) && b.phone === (currentUser.phone || currentUser.phoneNumber))
                                     );
                                     if (isAUser) return -1;
                                     if (isBUser) return 1;
@@ -573,7 +597,8 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
                                     const isCurrentUser = currentUser && (
                                         (member.userId?._id && String(member.userId._id) === String(currentUser._id)) ||
                                         (member.userId && String(member.userId) === String(currentUser._id)) ||
-                                        (member.email && currentUser.email && member.email.toLowerCase() === currentUser.email.toLowerCase())
+                                        (member.email && currentUser.email && member.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+                                        (member.phone && (currentUser.phone || currentUser.phoneNumber) && member.phone === (currentUser.phone || currentUser.phoneNumber))
                                     );
 
                                     return (
@@ -730,10 +755,21 @@ export default function AddMemberDialog({ open, onClose, groupId, onMemberAdded,
                             '&:hover': {
                                 background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
                                 transform: 'translateY(-2px)'
+                            },
+                            '&:disabled': {
+                                background: 'rgba(139, 92, 246, 0.3)',
+                                color: 'rgba(255, 255, 255, 0.5)'
                             }
                         }}
                     >
-                        {isSubmittingBulk ? 'Saving Members...' : `Save ${pendingMembers.length} Person(s) to Group`}
+                        {isSubmittingBulk ? (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <CircularProgress size={20} sx={{ color: '#FFFFFF' }} />
+                                <span>Saving Members...</span>
+                            </Box>
+                        ) : (
+                            `Save ${pendingMembers.length} Person(s) to Group`
+                        )}
                     </Button>
                 </Box>
             )}

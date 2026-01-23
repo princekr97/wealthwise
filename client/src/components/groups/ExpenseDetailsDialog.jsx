@@ -9,7 +9,11 @@ import {
     Stack,
     Divider,
     Paper,
-    Slide
+    Divider,
+    Paper,
+    Slide,
+    useTheme,
+    useMediaQuery
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -133,12 +137,51 @@ const getCategoryIcon = (category) => {
 // Prevents re-renders when props haven't changed
 // Safe because this component is pure (same props = same output)
 const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDelete, onEdit, groupMembers }) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
     if (!expense) return null;
 
     const formatName = (name) => {
         if (!name) return 'Unknown';
         if (name === 'You') return 'You';
         return name.length > 6 ? name.substring(0, 6) + '...' : name;
+    };
+
+    // Helper to robustly identify if an ID belongs to the current user
+    const isMe = (targetId) => {
+        if (!currentUser || !targetId) return false;
+
+        // 1. Direct ID Match
+        const currentUserId = currentUser._id || currentUser.id;
+        if (String(targetId) === String(currentUserId)) return true;
+
+        // 2. Lookup in group members (to check phone/email links)
+        if (groupMembers) {
+            const member = groupMembers.find(m => {
+                const mId = m._id || m.id;
+                const mUserId = m.userId && typeof m.userId === 'object' ? (m.userId._id || m.userId.id) : m.userId;
+                return (mId && String(mId) === String(targetId)) || (mUserId && String(mUserId) === String(targetId));
+            });
+
+            if (member) {
+                // Check Phone
+                const userPhone = currentUser.phone || currentUser.phoneNumber;
+                if (userPhone && member.phone && member.phone === userPhone) return true;
+                if (userPhone && member.userId?.phone && member.userId.phone === userPhone) return true;
+
+                // Check Email
+                if (currentUser.email) {
+                    const mEmail = member.email || member.userId?.email;
+                    if (mEmail && mEmail.toLowerCase() === currentUser.email.toLowerCase()) return true;
+                }
+
+                // Check ID again via member.userId
+                const finalMUserId = member.userId?._id || member.userId;
+                if (finalMUserId && String(finalMUserId) === String(currentUserId)) return true;
+            }
+        }
+        return false;
     };
 
     // Date/Time Formatting with Timezone awareness
@@ -162,7 +205,8 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
     const payerId = expense.paidBy && typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy;
     const currentUserId = currentUser?._id || currentUser?.id;
 
-    if (payerId && currentUserId && String(payerId) === String(currentUserId)) {
+    // Use robust isMe check
+    if (payerId && isMe(payerId)) {
         rawPayerName = 'You';
     }
 
@@ -176,7 +220,9 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
         });
 
         if (foundPayer) {
-            rawPayerName = String(foundPayer.userId?._id || foundPayer.userId) === String(currentUserId) ? 'You' : foundPayer.name;
+            // Check if foundPayer is me using robust check on its ID
+            const foundPayerId = foundPayer._id || foundPayer.id;
+            rawPayerName = isMe(foundPayerId) ? 'You' : foundPayer.name;
             payerAvatar = foundPayer.avatarUrl || (foundPayer.userId && foundPayer.userId.avatarUrl);
         }
     }
@@ -195,19 +241,21 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
             onClose={onClose}
             TransitionComponent={Transition}
             fullWidth
+            fullScreen={isMobile}
             maxWidth="xs"
             PaperProps={{
                 elevation: 0,
                 sx: {
-                    borderRadius: '24px', // Slightly smaller radius
+                    borderRadius: isMobile ? 0 : '24px', // Slightly smaller radius
                     background: 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), var(--active-gradient)',
                     backgroundAttachment: 'fixed',
-                    m: 2,
+                    m: isMobile ? 0 : 2,
                     p: 0,
                     position: 'relative',
                     overflow: 'hidden',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                    paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : 0
                 }
             }}
         >
@@ -218,7 +266,7 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
                     size="small"
                     sx={{
                         position: 'absolute',
-                        top: 16,
+                        top: isMobile ? 'calc(16px + env(safe-area-inset-top))' : 16,
                         right: 16,
                         zIndex: 10,
                         color: 'rgba(255,255,255,0.4)',
@@ -352,7 +400,7 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
 
                             const splitId = split.user && typeof split.user === 'object' ? split.user._id : split.user;
 
-                            if (splitId && currentUserId && String(splitId) === String(currentUserId)) {
+                            if (splitId && isMe(splitId)) {
                                 rawSplitName = 'You';
                             }
 
@@ -366,7 +414,9 @@ const ExpenseDetailsDialog = memo(({ open, onClose, expense, currentUser, onDele
                                 });
 
                                 if (foundMember) {
-                                    rawSplitName = String(foundMember.userId?._id || foundMember.userId) === String(currentUserId) ? 'You' : foundMember.name;
+                                    // Check if foundMember is me using robust check
+                                    const foundMemberId = foundMember._id || foundMember.id;
+                                    rawSplitName = isMe(foundMemberId) ? 'You' : foundMember.name;
                                     splitAvatar = foundMember.avatarUrl || (foundMember.userId && foundMember.userId.avatarUrl);
                                 }
                             }

@@ -124,6 +124,10 @@ export const loginUser = async (req, res, next) => {
       throw new Error('Invalid credentials');
     }
 
+    // **Auto-link shadow members on login too**
+    // This handles cases where user was added to groups after they registered
+    const linkingResult = await linkShadowMembersToUser(user);
+
     const token = generateToken(user._id);
 
     res.json({
@@ -135,6 +139,11 @@ export const loginUser = async (req, res, next) => {
         phoneNumber: user.phoneNumber,
         currency: user.currency,
         avatar: user.avatar
+      },
+      // Include linking info (useful for debugging)
+      shadowUserLinking: {
+        groupsLinked: linkingResult.linkedGroupsCount,
+        groupNames: linkingResult.groupNames
       }
     });
   } catch (err) {

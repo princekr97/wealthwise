@@ -16,7 +16,10 @@ import {
     Box,
     Avatar,
     Chip,
-    styled
+    styled,
+    CircularProgress,
+    useTheme,
+    useMediaQuery
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -38,10 +41,12 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
 }));
 
 export default function AddGroupDialog({ open, onClose, onGroupCreated, group }) {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const isEditMode = !!group;
     const { createGroup, updateGroup } = useGroupStore();
 
-    const { control, handleSubmit, reset, watch } = useForm({
+    const { control, handleSubmit, reset, watch, formState: { isSubmitting } } = useForm({
         defaultValues: {
             name: '',
             type: 'Trip',
@@ -100,6 +105,7 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
     return (
         <StyledDialog
             open={open}
+            fullScreen={isMobile}
             onClose={onClose}
             maxWidth="sm"
             fullWidth
@@ -108,6 +114,10 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
             sx={{
                 '& .MuiBackdrop-root': {
                     backgroundColor: 'rgba(0, 0, 0, 0.85)'
+                },
+                '& .MuiDialog-paper': {
+                    borderRadius: isMobile ? 0 : '24px',
+                    paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : 0
                 }
             }}
         >
@@ -245,6 +255,7 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
                         onClick={handleSubmit(onSubmit)}
                         variant="contained"
                         fullWidth
+                        disabled={isSubmitting}
                         sx={{
                             py: 1.2,
                             borderRadius: '12px',
@@ -257,10 +268,18 @@ export default function AddGroupDialog({ open, onClose, onGroupCreated, group })
                                 background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
                                 transform: 'translateY(-1px)',
                                 boxShadow: '0 6px 16px rgba(20, 184, 166, 0.45)'
+                            },
+                            '&:disabled': {
+                                background: 'rgba(20, 184, 166, 0.3)',
+                                color: 'rgba(255, 255, 255, 0.5)'
                             }
                         }}
                     >
-                        {isEditMode ? 'Update Group' : 'Create Group'}
+                        {isSubmitting ? (
+                            <CircularProgress size={24} sx={{ color: '#FFFFFF' }} />
+                        ) : (
+                            isEditMode ? 'Update Group' : 'Create Group'
+                        )}
                     </Button>
                 </Box>
             </Box>
