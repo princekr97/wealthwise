@@ -247,23 +247,47 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
 
     // 2. Prepare Data: Spending by Member
     const memberSpendingData = React.useMemo(() => {
-        const map = {};
-        members.forEach(m => map[m.name] = 0);
+        const spendingMap = {};
+
+        // Initialize map with all members
+        members.forEach(m => {
+            const mId = m.userId?._id || m.userId || m._id;
+            spendingMap[String(mId)] = { name: m.name, value: 0 };
+        });
 
         expenses.forEach(exp => {
             if (exp.category === 'Settlement') return;
-            if (!exp.paidBy) return; // Skip expenses with missing paidBy
 
-            const payerName = exp.paidBy.name;
-            if (map[payerName] !== undefined) {
-                map[payerName] += exp.amount;
-            } else {
-                map[payerName] = (map[payerName] || 0) + exp.amount;
+            // Resolve payer ID or use a fallback for name-based matching
+            const pId = exp.paidBy?._id || exp.paidBy || exp.paidById;
+            const pName = (exp.paidBy?.name || exp.paidByName || '').trim().toLowerCase();
+
+            let matchedId = null;
+
+            // 1. Try matching by ID
+            if (pId && spendingMap[String(pId)]) {
+                matchedId = String(pId);
+            }
+            // 2. Fallback to name matching
+            else if (pName) {
+                const memberByName = members.find(m => m.name?.trim().toLowerCase() === pName);
+                if (memberByName) {
+                    matchedId = String(memberByName.userId?._id || memberByName.userId || memberByName._id);
+                }
+            }
+
+            if (matchedId) {
+                spendingMap[matchedId].value += exp.amount;
+            } else if (pName && pName !== 'unknown') {
+                // Handle ex-members or unlinked names
+                const displayName = exp.paidBy?.name || exp.paidByName || 'Unknown';
+                if (!spendingMap[displayName]) spendingMap[displayName] = { name: displayName, value: 0 };
+                spendingMap[displayName].value += exp.amount;
             }
         });
 
-        return Object.entries(map)
-            .map(([name, value]) => ({ name, value }))
+        return Object.values(spendingMap)
+            .filter(item => item.value > 0)
             .sort((a, b) => b.value - a.value); // Sort desc
     }, [expenses, members]);
 
@@ -292,8 +316,7 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
             >
                 {/* 1. Total Spending */}
                 <MetricCard
-                    title="Total Spending"
-                    value={formatCurrency(stats.totalGroupSpend)}
+                    title="Total Group Spend"
                     theme={theme}
                     color="#3b82f6"
                     icon={
@@ -303,12 +326,36 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                             <path d="M3 11h18" stroke="currentColor" strokeWidth="2" />
                         </svg>
                     }
-                />
+                >
+                    <Box sx={{ mt: 0.5 }}>
+                        <Typography sx={{
+                            fontSize: { xs: '1.4rem', md: '2.1rem' },
+                            fontWeight: 800,
+                            color: theme.palette.text.primary,
+                            letterSpacing: '-1.2px',
+                            lineHeight: 1
+                        }}>
+                            {formatCurrency(stats.totalGroupSpend)}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1.5 }}>
+                            <Box sx={{
+                                display: 'inline-flex',
+                                px: 1, py: 0.4, borderRadius: '8px',
+                                background: 'rgba(59, 130, 246, 0.1)',
+                                border: '1px solid rgba(59, 130, 246, 0.15)',
+                                backdropFilter: 'blur(4px)'
+                            }}>
+                                <Typography sx={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: 700 }}>
+                                    {expenses.filter(e => e.category !== 'Settlement').length} Transactions
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                </MetricCard>
 
-                {/* 2. Expenses Paid */}
+                {/* 2. Your Contributions */}
                 <MetricCard
-                    title="Expenses Paid"
-                    value={formatCurrency(stats.myTotalSpend)}
+                    title="You Paid"
                     theme={theme}
                     color="#10b981"
                     icon={
@@ -317,7 +364,32 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                             <path d="M3 10h18M7 14h2M7 17h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                     }
-                />
+                >
+                    <Box sx={{ mt: 0.5 }}>
+                        <Typography sx={{
+                            fontSize: { xs: '1.4rem', md: '2.1rem' },
+                            fontWeight: 800,
+                            color: theme.palette.text.primary,
+                            letterSpacing: '-1.2px',
+                            lineHeight: 1
+                        }}>
+                            {formatCurrency(stats.myTotalSpend)}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1.5 }}>
+                            <Box sx={{
+                                display: 'inline-flex',
+                                px: 1, py: 0.4, borderRadius: '8px',
+                                background: 'rgba(16, 185, 129, 0.1)',
+                                border: '1px solid rgba(16, 185, 129, 0.15)',
+                                backdropFilter: 'blur(4px)'
+                            }}>
+                                <Typography sx={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 700 }}>
+                                    {stats.totalGroupSpend > 0 ? ((stats.myTotalSpend / stats.totalGroupSpend) * 100).toFixed(0) : 0}% of group total
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                </MetricCard>
 
                 {/* 3. Settlements */}
                 <MetricCard

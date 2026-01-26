@@ -260,7 +260,7 @@ const renderParticipants = (group, balances, expenses) => {
           <div style="font-size:9px; color:#64748b; margin-bottom:4px;">${escape(phone)}${escape(email)}</div>
           <div style="font-size:10px; color:#334155; line-height:1.4; border-top: 1px solid ${borderColor}; padding-top: 4px;">
             Total Paid: <strong>Rs. ${totalPaid.toFixed(0)}</strong><br>
-            Your Share: Rs. ${individualShare.toFixed(0)}
+            Member Share: Rs. ${individualShare.toFixed(0)}
           </div>
         </div>
         <div style="text-align:right;">
