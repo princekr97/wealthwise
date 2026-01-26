@@ -101,7 +101,7 @@ const getTripDateRange = (expenses, createdAt) => {
     endDate = new Date(Math.max(...dates));
   }
 
-  const fmt = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  const fmt = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
   return `${fmt(startDate)} - ${fmt(endDate)}, ${endDate.getFullYear()}`;
 };
 
@@ -143,8 +143,9 @@ const renderFinancialCards = (total, perPerson) => `
       <div class="card-value">Rs. ${total.toFixed(2)}</div>
     </div>
     <div class="card card-green">
-      <div class="card-label">Per Person Share</div>
-      <div class="card-value">Rs. ${perPerson.toFixed(2)}</div>
+      <div class="card-label">Average Group Share</div>
+      <div class="card-value">Rs. ${perPerson.toFixed(0)}</div>
+      <div style="font-size:8px; opacity:0.8; margin-top:2px;">(Estimate only; individual shares vary)</div>
     </div>
   </div>
 `;
@@ -206,16 +207,35 @@ const renderParticipants = (group, balances, expenses) => {
     const memberId = getMemberId(m);
     const balance = balances[memberId] || 0;
 
-    // Robust matching
+    // Robust matching for this member
     const idsToCheck = [m._id, m.userId, m.userId?._id, m.email].filter(Boolean).map(String);
+    const memberName = (m.name || '').trim().toLowerCase();
+
+    // 1. Calculate Total Paid (All out-of-pocket: Expenses covered + Settlements paid)
     const totalPaid = expenses
       .filter(exp => {
-        const pId = exp.paidBy?._id || exp.paidBy;
-        return idsToCheck.includes(String(pId));
+        const pId = exp.paidBy?._id || exp.paidBy || exp.paidById;
+        const pName = exp.paidBy?.name || exp.paidByName;
+        
+        if (pId && idsToCheck.includes(String(pId))) return true;
+        if (pName && memberName && pName.trim().toLowerCase() === memberName) return true;
+        return false;
       })
       .reduce((sum, e) => sum + e.amount, 0);
 
-    const impliedShare = totalPaid - balance;
+    // 2. Calculate Individual Share (Consumption + Settlements received)
+    // We use the splits array directly for accuracy
+    const individualShare = expenses.reduce((sum, exp) => {
+      const split = exp.splits?.find(s => {
+        const sId = s.user?._id || s.user || s.userId || s.userId?._id;
+        const sName = s.user?.name || s.userName;
+        
+        if (sId && idsToCheck.includes(String(sId))) return true;
+        if (sName && memberName && sName.trim().toLowerCase() === memberName) return true;
+        return false;
+      });
+      return sum + (split ? split.amount : 0);
+    }, 0);
     
     // Styling states
     const isCredit = balance > 0.1;
@@ -225,7 +245,7 @@ const renderParticipants = (group, balances, expenses) => {
     const borderColor = isCredit ? '#86efac' : isDebit ? '#fca5a5' : '#cbd5e1';
     const textColor = isCredit ? '#15803d' : isDebit ? '#b91c1c' : '#64748b';
     const statusText = isCredit ? 'GETS BACK' : isDebit ? 'TO PAY' : 'SETTLED';
-    const statusVal = isCredit ? `+${balance.toFixed(0)}` : isDebit ? `${balance.toFixed(0)}` : '✓';
+    const statusVal = isCredit ? `+${Math.abs(balance).toFixed(0)}` : isDebit ? `${Math.abs(balance).toFixed(0)}` : '✓';
 
     const phone = m.phoneNumber || m.phone || m.mobile || 'N/A';
     const email = m.email && m.email !== 'null' ? ` • ${m.email}` : '';
@@ -239,12 +259,12 @@ const renderParticipants = (group, balances, expenses) => {
           <div style="font-weight:700; font-size:12px; color:#0f172a; margin-bottom:2px">${escape(m.name)}</div>
           <div style="font-size:9px; color:#64748b; margin-bottom:4px;">${escape(phone)}${escape(email)}</div>
           <div style="font-size:10px; color:#334155; line-height:1.4; border-top: 1px solid ${borderColor}; padding-top: 4px;">
-            Paid: <strong>Rs. ${totalPaid.toFixed(0)}</strong><br>
-            Spent: Rs. ${impliedShare.toFixed(0)}
+            Total Paid: <strong>Rs. ${totalPaid.toFixed(0)}</strong><br>
+            Your Share: Rs. ${individualShare.toFixed(0)}
           </div>
         </div>
         <div style="text-align:right;">
-          <div style="color:${textColor}; font-weight:800; font-size:12px">${statusVal}</div>
+          <div style="color:${textColor}; font-weight:800; font-size:14px">${statusVal}</div>
           <div style="font-size:9px; color:${textColor}; opacity:0.8; font-weight:600">${statusText}</div>
         </div>
       </div>
@@ -383,9 +403,14 @@ const renderTransactions = (expenses) => {
   const list = nonSettlementExpenses.map(e => {
     const catColor = getCategoryColor(e.category);
     const dateObj = new Date(e.date);
+    // Use actual creation time if the date field is just a normalized date (00:00 UTC)
+    const timeObj = (e.createdAt && dateObj.getUTCHours() === 0 && dateObj.getUTCMinutes() === 0) 
+      ? new Date(e.createdAt) 
+      : dateObj;
+
     const day = dateObj.getDate();
-    const month = dateObj.toLocaleDateString('en-IN', { month: 'short' });
-    const time = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    const month = dateObj.toLocaleDateString('en-IN', { month: 'short', timeZone: 'Asia/Kolkata' });
+    const time = timeObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
 
     return `
       <div style="background:white; border:1px solid #e2e8f0; border-left: 4px solid ${catColor}; border-radius:10px; padding:12px; margin-bottom:0; box-shadow:0 1px 2px rgba(0,0,0,0.03); display:flex; align-items:center; justify-content:space-between;">
@@ -430,7 +455,7 @@ const renderFooter = () => `
     </div>
     <div class="credits">
       Designed & Developed by <span style="color:#3b82f6;font-weight:600">Prince Gupta</span> •
-      ${new Date().toLocaleDateString('en-IN')} •
+      ${new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })} •
       Report ID: TRI-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}
     </div>
   </div>
@@ -648,7 +673,7 @@ export const generateTripReportHTML = (data) => {
       </div>
       <div class="credits">
         Designed & Developed by <span style="color:#3b82f6;font-weight:600">Prince Gupta</span> •
-        ${new Date().toLocaleDateString('en-IN')} •
+        ${new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })} •
         Report ID: TRI-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}
       </div>
     </div>

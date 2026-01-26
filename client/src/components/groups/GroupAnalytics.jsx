@@ -154,8 +154,9 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
         let mySettlementPaid = 0;
         let mySettlementReceived = 0;
         let myNetBalance = 0;
+        let myTotalConsumption = 0;
 
-        if (!currentUser) return { totalGroupSpend: 0, myTotalSpend: 0, myNetBalance: 0 };
+        if (!currentUser) return { totalGroupSpend: 0, myTotalSpend: 0, myNetBalance: 0, myTotalConsumption: 0 };
 
         // Helper for safe ID comparison
         const getSafeId = (obj) => {
@@ -207,14 +208,16 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                             mySettlementReceived += split.amount;
                         } else {
                             myNetBalance -= split.amount; // - Debit (Consumed)
+                            myTotalConsumption += split.amount;
                         }
                     }
                 });
             }
         });
 
-        return { totalGroupSpend, myTotalSpend, mySettlementPaid, mySettlementReceived, myNetBalance };
+        return { totalGroupSpend, myTotalSpend, mySettlementPaid, mySettlementReceived, myNetBalance, myTotalConsumption };
     }, [expenses, currentUser]);
+
     const categoryData = React.useMemo(() => {
         const map = {};
         expenses.forEach(exp => {
@@ -333,34 +336,99 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                     </Box>
                 </MetricCard>
 
-                {/* 4. Average Spend */}
+                {/* 4. Your Share (Consumption) */}
                 <MetricCard
-                    title="Average Spend"
+                    title="Your Share"
                     theme={theme}
                     color="#f59e0b"
                     icon={
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="9" cy="7" r="3" stroke="currentColor" strokeWidth="2" />
-                            <circle cx="15" cy="7" r="3" stroke="currentColor" strokeWidth="2" />
-                            <path d="M3 20c0-3.5 2.5-6 6-6s6 2.5 6 6M15 20c0-3.5 2.5-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
                         </svg>
                     }
                 >
-                    <Typography sx={{
-                        fontSize: { xs: '1.4rem', md: '2.2rem' },
-                        fontWeight: 800,
-                        color: theme.palette.text.primary,
-                        letterSpacing: '-1px',
-                        lineHeight: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'flex-start'
-                    }}>
-                        {formatCurrency(stats.totalGroupSpend / (members.length || 1))}
-                        <Typography component="span" sx={{ fontSize: '0.75rem', color: alpha(theme.palette.text.primary, 0.5), fontWeight: 600, mt: 0.5, letterSpacing: '1px', textTransform: 'uppercase' }}>
-                            Per Person
+                    <Box sx={{ mt: 0.5 }}>
+                        <Typography sx={{
+                            fontSize: { xs: '1.4rem', md: '2.1rem' },
+                            fontWeight: 800,
+                            color: theme.palette.text.primary,
+                            letterSpacing: '-1.2px',
+                            lineHeight: 1
+                        }}>
+                            {formatCurrency(stats.myTotalConsumption)}
                         </Typography>
-                    </Typography>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1.5 }}>
+                            <Box
+                                sx={{
+                                    display: 'inline-flex',
+                                    flexWrap: 'wrap',
+                                    alignItems: 'center',
+                                    gap: 0.75,
+                                    pl: 1,
+                                    pr: 0.75,
+                                    py: 0.5,
+                                    borderRadius: '8px',
+                                    background: 'rgba(255, 255, 255, 0.04)',
+                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    backdropFilter: 'blur(8px)',
+                                    maxWidth: '100%'
+                                }}
+                            >
+                                <Typography sx={{
+                                    fontSize: '0.65rem',
+                                    color: '#94A3B8',
+                                    fontWeight: 600,
+                                    letterSpacing: '0.2px',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    Group Average:
+                                </Typography>
+
+                                <Typography sx={{
+                                    fontSize: '0.65rem',
+                                    color: '#f59e0b',
+                                    fontWeight: 800,
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    {formatCurrency(stats.totalGroupSpend / (members.length || 1))}
+                                </Typography>
+
+                                <MuiTooltip
+                                    title="Your Share is your personal consumption. It differs from the Average if you were excluded from certain expenses or splits were unequal."
+                                    arrow
+                                    placement="top"
+                                    enterTouchDelay={0}
+                                >
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            width: 16,
+                                            height: 16,
+                                            borderRadius: '50%',
+                                            background: alpha('#f59e0b', 0.15),
+                                            color: '#f59e0b',
+                                            cursor: 'help',
+                                            transition: 'all 0.2s',
+                                            '&:hover': {
+                                                background: alpha('#f59e0b', 0.25)
+                                            }
+                                        }}
+                                    >
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </Box>
+                                </MuiTooltip>
+                            </Box>
+                        </Box>
+                    </Box>
                 </MetricCard>
             </Box>
 
@@ -459,4 +527,3 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
 
 // Export with React.memo for performance optimization
 export default React.memo(GroupAnalytics);
-
