@@ -156,35 +156,57 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
         let myNetBalance = 0;
         let myTotalConsumption = 0;
 
-        if (!currentUser) return { totalGroupSpend: 0, myTotalSpend: 0, myNetBalance: 0, myTotalConsumption: 0 };
+        if (!currentUser || !members) return { totalGroupSpend: 0, myTotalSpend: 0, myNetBalance: 0, myTotalConsumption: 0 };
 
-        // Helper for safe ID comparison
-        const getSafeId = (obj) => {
-            if (!obj) return '';
-            if (typeof obj === 'object') return String(obj._id || obj.id || '');
-            return String(obj);
+        // 1. Identify "Me" in the members list (Robust matching)
+        const myMember = members.find(m => {
+            const mId = m.userId?._id || m.userId || m._id;
+            const cId = currentUser._id || currentUser.id;
+
+            if (cId && String(mId) === String(cId)) return true;
+            if (currentUser.email && m.email && m.email.toLowerCase() === currentUser.email.toLowerCase()) return true;
+            if (currentUser.phone && m.phone && m.phone === currentUser.phone) return true;
+            return false;
+        });
+
+        // 2. Collect all "My Identities" for matching against expenses
+        const myIdentities = new Set();
+        if (currentUser._id) myIdentities.add(String(currentUser._id));
+        if (currentUser.id) myIdentities.add(String(currentUser.id));
+        if (myMember) {
+            const mId = myMember.userId?._id || myMember.userId || myMember._id;
+            if (mId) myIdentities.add(String(mId));
+            if (myMember.name) myIdentities.add(myMember.name.trim().toLowerCase());
+            if (myMember.email) myIdentities.add(myMember.email.trim().toLowerCase());
+        }
+        // Always include current user's profile info as fallback
+        if (currentUser.name) myIdentities.add(currentUser.name.trim().toLowerCase());
+        if (currentUser.email) myIdentities.add(currentUser.email.trim().toLowerCase());
+
+        const isMe = (userObj, userName) => {
+            if (!userObj && !userName) return false;
+
+            // Check ID
+            const uid = userObj?._id || userObj?.id || (typeof userObj === 'string' ? userObj : null);
+            if (uid && myIdentities.has(String(uid))) return true;
+
+            // Check Name
+            const name = (userObj?.name || userName || '').trim().toLowerCase();
+            if (name && myIdentities.has(name)) return true;
+
+            return false;
         };
-
-        const currentUserId = getSafeId(currentUser);
 
         expenses.forEach(exp => {
             const isSettlement = exp.category === 'Settlement';
 
-            // Total Spend (Exclude settlements)
+            // Total Spend (Exclude settlements from group metrics)
             if (!isSettlement) {
                 totalGroupSpend += exp.amount;
             }
 
-            // My Spend (Paid By Me)
-            const payerId = getSafeId(exp.paidBy);
-            const payerName = exp.paidBy && exp.paidBy.name;
-
-            const isIdMatch = currentUserId && payerId === currentUserId;
-            // Only try name match if ID match fails AND we have valid names to compare
-            const isNameMatch = !isIdMatch && payerName && currentUser.name &&
-                payerName.trim().toLowerCase() === currentUser.name.trim().toLowerCase();
-
-            if (isIdMatch || isNameMatch) {
+            // My Spend (Did I pay for this?)
+            if (isMe(exp.paidBy, exp.paidByName)) {
                 if (isSettlement) {
                     mySettlementPaid += exp.amount;
                 } else {
@@ -193,17 +215,10 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
                 }
             }
 
-            // My consumption (Split) - Exclude settlements from Net Balance logic
+            // My consumption (Was I part of the split?)
             if (exp.splits) {
                 exp.splits.forEach(split => {
-                    const splitUserId = getSafeId(split.user);
-                    const splitUserName = split.user?.name || split.userName;
-
-                    const isSplitIdMatch = currentUserId && splitUserId === currentUserId;
-                    const isSplitNameMatch = !isSplitIdMatch && splitUserName && currentUser.name &&
-                        splitUserName.trim().toLowerCase() === currentUser.name.trim().toLowerCase();
-
-                    if (isSplitIdMatch || isSplitNameMatch) {
+                    if (isMe(split.user, split.userName)) {
                         if (isSettlement) {
                             mySettlementReceived += split.amount;
                         } else {
@@ -216,7 +231,7 @@ const GroupAnalytics = ({ expenses, members, currency, currentUser }) => {
         });
 
         return { totalGroupSpend, myTotalSpend, mySettlementPaid, mySettlementReceived, myNetBalance, myTotalConsumption };
-    }, [expenses, currentUser]);
+    }, [expenses, currentUser, members]);
 
     const categoryData = React.useMemo(() => {
         const map = {};
